@@ -7933,6 +7933,10 @@ body.duel-active .floating-widget {
   backdrop-filter: blur(12px);
 }
 
+.mini-game-overlay[hidden] {
+  display: none;
+}
+
 .mini-game-hud {
   position: fixed;
   top: 16px;
