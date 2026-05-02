@@ -226,6 +226,14 @@
           <span class="radial-icon">⬡</span>
           <span class="radial-label">联机</span>
         </button>
+        <button class="pet-radial-action action-gomoku" data-pet-action="gomoku" type="button" aria-label="五子棋">
+          <span class="radial-icon">♟</span>
+          <span class="radial-label">棋</span>
+        </button>
+        <button class="pet-radial-action action-runner" data-pet-action="runner" type="button" aria-label="怨气闯关">
+          <span class="radial-icon">⚡</span>
+          <span class="radial-label">闯关</span>
+        </button>
       </div>
       <div class="summoned-pet-avatar-shell">
         <div id="summonedPetAvatar" class="summoned-pet-avatar"></div>
@@ -331,6 +339,33 @@
         <div id="deskDuelStatus" class="desktop-duel-status">WASD 走位，J 普通拳，K 反弹脚，I 嘴替暴击，H 安抚回血</div>
         <div id="deskDuelResult" class="desktop-duel-result" hidden></div>
       </div>
+    </div>
+
+    <div id="gomokuOverlay" class="mini-game-overlay" hidden>
+      <div class="mini-game-hud">
+        <span class="mini-game-title">♟ 五子棋</span>
+        <span id="gomokuTurn" class="mini-game-turn">轮到你落子</span>
+        <span id="gomokuScore" class="mini-game-score">胜 0 / 负 0 / 平 0</span>
+        <button id="gomokuClose" class="mini-game-close" type="button">✕ 退出</button>
+      </div>
+      <div class="gomoku-board-wrap">
+        <canvas id="gomokuCanvas" class="gomoku-canvas" width="600" height="600"></canvas>
+      </div>
+      <div id="gomokuResult" class="mini-game-result" hidden></div>
+    </div>
+
+    <div id="runnerOverlay" class="mini-game-overlay" hidden>
+      <div class="mini-game-hud">
+        <span class="mini-game-title">🏃 怨气闯关</span>
+        <span id="runnerScore" class="mini-game-turn">得分 0</span>
+        <span id="runnerBest" class="mini-game-score">最佳 0</span>
+        <button id="runnerClose" class="mini-game-close" type="button">✕ 退出</button>
+      </div>
+      <div class="runner-stage-wrap">
+        <canvas id="runnerCanvas" class="runner-canvas" width="900" height="400"></canvas>
+      </div>
+      <div id="runnerResult" class="mini-game-result" hidden></div>
+      <div class="runner-controls-hint">空格/↑ 跳跃 | ↓ 下蹲 | 躲避老板的怨念攻击</div>
     </div>
 
     <div id="rageBlackout" class="rage-blackout" hidden>

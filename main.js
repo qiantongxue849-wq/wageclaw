@@ -2177,6 +2177,14 @@ function executePetCommand(payload = {}) {
     previewOnlineBattle();
     return;
   }
+  if (action === "gomoku") {
+    startGomokuGame();
+    return;
+  }
+  if (action === "runner") {
+    startRunnerGame();
+    return;
+  }
   if (action === "ricochet") {
     triggerPetRicochetEffect({ localOnly: true });
     return;
@@ -3572,6 +3580,14 @@ function handlePetRadialAction(action) {
   }
   if (action === "online") {
     previewOnlineBattle();
+    return;
+  }
+  if (action === "gomoku") {
+    startGomokuGame();
+    return;
+  }
+  if (action === "runner") {
+    startRunnerGame();
   }
 }
 
@@ -4941,4 +4957,749 @@ startPetAmbientLoop();
 startPetIdleLoop();
 startPetFocusReminderLoop();
 setInterval(renderCountdownPanels, 1000);
+
+/* ============================================
+   Mini Games - 五子棋 & 怨气闯关
+   ============================================ */
+
+const gomokuState = {
+  board: [],
+  size: 15,
+  cellSize: 40,
+  playerTurn: true,
+  active: false,
+  wins: 0,
+  losses: 0,
+  draws: 0,
+  lastMove: null
+};
+
+function startGomokuGame() {
+  markPetInteraction("pet-gomoku");
+  togglePetRadialMenu(false);
+  if (runtime.duelActive) {
+    endPetDuel("lose");
+  }
+  const overlay = document.getElementById("gomokuOverlay");
+  if (!overlay) return;
+  overlay.hidden = false;
+  gomokuState.active = true;
+  gomokuState.playerTurn = true;
+  gomokuState.lastMove = null;
+  gomokuState.board = Array.from({ length: gomokuState.size }, () => Array(gomokuState.size).fill(0));
+  const resultEl = document.getElementById("gomokuResult");
+  if (resultEl) resultEl.hidden = true;
+  updateGomokuHUD();
+  drawGomokuBoard();
+  const canvas = document.getElementById("gomokuCanvas");
+  if (canvas) {
+    canvas.addEventListener("click", handleGomokuClick);
+  }
+  state.pet.lastLine = "来下五子棋吧，你先走。输了可别怨我。";
+  addPetLog("五子棋开局", "点击棋盘落子，五子连珠即获胜。");
+  renderSummary();
+}
+
+function stopGomokuGame() {
+  gomokuState.active = false;
+  const overlay = document.getElementById("gomokuOverlay");
+  if (overlay) overlay.hidden = true;
+  const canvas = document.getElementById("gomokuCanvas");
+  if (canvas) {
+    canvas.removeEventListener("click", handleGomokuClick);
+  }
+  const resultEl = document.getElementById("gomokuResult");
+  if (resultEl) resultEl.hidden = true;
+}
+
+function updateGomokuHUD() {
+  const turnEl = document.getElementById("gomokuTurn");
+  const scoreEl = document.getElementById("gomokuScore");
+  if (turnEl) {
+    turnEl.textContent = gomokuState.playerTurn ? "轮到你落子 ●" : "软团思考中... ○";
+  }
+  if (scoreEl) {
+    scoreEl.textContent = `胜 ${gomokuState.wins} / 负 ${gomokuState.losses} / 平 ${gomokuState.draws}`;
+  }
+}
+
+function drawGomokuBoard() {
+  const canvas = document.getElementById("gomokuCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const s = gomokuState.size;
+  const c = gomokuState.cellSize;
+  const pad = c;
+  const w = (s - 1) * c + pad * 2;
+  canvas.width = w;
+  canvas.height = w;
+
+  ctx.fillStyle = "#d4a76a";
+  ctx.fillRect(0, 0, w, w);
+
+  ctx.strokeStyle = "#3a2a0a";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < s; i++) {
+    ctx.beginPath();
+    ctx.moveTo(pad, pad + i * c);
+    ctx.lineTo(pad + (s - 1) * c, pad + i * c);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pad + i * c, pad);
+    ctx.lineTo(pad + i * c, pad + (s - 1) * c);
+    ctx.stroke();
+  }
+
+  const stars = [[3, 3], [3, 7], [3, 11], [7, 3], [7, 7], [7, 11], [11, 3], [11, 7], [11, 11]];
+  stars.forEach(([r, cStar]) => {
+    ctx.fillStyle = "#3a2a0a";
+    ctx.beginPath();
+    ctx.arc(pad + cStar * c, pad + r * c, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  for (let r = 0; r < s; r++) {
+    for (let col = 0; col < s; col++) {
+      if (gomokuState.board[r][col] === 0) continue;
+      const x = pad + col * c;
+      const y = pad + r * c;
+      const grad = ctx.createRadialGradient(x - 2, y - 2, 1, x, y, c * 0.44);
+      if (gomokuState.board[r][col] === 1) {
+        grad.addColorStop(0, "#fff");
+        grad.addColorStop(0.6, "#222");
+        grad.addColorStop(1, "#111");
+      } else {
+        grad.addColorStop(0, "#fff");
+        grad.addColorStop(0.6, "#f5f5f5");
+        grad.addColorStop(1, "#ccc");
+      }
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, c * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = gomokuState.board[r][col] === 1 ? "#000" : "#999";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  if (gomokuState.lastMove) {
+    const { r, c: lc } = gomokuState.lastMove;
+    const x = pad + lc * c;
+    const y = pad + r * c;
+    ctx.strokeStyle = "#ff6b6b";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, c * 0.46, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function handleGomokuClick(e) {
+  if (!gomokuState.active || !gomokuState.playerTurn) return;
+  const canvas = document.getElementById("gomokuCanvas");
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  const s = gomokuState.size;
+  const c = gomokuState.cellSize;
+  const pad = c;
+  const col = Math.round((mx - pad) / c);
+  const row = Math.round((my - pad) / c);
+  if (row < 0 || row >= s || col < 0 || col >= s) return;
+  if (gomokuState.board[row][col] !== 0) return;
+
+  gomokuState.board[row][col] = 1;
+  gomokuState.lastMove = { r: row, c: col };
+  drawGomokuBoard();
+
+  if (checkGomokuWin(1)) {
+    gomokuState.wins++;
+    showGomokuResult("win");
+    return;
+  }
+  if (isGomokuBoardFull()) {
+    gomokuState.draws++;
+    showGomokuResult("draw");
+    return;
+  }
+
+  gomokuState.playerTurn = false;
+  updateGomokuHUD();
+  setTimeout(gomokuAIMove, 300);
+}
+
+function gomokuAIMove() {
+  if (!gomokuState.active) return;
+  const move = findGomokuBestMove();
+  if (!move) {
+    gomokuState.draws++;
+    showGomokuResult("draw");
+    return;
+  }
+  gomokuState.board[move.r][move.c] = 2;
+  gomokuState.lastMove = move;
+  drawGomokuBoard();
+
+  if (checkGomokuWin(2)) {
+    gomokuState.losses++;
+    showGomokuResult("lose");
+    return;
+  }
+  if (isGomokuBoardFull()) {
+    gomokuState.draws++;
+    showGomokuResult("draw");
+    return;
+  }
+
+  gomokuState.playerTurn = true;
+  updateGomokuHUD();
+}
+
+function findGomokuBestMove() {
+  const s = gomokuState.size;
+  let bestScore = -Infinity;
+  let bestMove = null;
+  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+  for (let r = 0; r < s; r++) {
+    for (let c = 0; c < s; c++) {
+      if (gomokuState.board[r][c] !== 0) continue;
+      if (!hasNeighbor(r, c)) continue;
+      let score = 0;
+      for (const [dr, dc] of directions) {
+        score += evaluateGomokuLine(r, c, dr, dc, 2);
+        score += evaluateGomokuLine(r, c, dr, dc, 1) * 0.9;
+      }
+      const centerDist = Math.abs(r - 7) + Math.abs(c - 7);
+      score -= centerDist * 0.5;
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = { r, c };
+      }
+    }
+  }
+  if (!bestMove) {
+    for (let r = 0; r < s; r++) {
+      for (let c = 0; c < s; c++) {
+        if (gomokuState.board[r][c] === 0) return { r, c };
+      }
+    }
+  }
+  return bestMove;
+}
+
+function hasNeighbor(r, c) {
+  const s = gomokuState.size;
+  for (let dr = -2; dr <= 2; dr++) {
+    for (let dc = -2; dc <= 2; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr >= 0 && nr < s && nc >= 0 && nc < s && gomokuState.board[nr][nc] !== 0) return true;
+    }
+  }
+  return false;
+}
+
+function evaluateGomokuLine(r, c, dr, dc, player) {
+  const s = gomokuState.size;
+  let count = 1;
+  let openEnds = 0;
+  for (let i = 1; i <= 4; i++) {
+    const nr = r + dr * i;
+    const nc = c + dc * i;
+    if (nr >= 0 && nr < s && nc >= 0 && nc < s && gomokuState.board[nr][nc] === player) {
+      count++;
+    } else if (nr >= 0 && nr < s && nc >= 0 && nc < s && gomokuState.board[nr][nc] === 0) {
+      openEnds++;
+      break;
+    } else {
+      break;
+    }
+  }
+  for (let i = 1; i <= 4; i++) {
+    const nr = r - dr * i;
+    const nc = c - dc * i;
+    if (nr >= 0 && nr < s && nc >= 0 && nc < s && gomokuState.board[nr][nc] === player) {
+      count++;
+    } else if (nr >= 0 && nr < s && nc >= 0 && nc < s && gomokuState.board[nr][nc] === 0) {
+      openEnds++;
+      break;
+    } else {
+      break;
+    }
+  }
+  if (count >= 5) return 100000;
+  if (count === 4 && openEnds === 2) return 10000;
+  if (count === 4 && openEnds === 1) return 1000;
+  if (count === 3 && openEnds === 2) return 500;
+  if (count === 3 && openEnds === 1) return 100;
+  if (count === 2 && openEnds === 2) return 50;
+  if (count === 2 && openEnds === 1) return 10;
+  return count;
+}
+
+function checkGomokuWin(player) {
+  const s = gomokuState.size;
+  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  for (let r = 0; r < s; r++) {
+    for (let c = 0; c < s; c++) {
+      if (gomokuState.board[r][c] !== player) continue;
+      for (const [dr, dc] of directions) {
+        let count = 1;
+        for (let i = 1; i < 5; i++) {
+          const nr = r + dr * i;
+          const nc = c + dc * i;
+          if (nr >= 0 && nr < s && nc >= 0 && nc < s && gomokuState.board[nr][nc] === player) {
+            count++;
+          } else break;
+        }
+        if (count >= 5) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function isGomokuBoardFull() {
+  const s = gomokuState.size;
+  for (let r = 0; r < s; r++) {
+    for (let c = 0; c < s; c++) {
+      if (gomokuState.board[r][c] === 0) return false;
+    }
+  }
+  return true;
+}
+
+function showGomokuResult(type) {
+  gomokuState.active = false;
+  const resultEl = document.getElementById("gomokuResult");
+  if (!resultEl) return;
+  resultEl.hidden = false;
+  resultEl.className = "mini-game-result " + (type === "win" ? "win" : type === "lose" ? "lose" : "");
+  if (type === "win") {
+    resultEl.textContent = "🎉 你赢了！五子连珠！";
+    const reward = 15 + Math.floor(Math.random() * 10);
+    addRageCoins(reward, "五子棋胜利");
+    state.pet.lastLine = `厉害！这局你赢了，奖励 ${formatRage(reward)}。再来一局？`;
+    addPetLog("五子棋胜利", `获得 ${formatRage(reward)}。`);
+  } else if (type === "lose") {
+    resultEl.textContent = "😤 软团赢了！再来一局？";
+    state.pet.lastLine = "嘿嘿，这局我赢了。别灰心，再下一盘？";
+    addPetLog("五子棋失利", "软团五子连珠获胜。");
+  } else {
+    resultEl.textContent = "🤝 平局！棋盘满了";
+    state.pet.lastLine = "平局了，棋盘都下满了。再来一局决胜负？";
+    addPetLog("五子棋平局", "棋盘已满，双方平局。");
+  }
+  updateGomokuHUD();
+  persistSettings();
+  renderSummary();
+  setTimeout(() => {
+    if (resultEl) resultEl.hidden = true;
+  }, 3000);
+}
+
+/* ============================================
+   怨气闯关 Runner Game
+   ============================================ */
+
+const runnerState = {
+  active: false,
+  score: 0,
+  best: 0,
+  player: { x: 120, y: 0, vy: 0, width: 40, height: 50, grounded: true, ducking: false },
+  obstacles: [],
+  coins: [],
+  bgOffset: 0,
+  speed: 4,
+  frame: 0,
+  keys: {},
+  spawnTimer: 0,
+  difficulty: 1
+};
+
+function startRunnerGame() {
+  markPetInteraction("pet-runner");
+  togglePetRadialMenu(false);
+  if (runtime.duelActive) {
+    endPetDuel("lose");
+  }
+  const overlay = document.getElementById("runnerOverlay");
+  if (!overlay) return;
+  overlay.hidden = false;
+  runnerState.active = true;
+  runnerState.score = 0;
+  runnerState.player = { x: 120, y: 0, vy: 0, width: 40, height: 50, grounded: true, ducking: false };
+  runnerState.obstacles = [];
+  runnerState.coins = [];
+  runnerState.bgOffset = 0;
+  runnerState.speed = 4;
+  runnerState.frame = 0;
+  runnerState.spawnTimer = 0;
+  runnerState.difficulty = 1;
+  runnerState.keys = {};
+  runnerState.best = Math.max(runnerState.best, Number(state.pet?.gameBest) || 0);
+  const resultEl = document.getElementById("runnerResult");
+  if (resultEl) resultEl.hidden = true;
+  updateRunnerHUD();
+  state.pet.lastLine = "怨气闯关开始！空格跳跃，↓下蹲，躲避老板的怨念攻击！";
+  addPetLog("怨气闯关开始", "空格/↑ 跳跃，↓ 下蹲，躲避障碍物。");
+  renderSummary();
+  runRunnerLoop();
+}
+
+function stopRunnerGame() {
+  runnerState.active = false;
+  const overlay = document.getElementById("runnerOverlay");
+  if (overlay) overlay.hidden = true;
+  const resultEl = document.getElementById("runnerResult");
+  if (resultEl) resultEl.hidden = true;
+}
+
+function updateRunnerHUD() {
+  const scoreEl = document.getElementById("runnerScore");
+  const bestEl = document.getElementById("runnerBest");
+  if (scoreEl) scoreEl.textContent = `得分 ${runnerState.score}`;
+  if (bestEl) bestEl.textContent = `最佳 ${runnerState.best}`;
+}
+
+function runRunnerLoop() {
+  if (!runnerState.active) return;
+  runnerState.frame++;
+  updateRunnerPlayer();
+  updateRunnerObstacles();
+  spawnRunnerObstacles();
+  drawRunnerFrame();
+  requestAnimationFrame(runRunnerLoop);
+}
+
+function updateRunnerPlayer() {
+  const p = runnerState.player;
+  const canvas = document.getElementById("runnerCanvas");
+  const groundY = (canvas?.height || 400) - 60;
+
+  if (runnerState.keys["ArrowDown"] || runnerState.keys["s"] || runnerState.keys["S"]) {
+    p.ducking = true;
+    p.height = 30;
+  } else {
+    p.ducking = false;
+    p.height = 50;
+  }
+
+  if ((runnerState.keys[" "] || runnerState.keys["ArrowUp"] || runnerState.keys["w"] || runnerState.keys["W"]) && p.grounded) {
+    p.vy = -11;
+    p.grounded = false;
+  }
+
+  p.vy += 0.6;
+  p.y += p.vy;
+
+  if (p.y >= groundY - p.height) {
+    p.y = groundY - p.height;
+    p.vy = 0;
+    p.grounded = true;
+  }
+
+  runnerState.score += 1;
+  runnerState.speed = 4 + Math.floor(runnerState.score / 300) * 0.5;
+  runnerState.difficulty = 1 + Math.floor(runnerState.score / 200);
+}
+
+function spawnRunnerObstacles() {
+  runnerState.spawnTimer--;
+  if (runnerState.spawnTimer > 0) return;
+  const canvas = document.getElementById("runnerCanvas");
+  const w = canvas?.width || 900;
+  const groundY = (canvas?.height || 400) - 60;
+  const minGap = Math.max(40, 90 - runnerState.difficulty * 4);
+  runnerState.spawnTimer = minGap + Math.floor(Math.random() * 40);
+
+  const types = ["box", "spike", "bird"];
+  if (runnerState.difficulty < 3) types.pop();
+  const type = types[Math.floor(Math.random() * types.length)];
+
+  if (type === "bird") {
+    runnerState.obstacles.push({
+      x: w + 20,
+      y: groundY - 80 - Math.random() * 40,
+      width: 50,
+      height: 30,
+      type: "bird"
+    });
+  } else if (type === "spike") {
+    runnerState.obstacles.push({
+      x: w + 20,
+      y: groundY - 25,
+      width: 30,
+      height: 25,
+      type: "spike"
+    });
+  } else {
+    runnerState.obstacles.push({
+      x: w + 20,
+      y: groundY - 40,
+      width: 35,
+      height: 40,
+      type: "box"
+    });
+  }
+
+  if (Math.random() < 0.3) {
+    runnerState.coins.push({
+      x: w + 40,
+      y: groundY - 60 - Math.random() * 60,
+      radius: 8,
+      collected: false
+    });
+  }
+}
+
+function updateRunnerObstacles() {
+  const canvas = document.getElementById("runnerCanvas");
+  const w = canvas?.width || 900;
+  const p = runnerState.player;
+  const groundY = (canvas?.height || 400) - 60;
+  const px = p.x;
+  const py = p.y;
+  const pw = p.width;
+  const ph = p.height;
+
+  runnerState.obstacles = runnerState.obstacles.filter((obs) => {
+    obs.x -= runnerState.speed;
+    if (obs.x + obs.width < -50) return false;
+
+    if (
+      px < obs.x + obs.width &&
+      px + pw > obs.x &&
+      py < obs.y + obs.height &&
+      py + ph > obs.y
+    ) {
+      endRunnerGame("hit");
+      return false;
+    }
+    return true;
+  });
+
+  runnerState.coins = runnerState.coins.filter((coin) => {
+    coin.x -= runnerState.speed;
+    if (coin.x + coin.radius < -20) return false;
+    if (!coin.collected) {
+      const dx = px + pw / 2 - coin.x;
+      const dy = py + ph / 2 - coin.y;
+      if (Math.sqrt(dx * dx + dy * dy) < coin.radius + 20) {
+        coin.collected = true;
+        runnerState.score += 50;
+        updateRunnerHUD();
+      }
+    }
+    return true;
+  });
+
+  runnerState.bgOffset = (runnerState.bgOffset + runnerState.speed * 0.5) % 100;
+}
+
+function drawRunnerFrame() {
+  const canvas = document.getElementById("runnerCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  const groundY = h - 60;
+
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+  skyGrad.addColorStop(0, "#1a1a2e");
+  skyGrad.addColorStop(0.5, "#16213e");
+  skyGrad.addColorStop(1, "#0f3460");
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = "rgba(255,255,255,0.03)";
+  for (let i = 0; i < 20; i++) {
+    const sx = ((i * 47 + runnerState.bgOffset * 0.3) % w);
+    const sy = (i * 31) % (h * 0.6);
+    ctx.beginPath();
+    ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = "#2d1b4e";
+  ctx.fillRect(0, groundY - 10, w, 10);
+  for (let i = 0; i < 8; i++) {
+    const bx = ((i * 130 - runnerState.bgOffset * 0.6) % (w + 200)) - 100;
+    ctx.fillStyle = "#1a1040";
+    ctx.fillRect(bx, groundY - 80, 60, 70);
+    ctx.fillStyle = "#3d2b6e";
+    ctx.fillRect(bx + 10, groundY - 120, 40, 40);
+    ctx.fillStyle = "#ffeb3b";
+    ctx.fillRect(bx + 25, groundY - 115, 10, 10);
+  }
+
+  ctx.fillStyle = "#3a2a1a";
+  ctx.fillRect(0, groundY, w, 60);
+  ctx.strokeStyle = "#5a4a3a";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 20; i++) {
+    const lx = ((i * 60 - runnerState.bgOffset) % (w + 60)) - 30;
+    ctx.beginPath();
+    ctx.moveTo(lx, groundY);
+    ctx.lineTo(lx + 20, groundY + 60);
+    ctx.stroke();
+  }
+
+  runnerState.obstacles.forEach((obs) => {
+    if (obs.type === "box") {
+      ctx.fillStyle = "#8b4513";
+      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      ctx.strokeStyle = "#5a2d0c";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+      ctx.fillStyle = "#ff4444";
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillText("怨", obs.x + 8, obs.y + 26);
+    } else if (obs.type === "spike") {
+      ctx.fillStyle = "#ff6b6b";
+      ctx.beginPath();
+      ctx.moveTo(obs.x, obs.y + obs.height);
+      ctx.lineTo(obs.x + obs.width / 2, obs.y);
+      ctx.lineTo(obs.x + obs.width, obs.y + obs.height);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "#cc0000";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    } else if (obs.type === "bird") {
+      const wingFlap = Math.sin(runnerState.frame * 0.2) * 8;
+      ctx.fillStyle = "#4a4a6a";
+      ctx.beginPath();
+      ctx.ellipse(obs.x + obs.width / 2, obs.y + obs.height / 2, obs.width / 2, obs.height / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ff4444";
+      ctx.beginPath();
+      ctx.arc(obs.x + obs.width - 8, obs.y + 8, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#6a6a8a";
+      ctx.beginPath();
+      ctx.moveTo(obs.x + 10, obs.y + obs.height / 2);
+      ctx.lineTo(obs.x - 5, obs.y + obs.height / 2 + wingFlap);
+      ctx.lineTo(obs.x + 10, obs.y + obs.height / 2 + 5);
+      ctx.fill();
+    }
+  });
+
+  runnerState.coins.forEach((coin) => {
+    if (coin.collected) return;
+    const pulse = 1 + Math.sin(runnerState.frame * 0.1) * 0.15;
+    ctx.fillStyle = "#ffd700";
+    ctx.beginPath();
+    ctx.arc(coin.x, coin.y, coin.radius * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#b8860b";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = "#fff8dc";
+    ctx.font = "bold 10px sans-serif";
+    ctx.fillText("¥", coin.x - 5, coin.y + 4);
+  });
+
+  const p = runnerState.player;
+  const px = p.x;
+  const py = p.y;
+  const ph = p.height;
+
+  ctx.fillStyle = "#ffcc80";
+  ctx.fillRect(px + 8, py + 5, 24, ph - 15);
+
+  ctx.fillStyle = "#ffe0b2";
+  ctx.beginPath();
+  ctx.arc(px + 20, py + 8, 14, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#333";
+  ctx.beginPath();
+  ctx.arc(px + 14, py + 5, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px + 26, py + 5, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#ff6b6b";
+  ctx.beginPath();
+  ctx.arc(px + 20, py + 12, 3, 0, Math.PI);
+  ctx.fill();
+
+  ctx.fillStyle = "#1565c0";
+  ctx.fillRect(px + 5, py + ph - 12, 12, 12);
+  ctx.fillRect(px + 23, py + ph - 12, 12, 12);
+
+  if (p.ducking) {
+    ctx.fillStyle = "#ffcc80";
+    ctx.fillRect(px + 8, py + 5, 24, 20);
+    ctx.fillStyle = "#ffe0b2";
+    ctx.beginPath();
+    ctx.arc(px + 20, py + 10, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#333";
+    ctx.beginPath();
+    ctx.arc(px + 15, py + 8, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(px + 25, py + 8, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function endRunnerGame(reason) {
+  runnerState.active = false;
+  const finalScore = runnerState.score;
+  if (finalScore > runnerState.best) {
+    runnerState.best = finalScore;
+    state.pet.gameBest = finalScore;
+  }
+  const resultEl = document.getElementById("runnerResult");
+  if (!resultEl) return;
+  resultEl.hidden = false;
+  resultEl.className = "mini-game-result " + (reason === "hit" ? "lose" : "win");
+
+  if (reason === "hit") {
+    resultEl.textContent = `💥 被怨念击中！得分 ${finalScore}`;
+    state.pet.lastLine = `被老板怨念击中了...得分 ${finalScore}。再来一次？`;
+    addPetLog("怨气闯关结束", `被障碍物击中，最终得分 ${finalScore}。`);
+  }
+
+  const reward = Math.floor(finalScore / 10);
+  if (reward > 0) {
+    addRageCoins(reward, "怨气闯关");
+    state.pet.lastLine += ` 获得 ${formatRage(reward)}。`;
+  }
+
+  updateRunnerHUD();
+  persistSettings();
+  renderSummary();
+  setTimeout(() => {
+    if (resultEl) resultEl.hidden = true;
+  }, 3000);
+}
+
+document.addEventListener("keydown", (e) => {
+  if (runnerState.active) {
+    runnerState.keys[e.key] = true;
+    if (e.key === " " || e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+    }
+  }
+});
+
+document.addEventListener("keyup", (e) => {
+  if (runnerState.active) {
+    runnerState.keys[e.key] = false;
+  }
+});
+
+document.getElementById("gomokuClose")?.addEventListener("click", stopGomokuGame);
+document.getElementById("runnerClose")?.addEventListener("click", stopRunnerGame);
 startBalanceTicker();

@@ -7917,6 +7917,150 @@ body.duel-active .floating-widget {
   transition: opacity 300ms ease, filter 300ms ease;
 }
 
+/* ============================================
+   Mini Games - 五子棋 & 怨气闯关
+   ============================================ */
+
+.mini-game-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 10, 0.88);
+  backdrop-filter: blur(12px);
+}
+
+.mini-game-hud {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 101;
+  padding: 12px 22px;
+  border-radius: 14px;
+  background: rgba(6, 8, 10, 0.82);
+  border: 1px solid rgba(101, 216, 209, 0.18);
+  backdrop-filter: blur(16px);
+}
+
+.mini-game-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--vinyl-cyan);
+}
+
+.mini-game-turn {
+  font-size: 0.92rem;
+  color: #fff2b2;
+  font-weight: 700;
+}
+
+.mini-game-score {
+  font-size: 0.82rem;
+  color: #8a9a8a;
+}
+
+.mini-game-close {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 118, 93, 0.35);
+  background: rgba(255, 118, 93, 0.12);
+  color: var(--coral);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+
+.mini-game-close:hover {
+  background: rgba(255, 118, 93, 0.24);
+}
+
+.mini-game-result {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 102;
+  padding: 24px 40px;
+  border-radius: 16px;
+  background: rgba(6, 8, 10, 0.92);
+  border: 1px solid rgba(101, 216, 209, 0.28);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff2b2;
+  text-align: center;
+  animation: miniGameResultIn 400ms ease-out;
+}
+
+.mini-game-result.win {
+  color: var(--vinyl-cyan);
+  border-color: rgba(101, 216, 209, 0.48);
+  box-shadow: 0 0 60px rgba(101, 216, 209, 0.2);
+}
+
+.mini-game-result.lose {
+  color: var(--coral);
+  border-color: rgba(255, 118, 93, 0.48);
+  box-shadow: 0 0 60px rgba(255, 118, 93, 0.2);
+}
+
+@keyframes miniGameResultIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* 五子棋 */
+.gomoku-board-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.gomoku-canvas {
+  border-radius: 12px;
+  background: #d4a76a;
+  box-shadow:
+    0 0 0 4px #8b6914,
+    0 0 0 8px #5a3e1b,
+    0 8px 40px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+/* 怨气闯关 */
+.runner-stage-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.runner-canvas {
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.runner-controls-hint {
+  margin-top: 12px;
+  font-size: 0.82rem;
+  color: #687462;
+  text-align: center;
+}
+
 /* Scheme E: 3D 软胶工位宇宙落地层 */
 body[data-theme] {
   --bg-start: #f4ead8;
