@@ -5525,6 +5525,14 @@ body.pet-only .pet-radial-action.action-online {
   transform: translate(-50%, -50%) translateX(-78px);
 }
 
+body.pet-only .pet-radial-action.action-gomoku {
+  transform: translate(-50%, -50%) translate(55px, -55px);
+}
+
+body.pet-only .pet-radial-action.action-runner {
+  transform: translate(-50%, -50%) translate(-55px, 55px);
+}
+
 body.pet-only .pet-radial-action.action-retract:hover {
   transform: translate(-50%, -50%) translateY(-78px) scale(1.12);
 }
@@ -5539,6 +5547,14 @@ body.pet-only .pet-radial-action.action-duel:hover {
 
 body.pet-only .pet-radial-action.action-online:hover {
   transform: translate(-50%, -50%) translateX(-78px) scale(1.12);
+}
+
+body.pet-only .pet-radial-action.action-gomoku:hover {
+  transform: translate(-50%, -50%) translate(55px, -55px) scale(1.12);
+}
+
+body.pet-only .pet-radial-action.action-runner:hover {
+  transform: translate(-50%, -50%) translate(-55px, 55px) scale(1.12);
 }
 
 .summoned-pet-orbit {
@@ -5750,6 +5766,14 @@ body.pet-only .pet-radial-action.action-online:hover {
   transform: translate(-50%, -50%) translateX(-96px);
 }
 
+.pet-radial-action.action-gomoku {
+  transform: translate(-50%, -50%) translate(68px, -68px);
+}
+
+.pet-radial-action.action-runner {
+  transform: translate(-50%, -50%) translate(-68px, 68px);
+}
+
 .pet-radial-action.action-retract:hover {
   transform: translate(-50%, -50%) translateY(-96px) scale(1.12);
   border-color: rgba(200, 155, 255, 0.4);
@@ -5772,6 +5796,18 @@ body.pet-only .pet-radial-action.action-online:hover {
   transform: translate(-50%, -50%) translateX(-96px) scale(1.12);
   border-color: rgba(101, 216, 209, 0.4);
   box-shadow: 0 12px 32px rgba(101, 216, 209, 0.16), 0 0 20px rgba(101, 216, 209, 0.08);
+}
+
+.pet-radial-action.action-gomoku:hover {
+  transform: translate(-50%, -50%) translate(68px, -68px) scale(1.12);
+  border-color: rgba(255, 214, 102, 0.4);
+  box-shadow: 0 12px 32px rgba(255, 214, 102, 0.16), 0 0 20px rgba(255, 214, 102, 0.08);
+}
+
+.pet-radial-action.action-runner:hover {
+  transform: translate(-50%, -50%) translate(-68px, 68px) scale(1.12);
+  border-color: rgba(255, 165, 0, 0.4);
+  box-shadow: 0 12px 32px rgba(255, 165, 0, 0.16), 0 0 20px rgba(255, 165, 0, 0.08);
 }
 
 @keyframes radialRingSpin {
