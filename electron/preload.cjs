@@ -2,7 +2,6 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("wageclawDesktop", {
   focusScreen: (screen) => ipcRenderer.invoke("wageclaw:focus-screen", screen),
-  setWidgetOnTop: (enabled) => ipcRenderer.invoke("wageclaw:set-widget-on-top", enabled),
   openMainPanel: () => ipcRenderer.invoke("wageclaw:open-main-panel"),
   togglePet: (enabled) => ipcRenderer.invoke("wageclaw:toggle-pet", enabled),
   petCommand: (payload) => ipcRenderer.invoke("wageclaw:pet-command", payload),

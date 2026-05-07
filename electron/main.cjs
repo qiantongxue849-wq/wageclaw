@@ -1,8 +1,9 @@
 const path = require("path");
 const { app, BrowserWindow, ipcMain, screen } = require("electron");
 
+const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || process.env.WAGECLAW_DEV_SERVER_URL || "http://127.0.0.1:5173";
+
 let mainWindow = null;
-let widgetWindow = null;
 let petWindow = null;
 let blackoutWindow = null;
 let petRicochetTimer = null;
@@ -22,11 +23,12 @@ function updateDockVisibility() {
 function createMainWindow() {
   const win = new BrowserWindow({
     show: false,
-    width: 1480,
-    height: 920,
-    minWidth: 1100,
-    minHeight: 760,
-    title: "WageClaw",
+    width: 1020,
+    height: 680,
+    minWidth: 860,
+    minHeight: 560,
+    autoHideMenuBar: true,
+    title: "忍了吧 WageClaw",
     backgroundColor: "#101210",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -35,9 +37,7 @@ function createMainWindow() {
     }
   });
 
-  win.loadFile(path.join(app.getAppPath(), "index.html"), {
-    query: { view: "main" }
-  });
+  loadRenderer(win, { view: "main" });
   win.on("show", updateDockVisibility);
   win.on("hide", updateDockVisibility);
   win.on("closed", () => {
@@ -47,51 +47,9 @@ function createMainWindow() {
   return win;
 }
 
-function createWidgetWindow() {
-  const width = 306;
-  const height = 366;
-  const { workArea } = screen.getPrimaryDisplay();
-  const win = new BrowserWindow({
-    width,
-    height,
-    x: workArea.x + workArea.width - width - 18,
-    y: workArea.y + 18,
-    frame: false,
-    transparent: true,
-    resizable: false,
-    maximizable: false,
-    minimizable: false,
-    fullscreenable: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    hasShadow: true,
-    focusable: false,
-    title: "WageClaw Widget",
-    backgroundColor: "#00000000",
-    webPreferences: {
-      preload: path.join(__dirname, "preload.cjs"),
-      contextIsolation: true,
-      nodeIntegration: false,
-      backgroundThrottling: false
-    }
-  });
-
-  win.loadFile(path.join(app.getAppPath(), "index.html"), {
-    query: { view: "widget" }
-  });
-  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  win.on("closed", () => {
-    widgetWindow = null;
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      app.quit();
-    }
-  });
-  return win;
-}
-
 function createPetWindow() {
-  const width = 260;
-  const height = 300;
+  const width = 360;
+  const height = 520;
   const { workArea } = screen.getPrimaryDisplay();
   const win = new BrowserWindow({
     width,
@@ -108,7 +66,7 @@ function createPetWindow() {
     skipTaskbar: true,
     hasShadow: false,
     focusable: false,
-    title: "WageClaw Pet",
+    title: "忍了吧桌宠",
     backgroundColor: "#00000000",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -118,9 +76,7 @@ function createPetWindow() {
     }
   });
 
-  win.loadFile(path.join(app.getAppPath(), "index.html"), {
-    query: { view: "pet" }
-  });
+  loadRenderer(win, { view: "pet" });
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   ipcMain.on("wageclaw:pet-drag", (_, { dx, dy }) => {
@@ -133,6 +89,17 @@ function createPetWindow() {
     petWindow = null;
   });
   return win;
+}
+
+function loadRenderer(win, query = {}) {
+  const params = new URLSearchParams(query).toString();
+  if (!app.isPackaged) {
+    win.loadURL(`${DEV_SERVER_URL}${params ? `?${params}` : ""}`);
+    return;
+  }
+  win.loadFile(path.join(app.getAppPath(), "dist", "index.html"), {
+    query
+  });
 }
 
 function sendWhenReady(win, channel, payload) {
@@ -177,7 +144,7 @@ function triggerDesktopBlackout(payload = {}) {
     skipTaskbar: true,
     focusable: false,
     hasShadow: false,
-    title: "WageClaw Blackout Ward",
+    title: "忍了吧黑屏结界",
     backgroundColor: "#000000",
     webPreferences: {
       contextIsolation: true,
@@ -379,18 +346,9 @@ function togglePetWindow(enabled) {
 }
 
 app.whenReady().then(() => {
-  showMainWindow("converter");
-
   ipcMain.handle("wageclaw:focus-screen", (_, screen) => {
     showMainWindow(screen);
     return { ok: true, screen };
-  });
-
-  ipcMain.handle("wageclaw:set-widget-on-top", (_, enabled) => {
-    if (widgetWindow) {
-      widgetWindow.setAlwaysOnTop(Boolean(enabled));
-    }
-    return { ok: true, enabled: Boolean(enabled) };
   });
 
   ipcMain.handle("wageclaw:open-main-panel", () => {
@@ -426,18 +384,18 @@ app.whenReady().then(() => {
 
   ipcMain.handle("wageclaw:pet-resize", (_, { width, height }) => {
     if (petWindow && !petWindow.isDestroyed()) {
-      petWindow.setSize(width || 260, height || 300);
+      petWindow.setSize(width || 360, height || 520);
     }
     return { ok: true };
   });
 
   ipcMain.handle("wageclaw:show-pet", () => {
     if (petWindow && !petWindow.isDestroyed()) {
-      petWindow.setSize(260, 300);
+      petWindow.setSize(360, 520);
       const { workArea } = screen.getPrimaryDisplay();
       petWindow.setPosition(
-        workArea.x + workArea.width - 260 - 24,
-        workArea.y + workArea.height - 300 - 24
+        workArea.x + workArea.width - 360 - 24,
+        workArea.y + workArea.height - 520 - 24
       );
       petWindow.show();
     }
@@ -464,18 +422,18 @@ app.whenReady().then(() => {
     return { ok: true, visible };
   });
 
-  widgetWindow = createWidgetWindow();
+  petWindow = createPetWindow();
+  petWindow.show();
   updateDockVisibility();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      showMainWindow("converter");
-      widgetWindow = createWidgetWindow();
+      petWindow = createPetWindow();
+      petWindow.show();
       updateDockVisibility();
     } else {
-      showMainWindow();
-      if (widgetWindow && !widgetWindow.isDestroyed()) {
-        widgetWindow.show();
+      if (petWindow && !petWindow.isDestroyed()) {
+        petWindow.show();
       }
     }
   });

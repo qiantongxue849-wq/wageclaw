@@ -1,28 +1,40 @@
 {
   "name": "wageclaw-electron",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
-  "description": "WageClaw Electron desktop app",
+  "description": "忍了吧 WageClaw desktop app",
   "author": "OpenAI Codex",
   "main": "electron/main.cjs",
   "scripts": {
-    "start": ".tools/node/bin/node .tools/npm/bin/npm-cli.js exec electron .",
-    "electron": ".tools/node/bin/node .tools/npm/bin/npm-cli.js exec electron .",
-    "dist:mac": ".tools/node/bin/node .tools/npm/bin/npm-cli.js exec electron-builder -- --mac",
-    "dist:mac:dmg:localfix": "PATH=$(pwd):$PATH .tools/node-adhoc/bin/node node_modules/electron-builder/cli.js --mac dmg"
+    "dev": "vite --host 127.0.0.1",
+    "electron": "electron .",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "dist:mac": "npm run build && electron-builder -- --mac",
+    "dist:mac:dmg:localfix": "npm run build && electron-builder --mac dmg"
+  },
+  "dependencies": {
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "electron": "^41.2.1",
+    "electron-builder": "^26.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vue-tsc": "^3.1.1"
   },
   "build": {
     "appId": "com.wageclaw.electron",
-    "productName": "WageClawElectron",
+    "productName": "忍了吧 WageClaw",
     "directories": {
       "buildResources": "electron/assets",
       "output": "release"
     },
     "files": [
       "electron/**/*",
-      "index.html",
-      "main.js",
-      "styles.css",
+      "dist/**/*",
       "package.json"
     ],
     "mac": {
@@ -32,9 +44,5 @@
       ],
       "category": "public.app-category.productivity"
     }
-  },
-  "devDependencies": {
-    "electron": "^41.2.1",
-    "electron-builder": "^26.8.1"
   }
 }
