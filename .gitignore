@@ -69,8 +69,10 @@ test-results/
 playwright-report/
 
 # Local env files
-.env
-.env.local
+.env*
+
+# TypeScript
+*.tsbuildinfo
 
 # Project docs (if you don't want to track)
 需求文档.docx
