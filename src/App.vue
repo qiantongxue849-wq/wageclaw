@@ -3,7 +3,14 @@ import { computed, reactive } from "vue";
 import { mallFilters, navItems, petTouchProfiles, transactionFilters } from "@/data/catalog";
 import { useWageClaw } from "@/composables/useWageClaw";
 import PetSprite from "@/components/PetSprite.vue";
-import type { Mood } from "@/types";
+import rageBlobPreview from "@/assets/pet-stages-preview.png";
+import capybaraZenPreview from "@/assets/pet-previews/capybara-zen.png";
+import lazyCatPreview from "@/assets/pet-previews/lazy-cat.png";
+import lazyDogPreview from "@/assets/pet-previews/lazy-dog.png";
+import walletCardArt from "@/assets/ui-art/wallet-paw-coins.png";
+import patienceCardArt from "@/assets/ui-art/patience-progress.png";
+import supplyCardArt from "@/assets/ui-art/supply-cache.png";
+import type { Mood, PetStyle } from "@/types";
 
 const wc = reactive(useWageClaw());
 
@@ -24,8 +31,27 @@ const wishParts = computed(() =>
 
 const moodEntries = computed(() => Object.entries(wc.moodCopy) as Array<[Mood, (typeof wc.moodCopy)[Mood]]>);
 const themeEntries = computed(() => Object.entries(wc.themeLabels));
+const petStyleEntries = computed(() => Object.entries(wc.petStyleLabels) as Array<[PetStyle, string]>);
 const modeEntries = computed(() => Object.entries(wc.modeLabels));
 const touchEntries = computed(() => Object.entries(petTouchProfiles));
+const petStylePreview = {
+  rageBlob: {
+    image: rageBlobPreview,
+    summary: "原始怨气软团，适合战斗感和职场反击感。"
+  },
+  capybaraZen: {
+    image: capybaraZenPreview,
+    summary: "卡皮巴拉佛系路线，越升级越稳、越无争。"
+  },
+  lazyCat: {
+    image: lazyCatPreview,
+    summary: "可爱但摆烂，主打午睡、躺平和反内耗。"
+  },
+  lazyDog: {
+    image: lazyDogPreview,
+    summary: "慵懒陪伴犬系，温吞守护、慢速回血。"
+  }
+} satisfies Record<PetStyle, { image: string; summary: string }>;
 
 const inventoryTotal = computed(() => wc.inventoryItems.reduce((total, entry) => total + entry.quantity, 0));
 const dailyRagePercent = computed(() => Math.min(100, Math.round((wc.state.dailyRage.value / 500) * 100)));
@@ -62,7 +88,7 @@ const pageLabels = {
 </script>
 
 <template>
-  <div class="app-root" :class="rootClass" :data-theme="wc.state.theme">
+  <div class="app-root" :class="rootClass" :data-theme="wc.state.theme" :data-pet-style="wc.state.petStyle">
     <div class="surface-grid" aria-hidden="true"></div>
 
     <section v-if="wc.notification" class="toast" role="status">{{ wc.notification }}</section>
@@ -74,7 +100,25 @@ const pageLabels = {
       </div>
     </section>
 
-    <section v-if="wc.state.pet.summoned || wc.viewMode === 'pet'" class="summoned-pet" :class="{ embedded: wc.viewMode === 'pet' }">
+    <div
+      v-if="wc.state.pet.summoned && isMainView"
+      class="floating-pet"
+      :class="[wc.petReaction, { dragging: wc.petDragging }]"
+      :style="{ left: `${wc.petPos.x}px`, top: `${wc.petPos.y}px` }"
+      @mousedown="wc.startPetDrag"
+      @dblclick="wc.showPetDialog"
+    >
+      <div class="pet-bubble" v-if="wc.summonedBubble">{{ wc.summonedBubble }}</div>
+      <div class="pet-dialog" v-if="wc.petDialog" v-html="wc.petDialog"></div>
+      <PetSprite :stage="wc.currentPetStage" mode="compact" />
+      <button class="pet-close" @mousedown.stop @click.stop="wc.setPetSummoned(false)" aria-label="收回桌宠">×</button>
+    </div>
+
+    <div v-if="wc.goldRush" class="gold-rush" aria-hidden="true">
+      <span v-for="n in 12" :key="n" class="gold-coin" :style="{ animationDelay: `${(n - 1) * 0.06}s`, left: `${40 + Math.random() * 20}%` }">🪙</span>
+    </div>
+
+    <section v-if="wc.viewMode === 'pet'" class="summoned-pet embedded">
       <div class="pet-bubble" v-if="wc.summonedBubble">{{ wc.summonedBubble }}</div>
       <button type="button" class="pet-avatar-button" @click="wc.handlePetTouch('head')" @dblclick="wc.openScreenFromPet('pet')">
         <PetSprite :stage="wc.currentPetStage" :mode="wc.viewMode === 'pet' ? 'hero' : 'compact'" />
@@ -197,12 +241,7 @@ const pageLabels = {
                   <p>本轮可用额度</p>
                 </div>
                 <div class="wallet-object" aria-hidden="true">
-                  <span>
-                    <b class="wallet-paw">
-                      <i></i><i></i><i></i><i></i><i></i>
-                    </b>
-                  </span>
-                  <i v-for="n in 5" :key="n"></i>
+                  <img class="wallet-card-art" :src="walletCardArt" alt="" draggable="false" />
                 </div>
                 <footer>
                   <span>本月累计 <strong class="plus">{{ wc.formatMoney(wc.monthlyStats.income) }}</strong></span>
@@ -235,25 +274,19 @@ const pageLabels = {
                   </footer>
                 </div>
                 <div class="lamp-scene" aria-hidden="true">
-                  <span class="lamp-glow"></span>
-                  <span class="lamp-head"></span>
-                  <span class="lamp-neck"></span>
-                  <span class="lamp-arm"></span>
-                  <span class="lamp-joint joint-a"></span>
-                  <span class="lamp-joint joint-b"></span>
-                  <span class="lamp-base"></span>
-                  <span class="mug">WC</span>
-                  <span class="plant"></span>
+                  <img class="patience-card-art" :src="patienceCardArt" alt="" draggable="false" />
                 </div>
               </article>
             </section>
 
             <section class="home-cards">
               <article class="home-soft-card soft-rage" @click="wc.setActiveScreen('pet')">
-                <span class="soft-avatar">{{ wc.currentPetStage.avatar }}</span>
+                <span class="soft-avatar">
+                  <PetSprite :stage="wc.currentPetStage" mode="mini" />
+                </span>
                 <div>
                   <h3>怨气软团</h3>
-                  <p>今日怨气值 <strong>{{ Math.round(wc.state.dailyRage.value) }}</strong> / 100</p>
+                  <p>今日怨气值 <strong>{{ Math.round(wc.state.dailyRage.value) }}</strong> / 500</p>
                   <small>心情状态：{{ wc.state.pet.touchMood }}</small>
                 </div>
                 <button type="button" @click.stop="wc.handlePetTouch('head')">捏一捏</button>
@@ -264,6 +297,9 @@ const pageLabels = {
                   <h3>情绪补给</h3>
                   <button type="button" @click="wc.setActiveScreen('mall')">换一批</button>
                 </header>
+                <div class="supply-cache-art" aria-hidden="true">
+                  <img :src="supplyCardArt" alt="" draggable="false" />
+                </div>
                 <div class="supply-mini-list">
                   <button v-for="item in homeSupplyItems" :key="item.id" type="button" @click="wc.buyMallItem(item)">
                     <span>{{ item.icon }}</span>
@@ -461,6 +497,10 @@ const pageLabels = {
             <article class="hero-panel pet-hero">
               <div class="large-pet" :style="wc.petStageStyle()">
                 <PetSprite :stage="wc.currentPetStage" mode="hero" />
+                <div class="pet-tooltips" v-if="wc.state.pet.summoned">
+                  <span class="pet-tip" :style="{ color: wc.petHungerLabel.color }">{{ wc.petHungerLabel.label }}</span>
+                  <span class="pet-tip" :style="{ color: wc.petPressureLabel.color }">{{ wc.petPressureLabel.label }}</span>
+                </div>
               </div>
               <div>
                 <span class="eyebrow">怨气桌宠</span>
@@ -470,10 +510,10 @@ const pageLabels = {
                   <span>{{ wc.currentPetStage.title }}</span>
                   <span>{{ wc.petAffinity.label }}</span>
                   <span>{{ wc.state.pet.touchMood }}</span>
-                  <span>{{ wc.petStats.combat }} 战力</span>
+                  <span>修炼 {{ wc.state.pet.cultivation }} 重</span>
                 </div>
               </div>
-              <div class="pet-aura" aria-hidden="true">
+              <div class="pet-aura" :style="wc.petStageStyle()" aria-hidden="true">
                 <i><b :style="{ height: `${wc.petProgress * 100}%` }"></b></i>
                 <span>进化进度</span>
               </div>
@@ -494,11 +534,19 @@ const pageLabels = {
               </article>
               <article>
                 <span>法力</span>
-                <strong>{{ Math.round(wc.state.pet.mana) }} / {{ wc.petStats.manaMax }}</strong>
+                <strong>{{ Math.round(wc.state.pet.mana) }} / {{ wc.petManaMax }}</strong>
               </article>
               <article>
                 <span>战绩</span>
                 <strong>{{ wc.state.pet.battleWins }} 胜 / {{ wc.state.pet.battleLosses }} 负</strong>
+              </article>
+              <article>
+                <span>饥饿度</span>
+                <strong>{{ wc.petHungerLabel.label }}</strong>
+              </article>
+              <article>
+                <span>血压</span>
+                <strong>{{ wc.petPressureLabel.label }}</strong>
               </article>
             </section>
 
@@ -516,13 +564,13 @@ const pageLabels = {
                 </header>
                 <div class="wish-progress">
                   <i :style="{ width: `${wc.petProgress * 100}%` }"></i>
+                  <span class="bar-label">{{ Math.round(wc.petProgress * 100) }}%</span>
                 </div>
                 <div class="stat-bars">
-                  <label><span>攻击</span><i><b :style="{ width: `${Math.min(100, wc.petStats.attack)}%` }"></b></i><em>{{ wc.petStats.attack }}</em></label>
-                  <label><span>防御</span><i><b :style="{ width: `${Math.min(100, wc.petStats.defense)}%` }"></b></i><em>{{ wc.petStats.defense }}</em></label>
-                  <label><span>暴击</span><i><b :style="{ width: `${wc.petStats.crit}%` }"></b></i><em>{{ wc.petStats.crit }}%</em></label>
-                  <label><span>饱食</span><i><b :style="{ width: `${wc.state.pet.satiety}%` }"></b></i><em>{{ wc.state.pet.satiety }}%</em></label>
-                  <label><span>亲密</span><i><b :style="{ width: `${wc.state.pet.affection}%` }"></b></i><em>{{ wc.state.pet.affection }}%</em></label>
+                  <label><span>饱食</span><i><b :style="{ width: `${wc.state.pet.satiety}%` }"></b><span class="bar-label">{{ wc.state.pet.satiety }}%</span></i></label>
+                  <label><span>亲密</span><i><b :style="{ width: `${wc.state.pet.affection}%` }"></b><span class="bar-label">{{ wc.state.pet.affection }}%</span></i></label>
+                  <label><span>饥饿</span><i><b :style="{ width: `${wc.state.pet.hunger}%`, background: wc.petHungerLabel.color }"></b><span class="bar-label">{{ Math.round(wc.state.pet.hunger) }}%</span></i></label>
+                  <label><span>血压</span><i><b :style="{ width: `${wc.state.pet.bloodPressure}%`, background: wc.petPressureLabel.color }"></b><span class="bar-label">{{ Math.round(wc.state.pet.bloodPressure) }}%</span></i></label>
                 </div>
               </article>
               <article class="panel-block">
@@ -707,7 +755,7 @@ const pageLabels = {
               <div>
                 <span class="eyebrow">基础设置</span>
                 <h2>{{ wc.state.nickname }}</h2>
-                <p>{{ wc.themeLabels[wc.state.theme] }} · {{ wc.modeLabels[wc.state.countMode] }} · {{ wc.state.startTime }} - {{ wc.state.endTime }}</p>
+                <p>{{ wc.themeLabels[wc.state.theme] }} · {{ wc.petStyleLabels[wc.state.petStyle] }} · {{ wc.modeLabels[wc.state.countMode] }} · {{ wc.state.startTime }} - {{ wc.state.endTime }}</p>
               </div>
             </article>
             <div class="segmented wide-tabs">
@@ -729,11 +777,29 @@ const pageLabels = {
                   <option v-for="[key, label] in themeEntries" :key="key" :value="key">{{ label }}</option>
                 </select>
               </label>
+              <label>桌宠系列
+                <select v-model="wc.state.petStyle">
+                  <option v-for="[key, label] in petStyleEntries" :key="key" :value="key">{{ label }}</option>
+                </select>
+              </label>
               <label>倒计时口径
                 <select v-model="wc.state.countMode">
                   <option v-for="[key, label] in modeEntries" :key="key" :value="key">{{ label }}</option>
                 </select>
               </label>
+              <div class="pet-style-switcher">
+                <button
+                  v-for="[key, label] in petStyleEntries"
+                  :key="key"
+                  type="button"
+                  :class="{ active: wc.state.petStyle === key }"
+                  @click="wc.state.petStyle = key"
+                >
+                  <img :src="petStylePreview[key].image" :alt="label" draggable="false" />
+                  <strong>{{ label }}</strong>
+                  <small>{{ petStylePreview[key].summary }}</small>
+                </button>
+              </div>
               <label class="switch-label">
                 <span>薪资隐私</span>
                 <span class="switch-track" :class="{ on: wc.state.privacyMode }" @click="wc.state.privacyMode = !wc.state.privacyMode">

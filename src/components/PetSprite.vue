@@ -11,7 +11,10 @@ import stage07 from "@/assets/pet-stages/level-07-halo.png";
 import stage08 from "@/assets/pet-stages/level-08-thunder.png";
 import stage09 from "@/assets/pet-stages/level-09-jade.png";
 import stage10 from "@/assets/pet-stages/level-10-immortal.png";
-import type { PetStage } from "@/types";
+import capybaraZenSheet from "@/assets/pet-sheets/capybara-zen-sheet.png";
+import lazyCatSheet from "@/assets/pet-sheets/lazy-cat-sheet.png";
+import lazyDogSheet from "@/assets/pet-sheets/lazy-dog-sheet.png";
+import type { PetStage, PetStyle } from "@/types";
 
 const props = withDefaults(
   defineProps<{
@@ -36,8 +39,15 @@ const petArt: Record<string, string> = {
   immortal: stage10
 };
 
-const spriteClass = computed(() => [`stage-${props.stage.level}`, `mode-${props.mode}`]);
-const artUrl = computed(() => petArt[props.stage.id]);
+const petSheets: Partial<Record<PetStyle, string>> = {
+  capybaraZen: capybaraZenSheet,
+  lazyCat: lazyCatSheet,
+  lazyDog: lazyDogSheet
+};
+
+const spriteClass = computed(() => [`stage-${props.stage.level}`, `mode-${props.mode}`, `pet-style-${props.stage.style || "rageBlob"}`]);
+const sheetUrl = computed(() => petSheets[props.stage.style || "rageBlob"]);
+const artUrl = computed(() => (sheetUrl.value ? "" : petArt[props.stage.id]));
 const styleVars = computed(
   () =>
     ({
@@ -46,14 +56,17 @@ const styleVars = computed(
       "--pet-accent": props.stage.palette.accent,
       "--pet-glow": props.stage.palette.glow,
       "--pet-eye": props.stage.palette.eye,
-      "--pet-shadow": props.stage.palette.shadow
+      "--pet-shadow": props.stage.palette.shadow,
+      "--pet-sheet": sheetUrl.value ? `url(${sheetUrl.value})` : "none",
+      "--pet-position": `${Math.max(0, props.stage.level - 1) * (100 / 9)}%`
     }) as CSSProperties
 );
 </script>
 
 <template>
   <span class="pet-sprite" :class="spriteClass" :style="styleVars" :aria-label="`${stage.name}：${stage.visual}`" role="img">
-    <img v-if="artUrl" class="pet-art" :src="artUrl" :alt="stage.name" draggable="false" />
+    <span v-if="sheetUrl" class="pet-sheet-art" aria-hidden="true"></span>
+    <img v-else-if="artUrl" class="pet-art" :src="artUrl" :alt="stage.name" draggable="false" />
     <template v-else>
       <span class="pet-orbit pet-orbit-a"></span>
       <span class="pet-orbit pet-orbit-b"></span>
@@ -98,6 +111,19 @@ const styleVars = computed(
   pointer-events: none;
   user-select: none;
   transform-origin: 50% 72%;
+}
+
+.pet-sheet-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: var(--pet-sheet);
+  background-position: var(--pet-position) center;
+  background-repeat: no-repeat;
+  background-size: 1000% 100%;
+  pointer-events: none;
+  transform-origin: 50% 72%;
+  user-select: none;
 }
 
 .mode-mini {
@@ -318,6 +344,133 @@ const styleVars = computed(
   transform: rotate(32deg);
 }
 
+.pet-style-capybaraZen .pet-body {
+  inset: 20% 13% 14%;
+  border-radius: 54% 46% 46% 54% / 48% 44% 58% 54%;
+}
+
+.pet-style-capybaraZen .pet-horn {
+  top: 22%;
+  width: 13%;
+  height: 13%;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--pet-body), color-mix(in srgb, var(--pet-shadow), var(--pet-body) 28%));
+  opacity: 1;
+}
+
+.pet-style-capybaraZen .pet-horn-left {
+  left: 22%;
+  transform: rotate(-8deg);
+}
+
+.pet-style-capybaraZen .pet-horn-right {
+  right: 22%;
+  transform: rotate(8deg);
+}
+
+.pet-style-capybaraZen .pet-mouth {
+  top: 54%;
+  width: 26%;
+  height: 11%;
+}
+
+.pet-style-capybaraZen .pet-tail {
+  opacity: 0;
+}
+
+.pet-style-capybaraZen .pet-crown {
+  clip-path: ellipse(48% 30% at 50% 54%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--pet-glow), white 8%), var(--pet-accent));
+}
+
+.pet-style-lazyCat .pet-body {
+  inset: 19% 14% 13%;
+  border-radius: 52% 48% 44% 56% / 50% 48% 58% 54%;
+}
+
+.pet-style-lazyCat .pet-horn {
+  top: 9%;
+  width: 22%;
+  height: 27%;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  border-radius: 0;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--pet-accent), white 18%) 0 42%, var(--pet-body) 42% 100%);
+  opacity: 1;
+}
+
+.pet-style-lazyCat .pet-horn-left {
+  left: 23%;
+  transform: rotate(-18deg);
+}
+
+.pet-style-lazyCat .pet-horn-right {
+  right: 23%;
+  transform: rotate(18deg);
+}
+
+.pet-style-lazyCat .pet-tail {
+  right: 0;
+  bottom: 22%;
+  width: 32%;
+  height: 18%;
+  border-width: 4px;
+  border-color: var(--pet-body);
+  opacity: 1;
+}
+
+.pet-style-lazyCat .pet-mouth {
+  top: 58%;
+  width: 22%;
+}
+
+.pet-style-lazyCat .pet-sigil {
+  background: color-mix(in srgb, var(--pet-accent), white 24%);
+}
+
+.pet-style-lazyDog .pet-body {
+  inset: 21% 12% 12%;
+  border-radius: 55% 45% 48% 52% / 48% 46% 58% 56%;
+}
+
+.pet-style-lazyDog .pet-horn {
+  top: 18%;
+  width: 18%;
+  height: 32%;
+  border-radius: 80% 20% 70% 30% / 70% 28% 72% 30%;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--pet-body), white 8%), color-mix(in srgb, var(--pet-shadow), var(--pet-body) 42%));
+  opacity: 1;
+}
+
+.pet-style-lazyDog .pet-horn-left {
+  left: 15%;
+  transform: rotate(-28deg);
+}
+
+.pet-style-lazyDog .pet-horn-right {
+  right: 15%;
+  transform: scaleX(-1) rotate(-28deg);
+}
+
+.pet-style-lazyDog .pet-tail {
+  right: -2%;
+  bottom: 27%;
+  width: 31%;
+  height: 15%;
+  border-width: 4px;
+  border-color: var(--pet-accent);
+  opacity: 1;
+}
+
+.pet-style-lazyDog .pet-mouth {
+  top: 57%;
+  width: 24%;
+}
+
+.pet-style-lazyDog .pet-crown {
+  clip-path: polygon(0 100%, 16% 44%, 36% 82%, 50% 18%, 64% 82%, 84% 44%, 100% 100%);
+}
+
 .stage-1 .pet-eye-left,
 .stage-1 .pet-eye-right {
   left: 43%;
@@ -329,6 +482,30 @@ const styleVars = computed(
 .stage-1 .pet-mouth,
 .stage-1 .pet-sigil {
   display: none;
+}
+
+.pet-style-capybaraZen.stage-1 .pet-eye-right,
+.pet-style-capybaraZen.stage-1 .pet-mouth,
+.pet-style-lazyCat.stage-1 .pet-eye-right,
+.pet-style-lazyCat.stage-1 .pet-mouth,
+.pet-style-lazyDog.stage-1 .pet-eye-right,
+.pet-style-lazyDog.stage-1 .pet-mouth {
+  display: block;
+}
+
+.pet-style-capybaraZen.stage-1 .pet-eye-left,
+.pet-style-lazyCat.stage-1 .pet-eye-left,
+.pet-style-lazyDog.stage-1 .pet-eye-left {
+  left: 31%;
+  width: 13%;
+}
+
+.pet-style-capybaraZen.stage-1 .pet-eye-right,
+.pet-style-lazyCat.stage-1 .pet-eye-right,
+.pet-style-lazyDog.stage-1 .pet-eye-right {
+  left: auto;
+  right: 31%;
+  width: 13%;
 }
 
 .stage-2 .pet-tail {

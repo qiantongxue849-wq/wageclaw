@@ -1,8 +1,9 @@
-export type Theme = "cyber" | "dawn" | "smog" | "paper" | "mint" | "peach" | "sky";
+export type Theme = "forest" | "arcade" | "sakura" | "ink" | "citrus";
 export type CountMode = "natural" | "workday";
 export type Mood = "rage" | "stable" | "numb";
 export type Currency = "wallet" | "rage";
 export type ScreenKey = "converter" | "mall" | "pet" | "ninja" | "community" | "sync" | "settings";
+export type PetStyle = "rageBlob" | "capybaraZen" | "lazyCat" | "lazyDog";
 
 export type PetStagePalette = {
   body: string;
@@ -15,6 +16,7 @@ export type PetStagePalette = {
 
 export type PetStage = {
   id: string;
+  style?: PetStyle;
   level: number;
   name: string;
   title: string;
@@ -40,11 +42,10 @@ export type PetBoost = {
   light?: number;
   satiety?: number;
   affection?: number;
-  attack?: number;
-  defense?: number;
   manaCap?: number;
   mana?: number;
-  crit?: number;
+  hunger?: number;
+  bloodPressure?: number;
 };
 
 export type MallItem = {
@@ -91,13 +92,12 @@ export type PetState = {
   rage: number;
   light: number;
   mana: number;
-  attackBonus: number;
-  defenseBonus: number;
   manaBonus: number;
-  critBonus: number;
   cultivation: number;
   satiety: number;
   affection: number;
+  hunger: number;
+  bloodPressure: number;
   summoned: boolean;
   gameBest: number;
   lastLine: string;
@@ -119,6 +119,7 @@ export type WageClawState = {
   rageMinutes: number;
   mood: Mood;
   theme: Theme;
+  petStyle: PetStyle;
   countMode: CountMode;
   startTime: string;
   endTime: string;

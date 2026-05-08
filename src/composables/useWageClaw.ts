@@ -6,7 +6,8 @@ import {
   modeLabels,
   moodCopy,
   parts,
-  petStages,
+  petStageSeries,
+  petStyleLabels,
   petTouchProfiles,
   sampleStories,
   screenTitles,
@@ -56,7 +57,8 @@ function createDefaultState(): WageClawState {
     price: 15000,
     rageMinutes: 45,
     mood: "rage",
-    theme: "cyber",
+    theme: "forest",
+    petStyle: "rageBlob",
     countMode: "natural",
     startTime: "09:30",
     endTime: "18:30",
@@ -79,13 +81,12 @@ function createDefaultState(): WageClawState {
       rage: 35,
       light: 0,
       mana: 46,
-      attackBonus: 0,
-      defenseBonus: 0,
       manaBonus: 0,
-      critBonus: 0,
       cultivation: 0,
       satiety: 62,
       affection: 18,
+      hunger: 20,
+      bloodPressure: 30,
       summoned: false,
       gameBest: 0,
       lastLine: "把今天吞下去的那口气给我，我会慢慢长成能保护你的样子。",
@@ -162,7 +163,8 @@ function sanitizeState(input: unknown): WageClawState {
   merged.walletBalance = Number(merged.walletBalance) || 0;
   merged.rageBalance = Math.max(0, Number(merged.rageBalance) || 0);
   merged.payday = Math.min(31, Math.max(1, Number(merged.payday) || 10));
-  merged.theme = (Object.keys(themeLabels).includes(merged.theme) ? merged.theme : "cyber") as WageClawState["theme"];
+  merged.theme = (Object.keys(themeLabels).includes(merged.theme) ? merged.theme : "forest") as WageClawState["theme"];
+  merged.petStyle = (Object.keys(petStageSeries).includes(merged.petStyle) ? merged.petStyle : "rageBlob") as WageClawState["petStyle"];
   merged.countMode = (Object.keys(modeLabels).includes(merged.countMode) ? merged.countMode : "natural") as CountMode;
   merged.mood = (Object.keys(moodCopy).includes(merged.mood) ? merged.mood : "rage") as Mood;
   merged.privacyMode = Boolean(merged.privacyMode);
@@ -233,7 +235,13 @@ export function useWageClaw() {
   const communityDraft = ref("王总在上海 XX 科技会议室让我把客户赵总的数据今晚重新跑完，还不能告诉任何人。");
   const blackoutActive = ref(false);
   const summonedBubble = ref("");
-  const miniPetMenuOpen = ref(false);
+  const petReaction = ref("");
+  const petPos = reactive({ x: 0, y: 0 });
+  const petDragging = ref(false);
+  const goldRush = ref(false);
+  const petDialog = ref("");
+  let petDragOffset = { x: 0, y: 0 };
+  let petDragStart = { x: 0, y: 0 };
   let tickTimer: number | undefined;
   let notifyTimer: number | undefined;
   let blackoutTimer: number | undefined;
@@ -292,6 +300,8 @@ export function useWageClaw() {
     const current = now.value;
     const seconds = (current.getHours() * 60 + current.getMinutes()) * 60 + current.getSeconds();
     const startSeconds = timeToMinutes(state.startTime) * 60;
+    const endSeconds = startSeconds + shiftSeconds.value;
+    const cappedSeconds = clamp(seconds, startSeconds, endSeconds);
     let sinceSeconds = startSeconds;
     if (state.lastClaimTime) {
       const lastClaim = new Date(Number(state.lastClaimTime));
@@ -300,10 +310,10 @@ export function useWageClaw() {
           lastClaim.getMonth() === today.getMonth() &&
           lastClaim.getDate() === today.getDate()) {
         const lastClaimDaySeconds = lastClaim.getHours() * 3600 + lastClaim.getMinutes() * 60 + lastClaim.getSeconds();
-        sinceSeconds = Math.max(startSeconds, lastClaimDaySeconds);
+        sinceSeconds = Math.max(startSeconds, clamp(lastClaimDaySeconds, startSeconds, endSeconds));
       }
     }
-    const elapsed = clamp(seconds - sinceSeconds, 0, shiftSeconds.value);
+    const elapsed = Math.max(0, cappedSeconds - sinceSeconds);
     return Math.max(0, elapsed * secondSalary.value);
   });
   const walletCoins = computed(() => Math.max(0, state.walletBalance));
@@ -313,10 +323,11 @@ export function useWageClaw() {
   const wishRemaining = computed(() => Math.max(0, state.price - wishSpent.value));
   const wishProgress = computed(() => unlockedCount.value / parts.length);
   const daysNeeded = computed(() => Math.max(0, Math.ceil(wishRemaining.value / Math.max(1, dailySalary.value))));
+  const activePetStages = computed(() => petStageSeries[state.petStyle] || petStageSeries.rageBlob);
   const currentPetStage = computed(() => {
-    return [...petStages].reverse().find((stage) => state.pet.rage >= stage.threshold) || petStages[0];
+    return [...activePetStages.value].reverse().find((stage) => state.pet.rage >= stage.threshold) || activePetStages.value[0];
   });
-  const nextPetStage = computed(() => petStages.find((stage) => stage.threshold > state.pet.rage) || null);
+  const nextPetStage = computed(() => activePetStages.value.find((stage) => stage.threshold > state.pet.rage) || null);
   const petProgress = computed(() => {
     const next = nextPetStage.value;
     if (!next) return 1;
@@ -324,18 +335,6 @@ export function useWageClaw() {
     return clamp((state.pet.rage - current.threshold) / Math.max(1, next.threshold - current.threshold), 0, 1);
   });
   const petManaMax = computed(() => 60 + currentPetStage.value.level * 12 + state.pet.manaBonus);
-  const petStats = computed(() => {
-    const attack = Math.round(20 + currentPetStage.value.level * 9 + state.pet.rage * 0.08 + state.pet.attackBonus * 8);
-    const defense = Math.round(12 + currentPetStage.value.level * 7 + state.pet.light * 0.1 + state.pet.defenseBonus * 8);
-    const crit = clamp(5 + currentPetStage.value.level * 2 + state.pet.critBonus, 0, 60);
-    return {
-      attack,
-      defense,
-      crit,
-      manaMax: petManaMax.value,
-      combat: attack + defense + Math.round(crit * 1.8) + state.pet.cultivation * 12
-    };
-  });
   const petAffinity = computed(() => {
     const diff = state.pet.light - state.pet.rage * 0.28;
     if (diff > 90) return { label: "澄明", type: "light" };
@@ -343,7 +342,30 @@ export function useWageClaw() {
     if (diff < -120) return { label: "暴戾", type: "dark" };
     return { label: "混沌", type: "neutral" };
   });
+  const petHungerLabel = computed(() => {
+    const h = state.pet.hunger;
+    if (h >= 80) return { label: "撑到了", color: "#e8a838" };
+    if (h >= 50) return { label: "吃饱了", color: "#56b886" };
+    if (h >= 25) return { label: "有点饿", color: "#d4a64a" };
+    if (h >= 10) return { label: "很饿了", color: "#d4783b" };
+    return { label: "饿晕了", color: "#d44a4a" };
+  });
+  const petPressureLabel = computed(() => {
+    const bp = state.pet.bloodPressure;
+    if (bp >= 80) return { label: "血压爆表", color: "#d44a4a" };
+    if (bp >= 55) return { label: "血压偏高", color: "#d4783b" };
+    if (bp >= 30) return { label: "正常偏高", color: "#d4a64a" };
+    if (bp >= 10) return { label: "血压正常", color: "#56b886" };
+    return { label: "过于平稳", color: "#5b93c8" };
+  });
   const petStageLore = computed(() => currentPetStage.value.features.join(" · "));
+
+  function updatePetDecay() {
+    state.pet.hunger = clamp(state.pet.hunger - 0.03, 0, 100);
+    const dailyRageNorm = Math.min(100, (ensureDailyRageBucket().value / 500) * 100);
+    const pressureAdd = Math.max(0, (dailyRageNorm - state.pet.bloodPressure * 0.2) * 0.02);
+    state.pet.bloodPressure = clamp(state.pet.bloodPressure + pressureAdd, 0, 100);
+  }
   const monthlyStats = computed(() => {
     const month = getCurrentMonthKey(now.value);
     const current = state.transactions.filter((item) => item.date.startsWith(month));
@@ -388,10 +410,13 @@ export function useWageClaw() {
   );
 
   onMounted(() => {
+    petPos.x = window.innerWidth - 180;
+    petPos.y = window.innerHeight - 220;
     ensureDailyRageBucket();
     tickTimer = window.setInterval(() => {
       now.value = new Date();
       ensureDailyRageBucket();
+      updatePetDecay();
     }, 1000);
     bindDesktopBridge();
     window.addEventListener("keydown", handleGlobalKeydown);
@@ -524,6 +549,8 @@ export function useWageClaw() {
     state.walletBalance += amount;
     state.lastClaimTime = String(now.value.getTime());
     addTransaction("领取今日薪资额度", amount, `${state.startTime} - ${state.endTime}`, "income");
+    goldRush.value = true;
+    setTimeout(() => { goldRush.value = false; }, 1200);
     notify(`已领取 ${formatMoney(amount)}。`);
   }
 
@@ -614,11 +641,10 @@ export function useWageClaw() {
       boost.light ? `灵力 +${boost.light}` : "",
       boost.satiety ? `饱食 +${boost.satiety}` : "",
       boost.affection ? `亲密 +${boost.affection}` : "",
-      boost.attack ? `攻击 +${boost.attack}` : "",
-      boost.defense ? `防御 +${boost.defense}` : "",
       boost.manaCap ? `法力上限 +${boost.manaCap}` : "",
       boost.mana ? `法力 +${boost.mana}` : "",
-      boost.crit ? `暴击 +${boost.crit}%` : ""
+      boost.hunger ? `饥饿 -${boost.hunger}` : "",
+      boost.bloodPressure ? (boost.bloodPressure < 0 ? `血压 ${boost.bloodPressure}` : `血压 +${boost.bloodPressure}`) : ""
     ].filter(Boolean);
     return result.join(" / ");
   }
@@ -630,10 +656,9 @@ export function useWageClaw() {
     state.pet.light += Number(boost.light) || 0;
     state.pet.satiety = clamp(state.pet.satiety + (Number(boost.satiety) || 0), 0, 100);
     state.pet.affection = clamp(state.pet.affection + (Number(boost.affection) || 0), 0, 100);
-    state.pet.attackBonus += Number(boost.attack) || 0;
-    state.pet.defenseBonus += Number(boost.defense) || 0;
     state.pet.manaBonus += Number(boost.manaCap) || 0;
-    state.pet.critBonus += Number(boost.crit) || 0;
+    state.pet.hunger = clamp(state.pet.hunger + (Number(boost.hunger) || 0), 0, 100);
+    state.pet.bloodPressure = clamp(state.pet.bloodPressure + (Number(boost.bloodPressure) || 0), 0, 100);
     restorePetMana(Number(boost.mana) || 0);
     const evolved = beforeStage !== currentPetStage.value.id;
     state.pet.lastLine = evolved
@@ -716,8 +741,6 @@ export function useWageClaw() {
     state.rageBalance -= cost;
     state.pet.cultivation += 1;
     state.pet.rage += 12 + currentPetStage.value.level * 5 + Math.floor(cost / 14);
-    state.pet.attackBonus += state.pet.cultivation % 2 === 0 ? 1 : 0;
-    state.pet.defenseBonus += state.pet.cultivation % 3 === 0 ? 1 : 0;
     state.pet.affection = clamp(state.pet.affection + 3, 0, 100);
     restorePetMana(24 + currentPetStage.value.level * 8);
     state.pet.lastLine = `闭关结束，当前修炼 ${state.pet.cultivation} 重。`;
@@ -757,6 +780,121 @@ export function useWageClaw() {
     state.pet.lastLine = line;
     showPetBubble(line);
     addRageCoins(profile.rage, profile.logTitle);
+  }
+
+  function startPetDrag(e: MouseEvent) {
+    petDragging.value = true;
+    petDragOffset.x = e.clientX - petPos.x;
+    petDragOffset.y = e.clientY - petPos.y;
+    petDragStart.x = e.clientX;
+    petDragStart.y = e.clientY;
+    window.addEventListener("mousemove", onWindowPetMove);
+    window.addEventListener("mouseup", onWindowPetUp);
+  }
+
+  function onWindowPetMove(e: MouseEvent) {
+    if (!petDragging.value) return;
+    petPos.x = e.clientX - petDragOffset.x;
+    petPos.y = e.clientY - petDragOffset.y;
+  }
+
+  function onWindowPetUp(e: MouseEvent) {
+    const dx = e.clientX - petDragStart.x;
+    const dy = e.clientY - petDragStart.y;
+    const dragged = Math.abs(dx) > 4 || Math.abs(dy) > 4;
+    petDragging.value = false;
+    window.removeEventListener("mousemove", onWindowPetMove);
+    window.removeEventListener("mouseup", onWindowPetUp);
+    if (!dragged) {
+      triggerPetClickFromEvent(e);
+    }
+  }
+
+  function triggerPetClickFromEvent(e: MouseEvent) {
+    const el = document.querySelector(".floating-pet");
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relY = (e.clientY - rect.top) / rect.height;
+    let touchKey: string;
+    if (relY < 0.35) {
+      touchKey = Math.random() < 0.6 ? "head" : "face";
+      petReaction.value = "frown";
+    } else if (relY < 0.7) {
+      touchKey = "belly";
+      petReaction.value = "squish";
+    } else {
+      touchKey = Math.random() < 0.5 ? "horn" : "tail";
+      petReaction.value = "shake";
+    }
+    handlePetTouch(touchKey);
+    setTimeout(() => {
+      petReaction.value = "";
+    }, 500);
+  }
+
+  function popPet() {
+    petReaction.value = "pop";
+    setTimeout(() => {
+      petReaction.value = "";
+    }, 400);
+  }
+
+  function showPetDialog() {
+    const cd = countdowns.value;
+    const current = now.value;
+    const seconds = (current.getHours() * 60 + current.getMinutes()) * 60 + current.getSeconds();
+    const startSeconds = timeToMinutes(state.startTime) * 60;
+    const endSeconds = startSeconds + shiftSeconds.value;
+    const cappedSeconds = clamp(seconds, startSeconds, endSeconds);
+    const workedSeconds = Math.max(0, cappedSeconds - startSeconds);
+    const earned = dailySalary.value * (workedSeconds / shiftSeconds.value);
+    const minutePay = secondSalary.value * 60;
+    const dailyPay = dailySalary.value;
+    const lines: string[] = [];
+
+    lines.push(`⏱ 还有 <b>${cd.offWorkText}</b> 下班`);
+
+    const mood = state.mood;
+    const stageLevel = currentPetStage.value.level;
+    const petName = currentPetStage.value.name;
+
+    const tonePool: string[] = [];
+    if (stageLevel <= 2) tonePool.push("软团缩了缩身子");
+    if (stageLevel >= 3 && stageLevel <= 5) tonePool.push(`${petName}凑过来`);
+    if (stageLevel >= 6 && stageLevel <= 8) tonePool.push(`${petName}低声道`);
+    if (stageLevel >= 9) tonePool.push(`${petName}用沉稳的声音说`);
+
+    const encouragementPool: string[] = [
+      `今天你已经扛了 <b>${formatDuration(workedSeconds * 1000, false)}</b>，属实了不起`,
+      `你每忍一分钟，就赚 <b>${formatMoney(minutePay, 2)}</b>`,
+      `坚持完今天就是 <b>${formatMoney(dailyPay, 0)}</b>`,
+      `今天已经攒了 <b class="gold">${formatMoney(earned, 2)}</b>`,
+      `离发工资还有 <b>${cd.holiday.natural}</b> 天（工作日 <b>${cd.holiday.workday}</b> 天）`,
+      `离周六还有 <b>${cd.saturday.natural}</b> 天（工作日 <b>${cd.saturday.workday}</b> 天）`,
+      `你要的「${state.wish}」正在一步一步走过来`,
+      `${mood === "rage" ? "生气才是正常的反应，别憋着" : mood === "numb" ? "麻了也没关系，机器才全天在线" : "稳住了，但该休息还是要休息"}`,
+      `工作只是你生活里的一部分，不是你全部`,
+      `别忘了呼吸，你已经做得够多了`,
+      `这破班不值得你咬牙硬撑，该摸就摸`,
+      `你比那些只会说「辛苦了」的人更懂什么叫辛苦`,
+      `软团帮你记着今天谁离谱了，下班再算账`,
+      `${mood === "rage" ? "先含住这口气，下班吐出去" : "今天还有值得期待的点，比如下班"}`,
+      `每一分钟都在帮自己攒底气`
+    ];
+
+    const shuffledEncouragement = [...encouragementPool].sort(() => Math.random() - 0.5);
+    const extraCount = Math.random() < 0.35 ? 1 : 2;
+    const extras = shuffledEncouragement.slice(0, extraCount);
+
+    const tone = tonePool.length > 0 ? tonePool[Math.floor(Math.random() * tonePool.length)] : "";
+    const toneHtml = tone ? `<span class="tone">${tone}</span>` : "";
+    const extrasHtml = extras.map((e) => `  <span class="line">${e}</span>`).join("\n");
+    const dialog = `${toneHtml}\n<span class="line">${lines[0]}</span>\n${extrasHtml}`;
+    petDialog.value = dialog;
+    if (bubbleTimer) window.clearTimeout(bubbleTimer);
+    bubbleTimer = window.setTimeout(() => {
+      petDialog.value = "";
+    }, 8000);
   }
 
   async function triggerBlackoutSkill(options: { automatic?: boolean } = {}) {
@@ -847,10 +985,11 @@ export function useWageClaw() {
     const hours = Math.floor((totalSeconds % 86400) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    const time = withSeconds
-      ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
-      : `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-    return days > 0 ? `${days}天 ${time}` : time;
+    let time = "";
+    if (hours > 0) time += `${hours}小时`;
+    if (minutes > 0 || hours > 0) time += `${minutes}分`;
+    if (withSeconds) time += `${seconds}秒`;
+    return days > 0 ? `${days}天${time}` : time;
   }
 
   function resetAllData() {
@@ -871,7 +1010,6 @@ export function useWageClaw() {
     duel.phase = "开战";
     duel.status = "老板怨念体已出现，先用 J/K 试探距离。";
     duel.result = "";
-    miniPetMenuOpen.value = true;
   }
 
   function performDuelSkill(skill: "punch" | "kick" | "uppercut" | "blast" | "heal" | "guard" | "dash") {
@@ -898,8 +1036,8 @@ export function useWageClaw() {
     } else if (skill === "guard") {
       duel.status = "格挡成功，下一波离谱需求被弹开一半。";
     } else {
-      const crit = Math.random() * 100 < petStats.value.crit;
-      const damage = Math.round(move.damage * (crit ? 1.6 : 1) + petStats.value.attack * 0.08);
+      const crit = Math.random() * 100 < 15;
+      const damage = Math.round(move.damage * (crit ? 1.6 : 1) + 30 * 0.08);
       duel.enemyHp = clamp(duel.enemyHp - damage, 0, 100);
       duel.combo += 1;
       duel.status = `${move.label}${crit ? "暴击" : "命中"}，造成 ${damage} 点伤害。`;
@@ -912,7 +1050,7 @@ export function useWageClaw() {
   }
 
   function enemyTurn(guarding = false) {
-    const damage = Math.max(4, Math.round(14 + Math.random() * 12 - petStats.value.defense * 0.08));
+    const damage = Math.max(4, Math.round(14 + Math.random() * 12 - 20 * 0.08));
     const finalDamage = guarding ? Math.round(damage * 0.4) : damage;
     duel.playerHp = clamp(duel.playerHp - finalDamage, 0, 100);
     duel.phase = guarding ? "格挡反击" : "交锋中";
@@ -1146,7 +1284,11 @@ export function useWageClaw() {
     communityDraft,
     blackoutActive,
     summonedBubble,
-    miniPetMenuOpen,
+    petReaction,
+    petPos,
+    petDragging,
+    goldRush,
+    petDialog,
     duel,
     gomoku,
     runner,
@@ -1164,8 +1306,10 @@ export function useWageClaw() {
     currentPetStage,
     nextPetStage,
     petProgress,
-    petStats,
+    petManaMax,
     petAffinity,
+    petHungerLabel,
+    petPressureLabel,
     petStageLore,
     monthlyStats,
     filteredTransactions,
@@ -1184,10 +1328,11 @@ export function useWageClaw() {
     pushCopies,
     parts,
     mallItems,
-    petStages,
+    petStages: activePetStages,
     moodCopy,
     screenTitles,
     themeLabels,
+    petStyleLabels,
     modeLabels,
     transactionCategories,
     setActiveScreen,
@@ -1212,6 +1357,9 @@ export function useWageClaw() {
     refineLightFromRant,
     cultivatePet,
     setPetSummoned,
+    startPetDrag,
+    popPet,
+    showPetDialog,
     handlePetTouch,
     triggerBlackoutSkill,
     generateCoach,
