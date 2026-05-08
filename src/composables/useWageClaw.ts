@@ -34,7 +34,7 @@ type PageKey = "transactions" | "mall" | "inventory" | "usage" | "petSupply" | "
 type TouchKey = keyof typeof petTouchProfiles;
 
 const rawViewMode = new URLSearchParams(window.location.search).get("view");
-const viewMode = (rawViewMode === "pet" ? "pet" : "main") as "main" | "pet";
+const viewMode = (rawViewMode === "pet" ? "pet" : rawViewMode === "float" ? "float" : "main") as "main" | "pet" | "float";
 
 function getLocalDateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -242,10 +242,15 @@ export function useWageClaw() {
   const petDialog = ref("");
   let petDragOffset = { x: 0, y: 0 };
   let petDragStart = { x: 0, y: 0 };
+  let consolePetClickCount = 0;
+  let desktopPetClickCount = 0;
+  let lastFloatPetInteractive = false;
   let tickTimer: number | undefined;
   let notifyTimer: number | undefined;
   let blackoutTimer: number | undefined;
   let bubbleTimer: number | undefined;
+  let consolePetClickTimer: number | undefined;
+  let desktopPetClickTimer: number | undefined;
   let bridgeCleanup: Array<() => void> = [];
 
   const duel = reactive({
@@ -410,6 +415,24 @@ export function useWageClaw() {
   );
 
   onMounted(() => {
+    if (viewMode === "float") {
+      document.documentElement.style.cssText = "margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;";
+      document.body.style.cssText = "margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;";
+      const app = document.getElementById("app");
+      if (app) app.style.cssText = "width:100%;height:100%;background:transparent;overflow:hidden;";
+      window.addEventListener("storage", () => {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          try {
+            Object.assign(state, JSON.parse(raw));
+          } catch (_) {}
+        }
+      });
+      window.addEventListener("mousemove", handleFloatHitTest);
+      window.addEventListener("mouseleave", handleFloatMouseLeave);
+    } else if (viewMode === "main" && window.wageclawDesktop?.togglePet) {
+      window.wageclawDesktop.togglePet(state.pet.summoned);
+    }
     petPos.x = window.innerWidth - 180;
     petPos.y = window.innerHeight - 220;
     ensureDailyRageBucket();
@@ -428,9 +451,13 @@ export function useWageClaw() {
     if (notifyTimer) window.clearTimeout(notifyTimer);
     if (blackoutTimer) window.clearTimeout(blackoutTimer);
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
+    if (consolePetClickTimer) window.clearTimeout(consolePetClickTimer);
+    if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
     if (runnerTimer) window.clearInterval(runnerTimer);
     window.removeEventListener("keydown", handleGlobalKeydown);
     window.removeEventListener("keyup", handleGlobalKeyup);
+    window.removeEventListener("mousemove", handleFloatHitTest);
+    window.removeEventListener("mouseleave", handleFloatMouseLeave);
     bridgeCleanup.forEach((cleanup) => cleanup());
     bridgeCleanup = [];
   });
@@ -471,6 +498,24 @@ export function useWageClaw() {
 
   function setActiveScreen(screen: ScreenKey) {
     activeScreen.value = screen;
+  }
+
+  function closeMainWindow() {
+    if (window.wageclawDesktop?.closeMainWindow) {
+      window.wageclawDesktop.closeMainWindow();
+    }
+  }
+
+  function minimizeMainWindow() {
+    if (window.wageclawDesktop?.minimizeMainWindow) {
+      window.wageclawDesktop.minimizeMainWindow();
+    }
+  }
+
+  function maximizeMainWindow() {
+    if (window.wageclawDesktop?.maximizeMainWindow) {
+      window.wageclawDesktop.maximizeMainWindow();
+    }
   }
 
   async function openScreenFromPet(screen: ScreenKey) {
@@ -759,6 +804,7 @@ export function useWageClaw() {
   }
 
   function showPetBubble(message: string) {
+    petDialog.value = "";
     summonedBubble.value = message;
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
     bubbleTimer = window.setTimeout(() => {
@@ -782,18 +828,48 @@ export function useWageClaw() {
     addRageCoins(profile.rage, profile.logTitle);
   }
 
+  function setFloatPetInteractive(interactive: boolean) {
+    if (viewMode !== "float" || lastFloatPetInteractive === interactive) return;
+    lastFloatPetInteractive = interactive;
+    window.wageclawDesktop?.petHitTest?.(interactive);
+  }
+
+  function isFloatPetPointInteractive(x: number, y: number) {
+    return document
+      .elementsFromPoint(x, y)
+      .some((element) => Boolean(element.closest(".pet-sprite")));
+  }
+
+  function handleFloatHitTest(event: MouseEvent) {
+    if (viewMode !== "float") return;
+    const interactive = petDragging.value || isFloatPetPointInteractive(event.clientX, event.clientY);
+    setFloatPetInteractive(interactive);
+  }
+
+  function handleFloatMouseLeave() {
+    if (!petDragging.value) setFloatPetInteractive(false);
+  }
+
   function startPetDrag(e: MouseEvent) {
     petDragging.value = true;
+    setFloatPetInteractive(true);
     petDragOffset.x = e.clientX - petPos.x;
     petDragOffset.y = e.clientY - petPos.y;
     petDragStart.x = e.clientX;
     petDragStart.y = e.clientY;
+    if (viewMode === "float") {
+      window.wageclawDesktop?.petDragStart();
+    }
     window.addEventListener("mousemove", onWindowPetMove);
     window.addEventListener("mouseup", onWindowPetUp);
   }
 
   function onWindowPetMove(e: MouseEvent) {
     if (!petDragging.value) return;
+    if (viewMode === "float") {
+      window.wageclawDesktop?.petDragMove(e.movementX, e.movementY);
+      return;
+    }
     petPos.x = e.clientX - petDragOffset.x;
     petPos.y = e.clientY - petDragOffset.y;
   }
@@ -808,9 +884,24 @@ export function useWageClaw() {
     if (!dragged) {
       triggerPetClickFromEvent(e);
     }
+    if (viewMode === "float") {
+      setFloatPetInteractive(isFloatPetPointInteractive(e.clientX, e.clientY));
+    }
   }
 
   function triggerPetClickFromEvent(e: MouseEvent) {
+    if (viewMode === "float") {
+      desktopPetClickCount += 1;
+      if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
+      if (desktopPetClickCount >= 3) {
+        desktopPetClickCount = 0;
+        void openMainPanelFromPet();
+        return;
+      }
+      desktopPetClickTimer = window.setTimeout(() => {
+        desktopPetClickCount = 0;
+      }, 900);
+    }
     const el = document.querySelector(".floating-pet");
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -832,6 +923,18 @@ export function useWageClaw() {
     }, 500);
   }
 
+  async function openMainPanelFromPet() {
+    state.pet.lastLine = "控制台已叫醒。软团把主界面推到你面前了。";
+    showPetBubble(state.pet.lastLine);
+    if (window.wageclawDesktop?.openMainPanel) {
+      await window.wageclawDesktop.openMainPanel();
+      return;
+    }
+    if (window.wageclawDesktop?.focusScreen) {
+      await window.wageclawDesktop.focusScreen("converter");
+    }
+  }
+
   function popPet() {
     petReaction.value = "pop";
     setTimeout(() => {
@@ -839,7 +942,24 @@ export function useWageClaw() {
     }, 400);
   }
 
+  function handleConsolePetSummonClick() {
+    consolePetClickCount += 1;
+    if (consolePetClickTimer) window.clearTimeout(consolePetClickTimer);
+    if (consolePetClickCount >= 3) {
+      consolePetClickCount = 0;
+      state.pet.lastLine = "三连点收到，我出来值班。双击我可以看下班倒计时和摸鱼提醒。";
+      void setPetSummoned(true);
+      showPetBubble(state.pet.lastLine);
+      notify("桌宠已被三连点召唤。");
+      return;
+    }
+    consolePetClickTimer = window.setTimeout(() => {
+      consolePetClickCount = 0;
+    }, 900);
+  }
+
   function showPetDialog() {
+    summonedBubble.value = "";
     const cd = countdowns.value;
     const current = now.value;
     const seconds = (current.getHours() * 60 + current.getMinutes()) * 60 + current.getSeconds();
@@ -848,11 +968,6 @@ export function useWageClaw() {
     const cappedSeconds = clamp(seconds, startSeconds, endSeconds);
     const workedSeconds = Math.max(0, cappedSeconds - startSeconds);
     const earned = dailySalary.value * (workedSeconds / shiftSeconds.value);
-    const minutePay = secondSalary.value * 60;
-    const dailyPay = dailySalary.value;
-    const lines: string[] = [];
-
-    lines.push(`⏱ 还有 <b>${cd.offWorkText}</b> 下班`);
 
     const mood = state.mood;
     const stageLevel = currentPetStage.value.level;
@@ -864,33 +979,25 @@ export function useWageClaw() {
     if (stageLevel >= 6 && stageLevel <= 8) tonePool.push(`${petName}低声道`);
     if (stageLevel >= 9) tonePool.push(`${petName}用沉稳的声音说`);
 
-    const encouragementPool: string[] = [
-      `今天你已经扛了 <b>${formatDuration(workedSeconds * 1000, false)}</b>，属实了不起`,
-      `你每忍一分钟，就赚 <b>${formatMoney(minutePay, 2)}</b>`,
-      `坚持完今天就是 <b>${formatMoney(dailyPay, 0)}</b>`,
-      `今天已经攒了 <b class="gold">${formatMoney(earned, 2)}</b>`,
-      `离发工资还有 <b>${cd.holiday.natural}</b> 天（工作日 <b>${cd.holiday.workday}</b> 天）`,
-      `离周六还有 <b>${cd.saturday.natural}</b> 天（工作日 <b>${cd.saturday.workday}</b> 天）`,
-      `你要的「${state.wish}」正在一步一步走过来`,
+    const reminderPool: string[] = [
+      `「${state.wish}」正在一点点靠近`,
       `${mood === "rage" ? "生气才是正常的反应，别憋着" : mood === "numb" ? "麻了也没关系，机器才全天在线" : "稳住了，但该休息还是要休息"}`,
-      `工作只是你生活里的一部分，不是你全部`,
-      `别忘了呼吸，你已经做得够多了`,
-      `这破班不值得你咬牙硬撑，该摸就摸`,
-      `你比那些只会说「辛苦了」的人更懂什么叫辛苦`,
-      `软团帮你记着今天谁离谱了，下班再算账`,
-      `${mood === "rage" ? "先含住这口气，下班吐出去" : "今天还有值得期待的点，比如下班"}`,
-      `每一分钟都在帮自己攒底气`
+      "工作只是生活的一部分，不是你的全部",
+      "别忘了呼吸，你已经做得够多了",
+      "这破班不值得咬牙硬撑，该摸就摸",
+      "软团帮你记账，下班再算",
+      "每一分钟都在帮自己攒底气"
     ];
 
-    const shuffledEncouragement = [...encouragementPool].sort(() => Math.random() - 0.5);
-    const extraCount = Math.random() < 0.35 ? 1 : 2;
-    const extras = shuffledEncouragement.slice(0, extraCount);
-
     const tone = tonePool.length > 0 ? tonePool[Math.floor(Math.random() * tonePool.length)] : "";
-    const toneHtml = tone ? `<span class="tone">${tone}</span>` : "";
-    const extrasHtml = extras.map((e) => `  <span class="line">${e}</span>`).join("\n");
-    const dialog = `${toneHtml}\n<span class="line">${lines[0]}</span>\n${extrasHtml}`;
-    petDialog.value = dialog;
+    const toneHtml = tone ? `<span class="tone">${tone}：</span>` : "";
+    const facts = [
+      `还有 <b>${cd.offWorkText}</b> 下班`,
+      `离周六 <b>${cd.saturday.natural}</b> 天`,
+      `今天已扛 <b>${formatDuration(workedSeconds * 1000, false)}</b>`,
+      `攒了 <b class="gold">${formatMoney(earned, 2)}</b>`
+    ];
+    petDialog.value = `<span class="line">${toneHtml}${facts.join("，")}。${randomPick(reminderPool)}。</span>`;
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
     bubbleTimer = window.setTimeout(() => {
       petDialog.value = "";
@@ -1337,6 +1444,9 @@ export function useWageClaw() {
     transactionCategories,
     setActiveScreen,
     openScreenFromPet,
+    closeMainWindow,
+     minimizeMainWindow,
+     maximizeMainWindow,
     petStageStyle,
     setTransactionFilter,
     setMallFilter,
@@ -1359,6 +1469,7 @@ export function useWageClaw() {
     setPetSummoned,
     startPetDrag,
     popPet,
+    handleConsolePetSummonClick,
     showPetDialog,
     handlePetTouch,
     triggerBlackoutSkill,

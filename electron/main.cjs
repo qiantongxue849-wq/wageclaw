@@ -2,6 +2,8 @@ const path = require("path");
 const { app, BrowserWindow, ipcMain, screen } = require("electron");
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || process.env.WAGECLAW_DEV_SERVER_URL || "http://127.0.0.1:5173";
+const PET_ONLY_PREVIEW = process.env.WAGECLAW_PET_ONLY === "1" || process.argv.includes("--pet-only");
+const PET_CENTER_PREVIEW = process.env.WAGECLAW_PET_CENTER === "1" || process.argv.includes("--pet-center");
 
 let mainWindow = null;
 let petWindow = null;
@@ -27,9 +29,11 @@ function createMainWindow() {
     height: 680,
     minWidth: 860,
     minHeight: 560,
+    frame: false,
+    titleBarStyle: "hidden",
     autoHideMenuBar: true,
     title: "忍了吧 WageClaw",
-    backgroundColor: "#101210",
+    backgroundColor: "#efe9dc",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -48,14 +52,18 @@ function createMainWindow() {
 }
 
 function createPetWindow() {
-  const width = 360;
-  const height = 520;
-  const { workArea } = screen.getPrimaryDisplay();
-  const win = new BrowserWindow({
-    width,
-    height,
-    x: workArea.x + workArea.width - width - 24,
-    y: workArea.y + workArea.height - height - 24,
+  const winW = 430;
+   const winH = 320;
+   const { workArea } = screen.getPrimaryDisplay();
+   const defaultX = workArea.x + workArea.width - winW - 60;
+   const defaultY = workArea.y + workArea.height - winH - 80;
+   const centeredX = workArea.x + Math.round((workArea.width - winW) / 2);
+   const centeredY = workArea.y + Math.round((workArea.height - winH) / 2);
+   const win = new BrowserWindow({
+     width: winW,
+     height: winH,
+     x: PET_CENTER_PREVIEW ? centeredX : defaultX,
+     y: PET_CENTER_PREVIEW ? centeredY : defaultY,
     frame: false,
     transparent: true,
     resizable: false,
@@ -65,7 +73,6 @@ function createPetWindow() {
     alwaysOnTop: true,
     skipTaskbar: true,
     hasShadow: false,
-    focusable: false,
     title: "忍了吧桌宠",
     backgroundColor: "#00000000",
     webPreferences: {
@@ -76,8 +83,23 @@ function createPetWindow() {
     }
   });
 
-  loadRenderer(win, { view: "pet" });
+  loadRenderer(win, { view: "float" });
+  win.webContents.insertCSS(`
+    html, body, #app { margin: 0; padding: 0; background: transparent !important; width: 100%; height: 100%; overflow: hidden !important; }
+    .app-root, .app-root[data-theme] { background: transparent !important; width: 100vw; height: 100vh; min-height: 0; padding: 0; display: block; place-items: unset; overflow: hidden !important; }
+    .app-root > :not(.floating-pet) { display: none !important; }
+    .app-root > section { display: none !important; }
+    .surface-grid { display: none !important; }
+    body::before, body::after, html::before, html::after { display: none !important; }
+  `);
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  win.setIgnoreMouseEvents(true, { forward: true });
+  win.webContents.once("did-finish-load", () => {
+    if (!win.isDestroyed()) {
+      win.show();
+      win.moveTop();
+    }
+  });
 
   ipcMain.on("wageclaw:pet-drag", (_, { dx, dy }) => {
     if (!win || win.isDestroyed()) return;
@@ -363,42 +385,33 @@ app.whenReady().then(() => {
 
   ipcMain.handle("wageclaw:pet-command", (_, payload) => {
     const command = payload || {};
-    if (command.action === "duel") {
-      if (petWindow && !petWindow.isDestroyed()) {
-        const { workArea } = screen.getPrimaryDisplay();
-        const duelW = 420;
-        const duelH = 520;
-        const posX = workArea.x + Math.round(workArea.width / 2 - duelW / 2);
-        const posY = workArea.y + Math.round(workArea.height / 2 - duelH / 2);
-        petWindow.setSize(duelW, duelH);
-        petWindow.setPosition(posX, posY);
-        petWindow.setAlwaysOnTop(true);
-        petWindow.show();
-        sendWhenReady(petWindow, "wageclaw:pet-command", command);
-      }
-    } else {
-      sendPetCommandToMain(command);
-    }
+    sendPetCommandToMain(command);
     return { ok: true };
   });
 
   ipcMain.handle("wageclaw:pet-resize", (_, { width, height }) => {
     if (petWindow && !petWindow.isDestroyed()) {
-      petWindow.setSize(width || 360, height || 520);
+      petWindow.setSize(width || 200, height || 320);
     }
     return { ok: true };
   });
 
+  ipcMain.on("wageclaw:pet-hit-test", (event, interactive) => {
+    if (!petWindow || petWindow.isDestroyed() || event.sender !== petWindow.webContents) return;
+    petWindow.setIgnoreMouseEvents(!interactive, { forward: true });
+  });
+
   ipcMain.handle("wageclaw:show-pet", () => {
-    if (petWindow && !petWindow.isDestroyed()) {
-      petWindow.setSize(360, 520);
-      const { workArea } = screen.getPrimaryDisplay();
-      petWindow.setPosition(
-        workArea.x + workArea.width - 360 - 24,
-        workArea.y + workArea.height - 520 - 24
-      );
-      petWindow.show();
+    if (!petWindow || petWindow.isDestroyed()) {
+      petWindow = createPetWindow();
     }
+    petWindow.setSize(240, 340);
+    const { workArea } = screen.getPrimaryDisplay();
+    petWindow.setPosition(
+      workArea.x + workArea.width - 260,
+      workArea.y + workArea.height - 360
+    );
+    petWindow.show();
     return { ok: true };
   });
 
@@ -422,20 +435,46 @@ app.whenReady().then(() => {
     return { ok: true, visible };
   });
 
-  petWindow = createPetWindow();
-  petWindow.show();
+  ipcMain.on("wageclaw:close-main-window", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.close();
+    }
+  });
+
+  ipcMain.on("wageclaw:minimize-main-window", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.minimize();
+    }
+  });
+
+  ipcMain.on("wageclaw:maximize-main-window", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  });
+
+  if (PET_ONLY_PREVIEW) {
+    petWindow = createPetWindow();
+    petWindow.show();
+  } else {
+    mainWindow = createMainWindow();
+    mainWindow.show();
+  }
   updateDockVisibility();
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      petWindow = createPetWindow();
-      petWindow.show();
-      updateDockVisibility();
-    } else {
-      if (petWindow && !petWindow.isDestroyed()) {
-        petWindow.show();
+    if (PET_ONLY_PREVIEW) {
+      if (!petWindow || petWindow.isDestroyed()) {
+        petWindow = createPetWindow();
       }
+      petWindow.show();
+      return;
     }
+    showMainWindow("converter");
   });
 });
 

@@ -8,16 +8,15 @@ import capybaraZenPreview from "@/assets/pet-previews/capybara-zen.png";
 import lazyCatPreview from "@/assets/pet-previews/lazy-cat.png";
 import lazyDogPreview from "@/assets/pet-previews/lazy-dog.png";
 import walletCardArt from "@/assets/ui-art/wallet-paw-coins.png";
-import patienceCardArt from "@/assets/ui-art/patience-progress.png";
 import supplyCardArt from "@/assets/ui-art/supply-cache.png";
 import type { Mood, PetStyle } from "@/types";
 
 const wc = reactive(useWageClaw());
 
 const rootClass = computed(() => ({
-  "pet-only": wc.viewMode === "pet"
+  "pet-only": wc.viewMode === "pet",
+  "float-only": wc.viewMode === "float"
 }));
-
 const isMainView = computed(() => wc.viewMode === "main");
 const activeTitle = computed(() => wc.screenTitles[wc.activeScreen]);
 
@@ -100,6 +99,19 @@ const pageLabels = {
       </div>
     </section>
 
+    <template v-if="wc.viewMode === 'float'">
+      <div
+        class="floating-pet float-mode"
+        :class="wc.petReaction"
+        @mousedown="wc.startPetDrag"
+        @dblclick="wc.showPetDialog"
+      >
+        <div class="pet-bubble" v-if="wc.summonedBubble">{{ wc.summonedBubble }}</div>
+        <div class="pet-dialog" v-if="wc.petDialog" v-html="wc.petDialog"></div>
+        <PetSprite :stage="wc.currentPetStage" mode="compact" />
+      </div>
+    </template>
+
     <div
       v-if="wc.state.pet.summoned && isMainView"
       class="floating-pet"
@@ -149,6 +161,17 @@ const pageLabels = {
 
     <template v-if="isMainView">
       <div class="desktop-shell">
+        <div class="title-bar">
+          <span class="title-drag">忍了吧 WageClaw</span>
+          <div class="title-tools">
+            <button class="window-tool calendar-tool" title="倒计时" @click="wc.setActiveScreen('sync')"></button>
+            <button class="window-tool bell-tool" title="提醒"></button>
+            <button class="window-tool pet-tool" title="桌宠" @click="wc.handleConsolePetSummonClick(); wc.setActiveScreen('pet')"></button>
+            <button class="title-btn" @click="wc.minimizeMainWindow()" title="最小化"><svg width="10" height="10" viewBox="0 0 10 10"><rect y="4.5" width="10" height="1" fill="currentColor"/></svg></button>
+            <button class="title-btn" @click="wc.maximizeMainWindow()" title="最大化"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+            <button class="title-btn title-btn-close" @click="wc.closeMainWindow()" title="关闭"><svg width="10" height="10" viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1.4"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1.4"/></svg></button>
+          </div>
+        </div>
         <aside class="sidebar">
           <div class="brand-block">
             <span class="brand-mark" aria-hidden="true">
@@ -203,14 +226,6 @@ const pageLabels = {
               <span class="eyebrow">忍了吧 WageClaw</span>
               <h1>{{ wc.activeScreen === 'converter' ? `晚上好，${wc.state.nickname}` : activeTitle }}</h1>
               <p>{{ screenMoodLine }}</p>
-            </div>
-            <div class="window-actions" aria-label="窗口快捷操作">
-              <button type="button" class="window-tool calendar-tool" title="倒计时" @click="wc.setActiveScreen('sync')"></button>
-              <button type="button" class="window-tool bell-tool" title="提醒"></button>
-              <button type="button" class="window-tool pet-tool" title="桌宠" @click="wc.setActiveScreen('pet')"></button>
-              <span></span>
-              <span></span>
-              <span></span>
             </div>
             <div class="top-metrics">
               <article>
@@ -273,15 +288,19 @@ const pageLabels = {
                     </button>
                   </footer>
                 </div>
-                <div class="lamp-scene" aria-hidden="true">
-                  <img class="patience-card-art" :src="patienceCardArt" alt="" draggable="false" />
+                <div class="patience-pet-scene" :style="wc.petStageStyle()" aria-hidden="true">
+                  <span class="patience-light"></span>
+                  <PetSprite :stage="wc.currentPetStage" mode="mini" />
+                  <div class="patience-stage-base">
+                    <i><b :style="{ width: `${monthlyProgressPercent}%` }"></b></i>
+                  </div>
                 </div>
               </article>
             </section>
 
             <section class="home-cards">
               <article class="home-soft-card soft-rage" @click="wc.setActiveScreen('pet')">
-                <span class="soft-avatar">
+                <span class="soft-avatar" @click.stop="wc.handleConsolePetSummonClick">
                   <PetSprite :stage="wc.currentPetStage" mode="mini" />
                 </span>
                 <div>
@@ -408,10 +427,12 @@ const pageLabels = {
                 <h2>正式采购台</h2>
                 <p>账户 {{ wc.formatBalance(wc.walletCoins) }} · 怨气 {{ wc.formatRage(wc.state.rageBalance) }} · 背包 {{ inventoryTotal }} 件</p>
               </div>
-              <div class="supply-shelf" aria-hidden="true">
-                <span>☕</span>
-                <span>🍵</span>
-                <span>🧿</span>
+              <div class="procurement-desk" aria-hidden="true">
+                <img :src="supplyCardArt" alt="" draggable="false" />
+                <span class="procurement-ledger"></span>
+                <span class="procurement-terminal"></span>
+                <span class="procurement-stamp"></span>
+                <span class="procurement-counter"></span>
               </div>
               <div class="segmented">
                 <button type="button" :class="{ active: wc.mallTab === 'inventory' }" @click="wc.mallTab = 'inventory'">背包</button>
@@ -495,7 +516,7 @@ const pageLabels = {
 
           <section v-show="wc.activeScreen === 'pet'" class="screen-grid">
             <article class="hero-panel pet-hero">
-              <div class="large-pet" :style="wc.petStageStyle()">
+              <div class="large-pet" :style="wc.petStageStyle()" @click="wc.handleConsolePetSummonClick">
                 <PetSprite :stage="wc.currentPetStage" mode="hero" />
                 <div class="pet-tooltips" v-if="wc.state.pet.summoned">
                   <span class="pet-tip" :style="{ color: wc.petHungerLabel.color }">{{ wc.petHungerLabel.label }}</span>
@@ -514,8 +535,18 @@ const pageLabels = {
                 </div>
               </div>
               <div class="pet-aura" :style="wc.petStageStyle()" aria-hidden="true">
-                <i><b :style="{ height: `${wc.petProgress * 100}%` }"></b></i>
-                <span>进化进度</span>
+                <div class="evolution-vessel">
+                  <i><b :style="{ height: `${wc.petProgress * 100}%` }"></b></i>
+                  <PetSprite :stage="wc.currentPetStage" mode="mini" />
+                </div>
+                <div class="evolution-markers">
+                  <span
+                    v-for="stage in wc.petStages"
+                    :key="`pet-progress-${stage.id}`"
+                    :class="{ active: wc.state.pet.rage >= stage.threshold, current: wc.currentPetStage.id === stage.id }"
+                  ></span>
+                </div>
+                <span>进化进度 {{ Math.round(wc.petProgress * 100) }}%</span>
               </div>
               <div class="button-stack">
                 <button type="button" class="primary-button" @click="wc.setPetSummoned()">{{ wc.state.pet.summoned ? "收回软团" : "召唤软团" }}</button>

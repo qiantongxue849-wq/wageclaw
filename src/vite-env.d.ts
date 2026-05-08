@@ -4,6 +4,9 @@ type WageClawDesktopApi = {
   focusScreen: (screen: string) => Promise<{ ok: boolean; screen: string }>;
   openMainPanel: () => Promise<{ ok: boolean }>;
   togglePet: (enabled: boolean) => Promise<{ ok: boolean; visible: boolean }>;
+  closeMainWindow: () => void;
+   minimizeMainWindow: () => void;
+   maximizeMainWindow: () => void;
   petCommand: (payload: Record<string, unknown>) => Promise<{ ok: boolean }>;
   triggerBlackout: (payload: Record<string, unknown>) => Promise<{ ok: boolean }>;
   petRicochet: () => Promise<{ ok: boolean; visible: boolean }>;
@@ -14,6 +17,7 @@ type WageClawDesktopApi = {
   petDragStart: () => void;
   petDragMove: (dx: number, dy: number) => void;
   petDragEnd: () => void;
+  petHitTest: (interactive: boolean) => void;
   onNavigate: (callback: (payload: { screen?: string }) => void) => () => void;
   onPetCommand: (callback: (payload: Record<string, unknown>) => void) => () => void;
 };

@@ -4,6 +4,9 @@ contextBridge.exposeInMainWorld("wageclawDesktop", {
   focusScreen: (screen) => ipcRenderer.invoke("wageclaw:focus-screen", screen),
   openMainPanel: () => ipcRenderer.invoke("wageclaw:open-main-panel"),
   togglePet: (enabled) => ipcRenderer.invoke("wageclaw:toggle-pet", enabled),
+  closeMainWindow: () => ipcRenderer.send("wageclaw:close-main-window"),
+   minimizeMainWindow: () => ipcRenderer.send("wageclaw:minimize-main-window"),
+   maximizeMainWindow: () => ipcRenderer.send("wageclaw:maximize-main-window"),
   petCommand: (payload) => ipcRenderer.invoke("wageclaw:pet-command", payload),
   triggerBlackout: (payload) => ipcRenderer.invoke("wageclaw:trigger-blackout", payload),
   petRicochet: () => ipcRenderer.invoke("wageclaw:pet-ricochet"),
@@ -14,6 +17,7 @@ contextBridge.exposeInMainWorld("wageclawDesktop", {
   petDragStart: () => {},
   petDragMove: (dx, dy) => ipcRenderer.send("wageclaw:pet-drag", { dx, dy }),
   petDragEnd: () => {},
+  petHitTest: (interactive) => ipcRenderer.send("wageclaw:pet-hit-test", Boolean(interactive)),
   onNavigate: (callback) => {
     const listener = (_, payload) => callback(payload);
     ipcRenderer.on("wageclaw:navigate", listener);
