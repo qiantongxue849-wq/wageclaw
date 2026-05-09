@@ -1022,7 +1022,7 @@ export const sampleStories = [
 export const screenTitles: Record<ScreenKey, string> = {
   converter: "忍了吧控制台",
   mall: "情绪补给",
-  pet: "怨气软团",
+  pet: "怨气桌宠",
   ninja: "AI 忍术参谋",
   community: "匿名树洞",
   sync: "多端联动与定时唤醒",
@@ -1032,7 +1032,7 @@ export const screenTitles: Record<ScreenKey, string> = {
 export const navItems: Array<{ key: ScreenKey; label: string; hint: string }> = [
   { key: "converter", label: "忍了吧", hint: "余额、心愿、账本" },
   { key: "mall", label: "补给仓", hint: "商城、背包、使用记录" },
-  { key: "pet", label: "怨气软团", hint: "桌宠、投喂、对练" },
+  { key: "pet", label: "怨气桌宠", hint: "桌宠、投喂、对练" },
   { key: "ninja", label: "AI 忍术", hint: "三段式回复" },
   { key: "community", label: "匿名树洞", hint: "脱敏发布" },
   { key: "sync", label: "多端提醒", hint: "倒计时、推送文案" },

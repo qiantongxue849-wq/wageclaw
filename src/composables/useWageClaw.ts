@@ -210,6 +210,16 @@ function randomPick<T>(items: T[]) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+const holidayCountdowns = [
+  { name: "元旦", month: 1, day: 1, daysOff: 1 },
+  { name: "春节", month: 2, day: 17, daysOff: 8 },
+  { name: "清明节", month: 4, day: 5, daysOff: 3 },
+  { name: "劳动节", month: 5, day: 1, daysOff: 5 },
+  { name: "端午节", month: 6, day: 19, daysOff: 3 },
+  { name: "中秋节", month: 9, day: 25, daysOff: 3 },
+  { name: "国庆节", month: 10, day: 1, daysOff: 7 }
+];
+
 export function useWageClaw() {
   const state = reactive<WageClawState>(loadState());
   const now = ref(new Date());
@@ -430,8 +440,8 @@ export function useWageClaw() {
       });
       window.addEventListener("mousemove", handleFloatHitTest);
       window.addEventListener("mouseleave", handleFloatMouseLeave);
-    } else if (viewMode === "main" && window.wageclawDesktop?.togglePet) {
-      window.wageclawDesktop.togglePet(state.pet.summoned);
+    } else if (viewMode === "main" && window.wageclawDesktop?.togglePet && state.pet.summoned) {
+      window.wageclawDesktop.togglePet(true);
     }
     petPos.x = window.innerWidth - 180;
     petPos.y = window.innerHeight - 220;
@@ -991,13 +1001,27 @@ export function useWageClaw() {
 
     const tone = tonePool.length > 0 ? tonePool[Math.floor(Math.random() * tonePool.length)] : "";
     const toneHtml = tone ? `<span class="tone">${tone}：</span>` : "";
-    const facts = [
-      `还有 <b>${cd.offWorkText}</b> 下班`,
-      `离周六 <b>${cd.saturday.natural}</b> 天`,
-      `今天已扛 <b>${formatDuration(workedSeconds * 1000, false)}</b>`,
-      `攒了 <b class="gold">${formatMoney(earned, 2)}</b>`
+    const offWorkFact = cd.isOffWork ? "已经下班" : `还有 <b>${cd.offWorkText}</b> 下班`;
+    const festivalFact = buildHolidayLine(cd.nextHoliday);
+    const isWeekend = current.getDay() === 0 || current.getDay() === 6;
+    const weekendDayFact = current.getDay() === 6 ? "今天是周六" : "今天是周日";
+    const weekendPool = [
+      "今天不用倒计时下班，先把自己还给自己",
+      "周末就别替工位操心了，软团批准你彻底放空",
+      "能躺就躺，能慢就慢，电量先充回来",
+      "今天的任务是少想工作，多晒太阳或多睡觉",
+      "休息不是偷懒，是给下周的自己回血"
     ];
-    petDialog.value = `<span class="line">${toneHtml}${facts.join("，")}。${randomPick(reminderPool)}。</span>`;
+    const workdayExtras = [
+      `今天已扛 <b>${formatDuration(workedSeconds * 1000, false)}</b>`,
+      `攒了 <b class="gold">${formatMoney(earned, 2)}</b>`,
+      festivalFact,
+      randomPick(reminderPool)
+    ];
+    const weekendLines = [...weekendPool, festivalFact, randomPick(reminderPool)];
+    if (Math.random() < 0.25) weekendLines.push(weekendDayFact);
+    const line = isWeekend ? randomPick(weekendLines) : `${offWorkFact}，${randomPick(workdayExtras)}`;
+    petDialog.value = `<span class="line">${toneHtml}${line}。</span>`;
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
     bubbleTimer = window.setTimeout(() => {
       petDialog.value = "";
@@ -1069,21 +1093,52 @@ export function useWageClaw() {
     const end = new Date(current);
     const [hour = "18", minute = "30"] = state.endTime.split(":");
     end.setHours(Number(hour), Number(minute), 0, 0);
-    if (end < current) end.setDate(end.getDate() + 1);
+    const offWorkMs = Math.max(0, end.getTime() - current.getTime());
+    const isOffWork = current >= end;
     const saturday = new Date(current);
-    const daysUntilSaturday = (6 - saturday.getDay() + 7) % 7 || 7;
+    const daysUntilSaturday = (6 - saturday.getDay() + 7) % 7;
     saturday.setDate(saturday.getDate() + daysUntilSaturday);
     saturday.setHours(0, 0, 0, 0);
     const payday = new Date(current.getFullYear(), current.getMonth(), Math.min(28, state.payday));
     if (payday < current) payday.setMonth(payday.getMonth() + 1);
-    const offWorkMs = end.getTime() - current.getTime();
+    const nextHoliday = getNextHoliday(current);
     return {
       offWorkMs,
-      offWorkText: formatDuration(offWorkMs),
+      offWorkText: isOffWork ? "已经下班" : formatDuration(offWorkMs),
+      isOffWork,
       saturday: getWorkdayGap(current, saturday),
+      saturdayText: daysUntilSaturday === 0 ? "今天是周六" : `离周六 <b>${daysUntilSaturday}</b> 天`,
       holiday: getWorkdayGap(current, payday),
+      nextHoliday,
       paydayLabel: `${payday.getMonth() + 1}月${payday.getDate()}日发薪`
     };
+  }
+
+  function getNextHoliday(current: Date) {
+    const candidates = [current.getFullYear(), current.getFullYear() + 1].flatMap((year) => {
+      return holidayCountdowns.map((holiday) => {
+        const date = new Date(year, holiday.month - 1, holiday.day);
+        date.setHours(0, 0, 0, 0);
+        return { ...holiday, date };
+      });
+    });
+    const currentDay = new Date(current);
+    currentDay.setHours(0, 0, 0, 0);
+    const target = candidates
+      .filter((holiday) => holiday.date >= currentDay)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())[0];
+    const gap = getWorkdayGap(current, target.date);
+    return { ...target, ...gap };
+  }
+
+  function buildHolidayLine(holiday: ReturnType<typeof getNextHoliday>) {
+    return randomPick([
+      `${holiday.name}在路上了，前面还有 <b>${holiday.workday}</b> 个工作日，先把今天这格走完`,
+      `再过 <b>${holiday.natural}</b> 个自然日就是${holiday.name}，通常能放 ${holiday.daysOff} 天，已经能看到一点光了`,
+      `${holiday.name}正在加载中：<b>${holiday.workday}</b> 个工作日后，允许暂时从工位撤退`,
+      `离${holiday.name}不算远了，<b>${holiday.natural}</b> 个自然日后给自己安排点真正的休息`,
+      `下一站${holiday.name}，通常 ${holiday.daysOff} 天假，软团先帮你把盼头记上`
+    ]);
   }
 
   function formatDuration(ms: number, withSeconds = true) {

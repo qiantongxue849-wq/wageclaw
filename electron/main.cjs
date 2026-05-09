@@ -51,9 +51,6 @@ function createMainWindow() {
 
   loadRenderer(win, { view: "main" });
   win.webContents.setBackgroundThrottling(false);
-  win.once("ready-to-show", () => {
-    win.show();
-  });
   win.on("show", updateDockVisibility);
   win.on("hide", updateDockVisibility);
   win.on("closed", () => {
