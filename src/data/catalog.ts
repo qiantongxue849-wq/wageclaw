@@ -603,11 +603,135 @@ const lazyDogStages: PetStageDraft[] = [
   }
 ];
 
+const honestCowStages: PetStageDraft[] = [
+  {
+    idSuffix: "calf",
+    name: "老实小牛犊",
+    title: "工位草坪初醒形",
+    avatar: "牛",
+    sigil: "忍",
+    visual: "黑白斑纹小牛蹲在桌角，眉毛皱得很认真，鼻口粉粉的，像刚听完一句离谱需求。",
+    temperament: "老实但不傻，先替你把委屈含住，再慢慢嚼碎。",
+    features: ["黑白斑", "皱眉", "粉鼻口"],
+    palette: { body: "#f7f2e8", belly: "#ffd5bc", accent: "#242424", glow: "#d7e7a6", eye: "#171717", shadow: "#34312c" },
+    line: "哞。老实不是好欺负，我只是先把这口气咽成反刍素材。"
+  },
+  {
+    idSuffix: "straw",
+    name: "叼吸管牛牛",
+    title: "奶茶续命观察体",
+    avatar: "茶",
+    sigil: "茶",
+    visual: "小牛叼着奶茶吸管，眼神斜斜盯住需求方，黑耳朵一抖一抖。",
+    temperament: "表面在喝奶茶，实际在记下每一次临时变更。",
+    features: ["奶茶", "吸管", "斜眼"],
+    palette: { body: "#f8f1e5", belly: "#ffd1b4", accent: "#202020", glow: "#f0d66b", eye: "#151515", shadow: "#302d28" },
+    line: "我先喝一口，免得把刚才那句话直接顶回去。"
+  },
+  {
+    idSuffix: "brow",
+    name: "凶眉打工牛",
+    title: "不服但在岗形",
+    avatar: "眉",
+    sigil: "顶",
+    visual: "眉毛压得更低，额头冒出两只短角，蹄子边散着几张被嚼皱的待办便签。",
+    temperament: "开始有脾气，但脾气会先变成行动清单。",
+    features: ["短角", "凶眉", "待办便签"],
+    palette: { body: "#f5efe4", belly: "#ffc9aa", accent: "#1f1f1f", glow: "#b8df8d", eye: "#111111", shadow: "#2b2926" },
+    line: "可以做，但要写清楚边界。我的角已经开始记仇了。"
+  },
+  {
+    idSuffix: "tie",
+    name: "领结牛牛",
+    title: "礼貌反击入门形",
+    avatar: "结",
+    sigil: "礼",
+    visual: "胸前系上黑色小领结，站姿乖巧，眉眼却写着我全都听见了。",
+    temperament: "礼貌、克制、但不会再自动背锅。",
+    features: ["黑领结", "端正站姿", "克制眼神"],
+    palette: { body: "#fbf4e8", belly: "#ffc7a7", accent: "#191919", glow: "#efe2a0", eye: "#111111", shadow: "#292522" },
+    line: "收到。我会配合，但这锅请按流程分配，不要默认挂我角上。"
+  },
+  {
+    idSuffix: "suit",
+    name: "西装老实牛",
+    title: "职业微笑防御形",
+    avatar: "装",
+    sigil: "稳",
+    visual: "穿上黑色小西装，白衬衫和领结齐全，胸口别着一枚小花，像参考图里那只强撑体面的牛。",
+    temperament: "体面到有点好笑，但体面下面是很硬的边界感。",
+    features: ["黑西装", "小花", "职业皱眉"],
+    palette: { body: "#f8f2e7", belly: "#ffc8aa", accent: "#151515", glow: "#f4d16e", eye: "#101010", shadow: "#26221f" },
+    line: "我穿西装不是为了忍，是为了让反击看起来很正式。"
+  },
+  {
+    idSuffix: "badge",
+    name: "工牌主管牛",
+    title: "需求验收看门形",
+    avatar: "牌",
+    sigil: "审",
+    visual: "西装胸口多了工牌和小印章，身边漂着几枚验收勾选框，眉峰像两道门禁。",
+    temperament: "开始审需求、审口头承诺、审谁在装没说过。",
+    features: ["工牌", "印章", "验收框"],
+    palette: { body: "#f6efe3", belly: "#ffc19f", accent: "#171717", glow: "#9fd7b0", eye: "#0f0f0f", shadow: "#24211f" },
+    line: "口头说的也算数。牛牛已经把它盖章进记忆里了。"
+  },
+  {
+    idSuffix: "boss",
+    name: "老实巴交老板牛",
+    title: "反向管理预备形",
+    avatar: "板",
+    sigil: "管",
+    visual: "戴上小墨镜，西装更挺，手边有一杯奶茶和一叠需求变更单。",
+    temperament: "不再只执行，开始反向管理混乱。",
+    features: ["墨镜", "奶茶", "变更单"],
+    palette: { body: "#f3ece1", belly: "#ffba98", accent: "#111111", glow: "#e9d575", eye: "#0b0b0b", shadow: "#201d1a" },
+    line: "我不是老板，但我现在要开始管理老板的想象力。"
+  },
+  {
+    idSuffix: "storm",
+    name: "顶角风暴牛",
+    title: "会议废话清障形",
+    avatar: "角",
+    sigil: "清",
+    visual: "双角变亮，周围旋着被顶飞的废话气泡和 KPI 碎片，眼神凶得很正义。",
+    temperament: "遇到空话会直接顶散，给你留出能呼吸的空间。",
+    features: ["发光牛角", "废话气泡", "KPI 碎片"],
+    palette: { body: "#f0e9de", belly: "#ffaf8a", accent: "#0f0f0f", glow: "#8bd9c4", eye: "#080808", shadow: "#1c1a18" },
+    line: "这句没信息量，我先顶走。下一句请讲人话。"
+  },
+  {
+    idSuffix: "tux",
+    name: "礼服牛牛尊",
+    title: "职场体面反击形",
+    avatar: "礼",
+    sigil: "尊",
+    visual: "黑白礼服完整成型，胸前小花发光，背后是一圈奶茶色护盾光环。",
+    temperament: "又体面又不好惹，能把愤怒压成清晰条款。",
+    features: ["礼服", "小花光", "奶茶护盾"],
+    palette: { body: "#eee7db", belly: "#ffa983", accent: "#0d0d0d", glow: "#f0c96a", eye: "#060606", shadow: "#171513" },
+    line: "体面不是退让，是让每一句边界都站得更稳。"
+  },
+  {
+    idSuffix: "legend",
+    name: "老实巴交牛仙",
+    title: "牛牛桌宠终阶灵物",
+    avatar: "仙",
+    sigil: "牛",
+    visual: "最终形态像一只穿黑礼服的牛仙，凶眉、粉鼻、黑白斑纹和金色工牌光环同时在线。",
+    temperament: "忠厚、护主、会反刍怨气，也会把你从过度忍耐里顶出来。",
+    features: ["牛仙光环", "黑礼服", "金色工牌"],
+    palette: { body: "#ebe4d8", belly: "#ffa27c", accent: "#080808", glow: "#f2d36c", eye: "#030303", shadow: "#11100f" },
+    line: "老实可以，巴交可以，但被欺负不可以。今天由牛牛替你顶住。"
+  }
+];
+
 export const petStageSeries: Record<PetStyle, PetStage[]> = {
   rageBlob: petStages.map((stage) => ({ ...stage, style: "rageBlob" })),
   capybaraZen: buildPetStyleStages("capybaraZen", capybaraZenStages),
   lazyCat: buildPetStyleStages("lazyCat", lazyCatStages),
-  lazyDog: buildPetStyleStages("lazyDog", lazyDogStages)
+  lazyDog: buildPetStyleStages("lazyDog", lazyDogStages),
+  honestCow: buildPetStyleStages("honestCow", honestCowStages)
 };
 
 export const mallItems: MallItem[] = [
@@ -927,7 +1051,8 @@ export const petStyleLabels: Record<PetStyle, string> = {
   rageBlob: "怨气软团",
   capybaraZen: "与世无争卡皮巴拉",
   lazyCat: "摆烂猫系列",
-  lazyDog: "慵懒狗系"
+  lazyDog: "慵懒狗系",
+  honestCow: "老实巴交牛牛"
 };
 
 export const modeLabels: Record<CountMode, string> = {

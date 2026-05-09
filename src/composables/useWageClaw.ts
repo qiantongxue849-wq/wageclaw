@@ -217,7 +217,7 @@ export function useWageClaw() {
   const accountTab = ref<"wallet" | "wish">("wallet");
   const mallTab = ref<"inventory" | "shop">("inventory");
   const inventorySubTab = ref<"items" | "log">("items");
-  const petTab = ref<"status" | "furnace" | "log">("status");
+  const petTab = ref<"status" | "refine" | "feed" | "log">("status");
   const settingsTab = ref<"profile" | "appearance" | "schedule" | "data">("profile");
   const pages = reactive<Record<PageKey, number>>({
     transactions: 1,

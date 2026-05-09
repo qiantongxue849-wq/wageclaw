@@ -3,7 +3,7 @@
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Microsoft YaHei", sans-serif;
-  background: #f2f5f3;
+  background: transparent;
   color: #17201d;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,6 +24,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow: hidden;
+  background: transparent;
 }
 
 button,
@@ -70,6 +71,8 @@ select {
 }
 
 .app-root {
+  --app-window-padding: 8px;
+  --shell-radius: 14px;
   --bg: #efe9dc;
   --panel: rgba(255, 252, 242, 0.9);
   --panel-strong: #fffaf0;
@@ -85,12 +88,15 @@ select {
   --bad: #b34b40;
   --glow: rgba(197, 111, 66, 0.24);
   --shadow: 0 20px 48px rgba(66, 47, 28, 0.14);
+  position: relative;
+  isolation: isolate;
   min-height: 100vh;
   height: 100vh;
   display: flex;
   overflow: hidden;
   color: var(--text);
-  background: var(--bg);
+  background: transparent;
+  padding: var(--app-window-padding);
 }
 
 .app-root[data-theme="forest"] {
@@ -108,11 +114,6 @@ select {
   --glow: rgba(199, 137, 62, 0.24);
   --shadow: 0 20px 48px rgba(31, 35, 20, 0.2);
   font-family: "LXGW WenKai", "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif;
-  background:
-    radial-gradient(circle at 14% 20%, rgba(199, 137, 62, 0.18), transparent 28%),
-    linear-gradient(135deg, rgba(43, 96, 73, 0.34), transparent 48%),
-    repeating-linear-gradient(90deg, rgba(255, 244, 210, 0.025) 0 1px, transparent 1px 18px),
-    var(--bg);
 }
 
 .app-root[data-theme="arcade"] {
@@ -130,12 +131,6 @@ select {
   --glow: rgba(91, 231, 255, 0.2);
   --shadow: 0 22px 54px rgba(0, 0, 0, 0.38);
   font-family: "Cascadia Mono", Consolas, "Microsoft YaHei", monospace;
-  background:
-    linear-gradient(90deg, rgba(91, 231, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(rgba(255, 109, 168, 0.08) 1px, transparent 1px),
-    radial-gradient(circle at 82% 12%, rgba(255, 212, 77, 0.16), transparent 26%),
-    var(--bg);
-  background-size: 22px 22px, 22px 22px, auto, auto;
 }
 
 .app-root[data-theme="sakura"] {
@@ -153,10 +148,6 @@ select {
   --glow: rgba(220, 124, 143, 0.2);
   --shadow: 0 20px 44px rgba(110, 72, 92, 0.16);
   font-family: "Yu Gothic UI", "Microsoft YaHei", sans-serif;
-  background:
-    radial-gradient(circle at 12% 20%, rgba(220, 124, 143, 0.22), transparent 24%),
-    radial-gradient(circle at 78% 8%, rgba(71, 124, 112, 0.12), transparent 28%),
-    linear-gradient(135deg, #fbecf1, #f7f0df);
 }
 
 .app-root[data-theme="ink"] {
@@ -174,11 +165,6 @@ select {
   --glow: rgba(179, 69, 57, 0.18);
   --shadow: 0 18px 42px rgba(35, 31, 22, 0.16);
   font-family: SimSun, "Songti SC", "Microsoft YaHei", serif;
-  background:
-    radial-gradient(ellipse at 18% 12%, rgba(31, 63, 58, 0.14), transparent 34%),
-    linear-gradient(100deg, rgba(179, 69, 57, 0.12), transparent 42%),
-    repeating-linear-gradient(0deg, rgba(28, 27, 24, 0.035) 0 1px, transparent 1px 15px),
-    var(--bg);
 }
 
 .app-root[data-theme="citrus"] {
@@ -196,17 +182,15 @@ select {
   --glow: rgba(238, 157, 47, 0.24);
   --shadow: 0 18px 44px rgba(122, 96, 30, 0.17);
   font-family: "Trebuchet MS", "Microsoft YaHei", sans-serif;
-  background:
-    radial-gradient(circle at 85% 18%, rgba(22, 127, 131, 0.16), transparent 26%),
-    linear-gradient(135deg, rgba(217, 95, 95, 0.12), transparent 38%),
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 8px, transparent 8px 18px),
-    var(--bg);
 }
 
 .surface-grid {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  inset: var(--app-window-padding);
+  z-index: 0;
   pointer-events: none;
+  overflow: hidden;
+  border-radius: var(--shell-radius);
   opacity: 0.36;
   background-image:
     linear-gradient(110deg, transparent 0 46%, color-mix(in srgb, var(--accent-2), transparent 88%) 46% 47%, transparent 47% 100%),
@@ -230,23 +214,44 @@ select {
   --bad: #b34b40;
   --glow: rgba(197, 111, 66, 0.24);
   --shadow: 0 16px 34px rgba(66, 47, 28, 0.1);
-  width: 100vw;
-  height: 100vh;
+  --shell-bg:
+    linear-gradient(120deg, rgba(255, 253, 247, 0.96), rgba(246, 238, 224, 0.94)),
+    var(--panel-strong);
+  --title-main-bg: color-mix(in srgb, var(--panel-strong), var(--surface) 20%);
+  --title-bridge-bg: var(--title-main-bg);
+  --title-drag-color: rgba(255, 244, 220, 0.72);
+  --title-tool-color: color-mix(in srgb, var(--text), transparent 28%);
+  --title-tool-hover-bg: color-mix(in srgb, var(--surface), white 18%);
+  --sidebar-bg:
+    linear-gradient(180deg, rgba(118, 154, 133, 0.14), transparent 34%),
+    linear-gradient(145deg, #0d3b34, #06231f 72%);
+  --sidebar-bg-size: auto;
+  --sidebar-title-bg: var(--sidebar-bg);
+  --sidebar-title-bg-size: var(--sidebar-bg-size);
+  --shell-outline: rgba(71, 53, 35, 0.1);
+  --shell-shadow-color: transparent;
+  --sidebar-width: 216px;
+  --sidebar-transition-width: 0px;
+  --sidebar-solid-width: calc(var(--sidebar-width) - var(--sidebar-transition-width));
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   display: grid;
-  grid-template-columns: 216px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   grid-template-rows: 32px minmax(0, 1fr);
   gap: 0;
   overflow: hidden;
   border: 0;
-  border-radius: 0;
-  background:
-    linear-gradient(120deg, rgba(255, 253, 247, 0.96), rgba(246, 238, 224, 0.94)),
-    var(--panel-strong);
+  border-radius: var(--shell-radius);
+  background: var(--shell-bg);
+  background-size: var(--shell-bg-size, auto);
   box-shadow: none;
 }
 
 .title-bar {
   grid-column: 1 / -1;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -257,13 +262,35 @@ select {
   background: transparent;
 }
 
+.title-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0 var(--sidebar-solid-width),
+      var(--title-bridge-bg) var(--sidebar-solid-width) var(--sidebar-width),
+      var(--title-main-bg) var(--sidebar-width) 100%
+    ),
+    var(--sidebar-title-bg);
+  background-size:
+    100%,
+    var(--sidebar-title-bg-size);
+}
+
 .title-drag {
+  position: relative;
+  z-index: 1;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--title-drag-color);
   letter-spacing: 0.04em;
 }
 
 .title-tools {
+  position: relative;
+  z-index: 1;
   display: flex;
   gap: 4px;
   align-items: center;
@@ -278,13 +305,14 @@ select {
   place-items: center;
   border: 1px solid transparent;
   border-radius: 6px;
-  color: color-mix(in srgb, var(--text), transparent 30%);
+  color: var(--title-tool-color);
   background: transparent;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .title-tools .window-tool:hover {
-  background: var(--surface);
+  color: var(--text);
+  background: var(--title-tool-hover-bg);
   border-color: var(--line);
 }
 
@@ -352,13 +380,15 @@ select {
   height: 28px;
   border-radius: 6px;
   border: 1px solid transparent;
-  color: var(--muted);
+  color: var(--title-tool-color);
   background: transparent;
-  transition: background 0.15s, color 0.15s;
+  opacity: 1;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .title-btn:hover {
-  background: var(--surface);
+  background: var(--title-tool-hover-bg);
+  border-color: var(--line);
   color: var(--text);
 }
 
@@ -380,10 +410,21 @@ select {
   --accent-3: #526f9f;
   --glow: rgba(199, 137, 62, 0.24);
   --shadow: 0 20px 48px rgba(31, 35, 20, 0.2);
-  border-color: rgba(224, 191, 112, 0.42);
-  background:
+  --shell-bg:
     radial-gradient(circle at 10% 0, rgba(45, 107, 85, 0.16), transparent 34%),
     linear-gradient(120deg, rgba(255, 249, 226, 0.96), rgba(232, 214, 176, 0.94));
+  --title-main-bg: #ece2c6;
+  --title-bridge-bg: var(--title-main-bg);
+  --title-drag-color: rgba(255, 244, 220, 0.74);
+  --title-tool-color: rgba(74, 68, 52, 0.76);
+  --title-tool-hover-bg: rgba(255, 249, 226, 0.72);
+  --sidebar-bg:
+    radial-gradient(circle at 22% 8%, rgba(199, 137, 62, 0.22), transparent 28%),
+    linear-gradient(160deg, #244f3d, #14251d 76%);
+  --shell-outline: rgba(116, 86, 38, 0.12);
+  --shell-shadow-color: transparent;
+  border-color: rgba(224, 191, 112, 0.42);
+  background: var(--shell-bg);
 }
 
 .app-root[data-theme="arcade"] .desktop-shell {
@@ -399,16 +440,26 @@ select {
   --accent-3: #ffd44d;
   --glow: rgba(91, 231, 255, 0.2);
   --shadow: 0 22px 54px rgba(0, 0, 0, 0.38);
-  border-color: rgba(91, 231, 255, 0.48);
-  background:
+  --shell-bg:
     linear-gradient(90deg, rgba(91, 231, 255, 0.06) 1px, transparent 1px),
     linear-gradient(rgba(255, 109, 168, 0.06) 1px, transparent 1px),
     #171b2f;
-  background-size: 24px 24px;
-  box-shadow:
-    0 0 0 2px rgba(255, 109, 168, 0.24),
-    0 0 42px rgba(91, 231, 255, 0.16),
-    0 30px 92px rgba(0, 0, 0, 0.48);
+  --title-main-bg: #181d31;
+  --title-bridge-bg: var(--title-main-bg);
+  --title-drag-color: rgba(248, 245, 255, 0.72);
+  --title-tool-color: rgba(248, 245, 255, 0.72);
+  --title-tool-hover-bg: rgba(91, 231, 255, 0.12);
+  --shell-bg-size: 24px 24px, 24px 24px, auto;
+  --sidebar-bg:
+    linear-gradient(90deg, rgba(91, 231, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(255, 109, 168, 0.1) 1px, transparent 1px),
+    linear-gradient(155deg, #171a36, #0b0f21 76%);
+  --sidebar-bg-size: 18px 18px, 18px 18px, auto;
+  --shell-outline: rgba(91, 231, 255, 0.24);
+  --shell-shadow-color: transparent;
+  border-color: rgba(91, 231, 255, 0.48);
+  background: var(--shell-bg);
+  box-shadow: none;
 }
 
 .app-root[data-theme="sakura"] .desktop-shell {
@@ -424,10 +475,21 @@ select {
   --accent-3: #477c70;
   --glow: rgba(220, 124, 143, 0.2);
   --shadow: 0 20px 44px rgba(110, 72, 92, 0.16);
-  border-color: rgba(220, 124, 143, 0.3);
-  background:
+  --shell-bg:
     radial-gradient(circle at 82% 0, rgba(220, 124, 143, 0.14), transparent 34%),
     linear-gradient(120deg, rgba(255, 251, 247, 0.98), rgba(248, 226, 224, 0.94));
+  --title-main-bg: #f6e5df;
+  --title-bridge-bg: var(--title-main-bg);
+  --title-drag-color: rgba(255, 244, 250, 0.76);
+  --title-tool-color: rgba(73, 58, 78, 0.72);
+  --title-tool-hover-bg: rgba(255, 250, 246, 0.78);
+  --sidebar-bg:
+    radial-gradient(circle at 16% 8%, rgba(255, 217, 225, 0.25), transparent 28%),
+    linear-gradient(155deg, #704d72, #29334f 76%);
+  --shell-outline: rgba(169, 100, 126, 0.12);
+  --shell-shadow-color: transparent;
+  border-color: rgba(220, 124, 143, 0.3);
+  background: var(--shell-bg);
 }
 
 .app-root[data-theme="ink"] .desktop-shell {
@@ -443,11 +505,22 @@ select {
   --accent-3: #314f87;
   --glow: rgba(179, 69, 57, 0.18);
   --shadow: 0 18px 42px rgba(35, 31, 22, 0.16);
-  border-color: rgba(31, 63, 58, 0.28);
-  background:
+  --shell-bg:
     linear-gradient(90deg, rgba(28, 27, 24, 0.035) 1px, transparent 1px),
     linear-gradient(120deg, rgba(252, 247, 236, 0.98), rgba(232, 223, 205, 0.96));
-  background-size: 18px 18px, auto;
+  --title-main-bg: #e9dfcb;
+  --title-bridge-bg: var(--title-main-bg);
+  --title-drag-color: rgba(255, 248, 236, 0.72);
+  --title-tool-color: rgba(28, 27, 24, 0.68);
+  --title-tool-hover-bg: rgba(251, 247, 238, 0.72);
+  --shell-bg-size: 18px 18px, auto;
+  --sidebar-bg:
+    linear-gradient(180deg, rgba(179, 69, 57, 0.15), transparent 34%),
+    linear-gradient(155deg, #263632, #151614 78%);
+  --shell-outline: rgba(31, 63, 58, 0.12);
+  --shell-shadow-color: transparent;
+  border-color: rgba(31, 63, 58, 0.28);
+  background: var(--shell-bg);
 }
 
 .app-root[data-theme="citrus"] .desktop-shell {
@@ -463,10 +536,21 @@ select {
   --accent-3: #d95f5f;
   --glow: rgba(238, 157, 47, 0.24);
   --shadow: 0 18px 44px rgba(122, 96, 30, 0.17);
-  border-color: rgba(22, 127, 131, 0.34);
-  background:
+  --shell-bg:
     radial-gradient(circle at 78% 0, rgba(238, 157, 47, 0.18), transparent 34%),
     linear-gradient(120deg, rgba(255, 253, 238, 0.98), rgba(246, 230, 182, 0.94));
+  --title-main-bg: #f4e7bd;
+  --title-bridge-bg: var(--title-main-bg);
+  --title-drag-color: rgba(255, 250, 224, 0.74);
+  --title-tool-color: rgba(32, 35, 51, 0.68);
+  --title-tool-hover-bg: rgba(255, 253, 238, 0.76);
+  --sidebar-bg:
+    radial-gradient(circle at 18% 8%, rgba(255, 210, 80, 0.32), transparent 28%),
+    linear-gradient(155deg, #126b6e, #1f2d45 76%);
+  --shell-outline: rgba(22, 127, 131, 0.12);
+  --shell-shadow-color: transparent;
+  border-color: rgba(22, 127, 131, 0.34);
+  background: var(--shell-bg);
 }
 
 .sidebar,
@@ -480,7 +564,6 @@ select {
 }
 
 .sidebar {
-  --sidebar-transition-width: 18px;
   --sidebar-bg:
     linear-gradient(180deg, rgba(118, 154, 133, 0.14), transparent 34%),
     linear-gradient(145deg, #0d3b34, #06231f 72%);
@@ -498,6 +581,8 @@ select {
   overflow: hidden;
   -webkit-app-region: drag;
   background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .sidebar::before {
@@ -619,6 +704,7 @@ select {
   gap: 12px;
   overflow-y: auto;
   padding-bottom: 12px;
+  -webkit-app-region: no-drag;
 }
 
 .nav-scroll::-webkit-scrollbar {
@@ -631,11 +717,11 @@ select {
 
 .nav-scroll::-webkit-scrollbar-thumb {
   border-radius: 99px;
-  background: rgba(255, 244, 223, 0.18);
+  background: rgba(111, 102, 80, 0.72);
 }
 
 .nav-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 244, 223, 0.36);
+  background: rgba(111, 102, 80, 0.92);
 }
 
 .nav-scroll::-webkit-scrollbar-button {
@@ -1036,9 +1122,11 @@ select {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
-  padding: 18px 0 12px;
-  background:
-    linear-gradient(180deg, var(--panel-strong) 62%, transparent);
+  margin: 0 -20px 0 calc(-20px - var(--sidebar-transition-width, 18px));
+  padding: 18px 20px 12px calc(20px + var(--sidebar-transition-width, 18px));
+  background: color-mix(in srgb, var(--panel), transparent 38%);
+  backdrop-filter: blur(20px) saturate(1.12);
+  border-bottom: 1px solid var(--line);
 }
 
 .topbar-title {
@@ -3198,6 +3286,9 @@ select {
   user-select: none;
   -webkit-user-drag: none;
   transition: filter 0.3s, transform 0.15s;
+  will-change: filter, transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .floating-pet:active,
@@ -3837,10 +3928,13 @@ select {
 }
 
 @media (max-width: 980px) {
+  .app-root {
+    --app-window-padding: 8px;
+    --shell-radius: 10px;
+  }
+
   .desktop-shell {
-    width: calc(100vw - 16px);
-    height: calc(100vh - 16px);
-    grid-template-columns: 190px minmax(0, 1fr);
+    --sidebar-width: 190px;
   }
 
   .sidebar {
@@ -3869,10 +3963,13 @@ select {
 }
 
 @media (max-width: 640px) {
+  .app-root {
+    --app-window-padding: 5px;
+    --shell-radius: 8px;
+  }
+
   .desktop-shell {
-    width: calc(100vw - 10px);
-    height: calc(100vh - 10px);
-    grid-template-columns: 72px minmax(0, 1fr);
+    --sidebar-width: 72px;
   }
 
   .sidebar {

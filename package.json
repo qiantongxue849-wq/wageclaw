@@ -12,7 +12,8 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "dist:mac": "npm run build && electron-builder -- --mac",
-    "dist:mac:dmg:localfix": "npm run build && electron-builder --mac dmg"
+    "dist:mac:dmg:localfix": "npm run build && electron-builder --mac dmg",
+    "dist:win": "npm run build && electron-builder --win"
   },
   "dependencies": {
     "vue": "^3.5.22"
@@ -43,6 +44,16 @@
         "zip"
       ],
       "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     }
   }
 }

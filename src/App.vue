@@ -7,6 +7,7 @@ import rageBlobPreview from "@/assets/pet-stages-preview.png";
 import capybaraZenPreview from "@/assets/pet-previews/capybara-zen.png";
 import lazyCatPreview from "@/assets/pet-previews/lazy-cat.png";
 import lazyDogPreview from "@/assets/pet-previews/lazy-dog.png";
+import honestCowPreview from "@/assets/pet-previews/honest-cow.png";
 import walletCardArt from "@/assets/ui-art/wallet-paw-coins.png";
 import supplyCardArt from "@/assets/ui-art/supply-cache.png";
 import type { Mood, PetStyle } from "@/types";
@@ -49,6 +50,10 @@ const petStylePreview = {
   lazyDog: {
     image: lazyDogPreview,
     summary: "慵懒陪伴犬系，温吞守护、慢速回血。"
+  },
+  honestCow: {
+    image: honestCowPreview,
+    summary: "老实巴交牛牛系，黑白斑纹、凶眉护主，嘴上很怂但眼神很硬。"
   }
 } satisfies Record<PetStyle, { image: string; summary: string }>;
 
@@ -112,20 +117,6 @@ const pageLabels = {
       </div>
     </template>
 
-    <div
-      v-if="wc.state.pet.summoned && isMainView"
-      class="floating-pet"
-      :class="[wc.petReaction, { dragging: wc.petDragging }]"
-      :style="{ left: `${wc.petPos.x}px`, top: `${wc.petPos.y}px` }"
-      @mousedown="wc.startPetDrag"
-      @dblclick="wc.showPetDialog"
-    >
-      <div class="pet-bubble" v-if="wc.summonedBubble">{{ wc.summonedBubble }}</div>
-      <div class="pet-dialog" v-if="wc.petDialog" v-html="wc.petDialog"></div>
-      <PetSprite :stage="wc.currentPetStage" mode="compact" />
-      <button class="pet-close" @mousedown.stop @click.stop="wc.setPetSummoned(false)" aria-label="收回桌宠">×</button>
-    </div>
-
     <div v-if="wc.goldRush" class="gold-rush" aria-hidden="true">
       <span v-for="n in 12" :key="n" class="gold-coin" :style="{ animationDelay: `${(n - 1) * 0.06}s`, left: `${40 + Math.random() * 20}%` }">🪙</span>
     </div>
@@ -166,7 +157,7 @@ const pageLabels = {
           <div class="title-tools">
             <button class="window-tool calendar-tool" title="倒计时" @click="wc.setActiveScreen('sync')"></button>
             <button class="window-tool bell-tool" title="提醒"></button>
-            <button class="window-tool pet-tool" title="桌宠" @click="wc.handleConsolePetSummonClick(); wc.setActiveScreen('pet')"></button>
+            <button class="window-tool pet-tool" title="桌宠" @click="wc.setActiveScreen('pet')"></button>
             <button class="title-btn" @click="wc.minimizeMainWindow()" title="最小化"><svg width="10" height="10" viewBox="0 0 10 10"><rect y="4.5" width="10" height="1" fill="currentColor"/></svg></button>
             <button class="title-btn" @click="wc.maximizeMainWindow()" title="最大化"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
             <button class="title-btn title-btn-close" @click="wc.closeMainWindow()" title="关闭"><svg width="10" height="10" viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1.4"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1.4"/></svg></button>
@@ -583,7 +574,8 @@ const pageLabels = {
 
             <div class="segmented wide-tabs">
               <button type="button" :class="{ active: wc.petTab === 'status' }" @click="wc.petTab = 'status'">状态</button>
-              <button type="button" :class="{ active: wc.petTab === 'furnace' }" @click="wc.petTab = 'furnace'">炼化与投喂</button>
+              <button type="button" :class="{ active: wc.petTab === 'refine' }" @click="wc.petTab = 'refine'">炼化</button>
+              <button type="button" :class="{ active: wc.petTab === 'feed' }" @click="wc.petTab = 'feed'">投喂</button>
               <button type="button" :class="{ active: wc.petTab === 'log' }" @click="wc.petTab = 'log'">日志</button>
             </div>
 
@@ -645,40 +637,39 @@ const pageLabels = {
               </div>
             </section>
 
-            <section v-show="wc.petTab === 'furnace'" class="two-column">
-              <article class="panel-block">
-                <header class="panel-header">
-                  <h3>糟心事炼化炉</h3>
-                  <span>今日怨气 {{ Math.round(wc.state.dailyRage.value) }}</span>
-                </header>
-                <textarea v-model="wc.rantText" rows="8" placeholder="例：老板把临时起意说成我的成长机会，还问我为什么不够主动。"></textarea>
-                <div class="action-row">
-                  <button type="button" class="primary-button" @click="wc.refineRageFromRant">炼化为怨气</button>
-                  <button type="button" class="secondary-button" @click="wc.refineLightFromRant">转化为灵力</button>
-                </div>
-              </article>
-              <article class="panel-block">
-                <header class="panel-header">
-                  <h3>可投喂供品</h3>
-                  <span>{{ wc.pagedPetSupplyItems.totalItems }} 类</span>
-                </header>
-                <div class="list-stack empty-ok">
-                  <article v-for="entry in wc.pagedPetSupplyItems.items" :key="entry.item.id" class="list-item">
-                    <div class="badge">{{ entry.item.icon }}</div>
-                    <div>
-                      <strong>{{ entry.item.name }} x{{ entry.quantity }}</strong>
-                      <small>{{ wc.formatPetBoost(entry.item.petBoost) }}</small>
-                    </div>
-                    <button type="button" @click="wc.useItem(entry.item)">投喂</button>
-                  </article>
-                  <p v-if="wc.pagedPetSupplyItems.totalItems === 0" class="empty-state">背包里暂时没有桌宠供品。</p>
-                </div>
-                <footer class="pager">
-                  <button type="button" @click="wc.setPage('petSupply', -1)">上一页</button>
-                  <span>{{ wc.pagedPetSupplyItems.current }} / {{ wc.pagedPetSupplyItems.totalPages }}</span>
-                  <button type="button" @click="wc.setPage('petSupply', 1)">下一页</button>
-                </footer>
-              </article>
+            <section v-show="wc.petTab === 'refine'" class="panel-block">
+              <header class="panel-header">
+                <h3>糟心事炼化炉</h3>
+                <span>今日怨气 {{ Math.round(wc.state.dailyRage.value) }}</span>
+              </header>
+              <textarea v-model="wc.rantText" rows="8" placeholder="例：老板把临时起意说成我的成长机会，还问我为什么不够主动。"></textarea>
+              <div class="action-row">
+                <button type="button" class="primary-button" @click="wc.refineRageFromRant">炼化为怨气</button>
+                <button type="button" class="secondary-button" @click="wc.refineLightFromRant">转化为灵力</button>
+              </div>
+            </section>
+
+            <section v-show="wc.petTab === 'feed'" class="panel-block">
+              <header class="panel-header">
+                <h3>可投喂供品</h3>
+                <span>{{ wc.pagedPetSupplyItems.totalItems }} 类</span>
+              </header>
+              <div class="list-stack empty-ok">
+                <article v-for="entry in wc.pagedPetSupplyItems.items" :key="entry.item.id" class="list-item">
+                  <div class="badge">{{ entry.item.icon }}</div>
+                  <div>
+                    <strong>{{ entry.item.name }} x{{ entry.quantity }}</strong>
+                    <small>{{ wc.formatPetBoost(entry.item.petBoost) }}</small>
+                  </div>
+                  <button type="button" @click="wc.useItem(entry.item)">投喂</button>
+                </article>
+                <p v-if="wc.pagedPetSupplyItems.totalItems === 0" class="empty-state">背包里暂时没有桌宠供品。</p>
+              </div>
+              <footer class="pager">
+                <button type="button" @click="wc.setPage('petSupply', -1)">上一页</button>
+                <span>{{ wc.pagedPetSupplyItems.current }} / {{ wc.pagedPetSupplyItems.totalPages }}</span>
+                <button type="button" @click="wc.setPage('petSupply', 1)">下一页</button>
+              </footer>
             </section>
 
             <section v-show="wc.petTab === 'log'" class="panel-block">

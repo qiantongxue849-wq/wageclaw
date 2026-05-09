@@ -14,6 +14,7 @@ import stage10 from "@/assets/pet-stages/level-10-immortal.png";
 import capybaraZenSheet from "@/assets/pet-sheets/capybara-zen-sheet.png";
 import lazyCatSheet from "@/assets/pet-sheets/lazy-cat-sheet.png";
 import lazyDogSheet from "@/assets/pet-sheets/lazy-dog-sheet.png";
+import honestCowSheet from "@/assets/pet-sheets/honest-cow-sheet.png";
 import type { PetStage, PetStyle } from "@/types";
 
 const props = withDefaults(
@@ -42,7 +43,8 @@ const petArt: Record<string, string> = {
 const petSheets: Partial<Record<PetStyle, string>> = {
   capybaraZen: capybaraZenSheet,
   lazyCat: lazyCatSheet,
-  lazyDog: lazyDogSheet
+  lazyDog: lazyDogSheet,
+  honestCow: honestCowSheet
 };
 
 const spriteClass = computed(() => [`stage-${props.stage.level}`, `mode-${props.mode}`, `pet-style-${props.stage.style || "rageBlob"}`]);
@@ -100,6 +102,7 @@ const styleVars = computed(
   place-items: center;
   isolation: isolate;
   filter: drop-shadow(0 18px 24px color-mix(in srgb, var(--pet-shadow), transparent 52%));
+  will-change: filter;
   animation: pet-float 3.6s ease-in-out infinite;
 }
 
@@ -469,6 +472,10 @@ const styleVars = computed(
 
 .pet-style-lazyDog .pet-crown {
   clip-path: polygon(0 100%, 16% 44%, 36% 82%, 50% 18%, 64% 82%, 84% 44%, 100% 100%);
+}
+
+.pet-style-honestCow .pet-sheet-art {
+  filter: drop-shadow(0 12px 12px rgba(37, 31, 25, 0.22));
 }
 
 .stage-1 .pet-eye-left,

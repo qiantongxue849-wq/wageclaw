@@ -8,6 +8,13 @@ const PET_CENTER_PREVIEW = process.env.WAGECLAW_PET_CENTER === "1" || process.ar
 let mainWindow = null;
 let petWindow = null;
 let blackoutWindow = null;
+
+process.on("uncaughtException", (err) => {
+  console.error("[FATAL]", err);
+  const { dialog } = require("electron");
+  dialog.showErrorBox("启动错误", err.stack || err.message);
+  process.exit(1);
+});
 let petRicochetTimer = null;
 let petStormTimer = null;
 let petNukeTimer = null;
@@ -30,10 +37,11 @@ function createMainWindow() {
     minWidth: 860,
     minHeight: 560,
     frame: false,
-    titleBarStyle: "hidden",
+    transparent: true,
+    backgroundColor: "#00000000",
     autoHideMenuBar: true,
     title: "忍了吧 WageClaw",
-    backgroundColor: "#efe9dc",
+    hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -42,6 +50,10 @@ function createMainWindow() {
   });
 
   loadRenderer(win, { view: "main" });
+  win.webContents.setBackgroundThrottling(false);
+  win.once("ready-to-show", () => {
+    win.show();
+  });
   win.on("show", updateDockVisibility);
   win.on("hide", updateDockVisibility);
   win.on("closed", () => {
@@ -74,7 +86,7 @@ function createPetWindow() {
     skipTaskbar: true,
     hasShadow: false,
     title: "忍了吧桌宠",
-    backgroundColor: "#00000000",
+    backgroundColor: "#00000001",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -84,16 +96,20 @@ function createPetWindow() {
   });
 
   loadRenderer(win, { view: "float" });
-  win.webContents.insertCSS(`
-    html, body, #app { margin: 0; padding: 0; background: transparent !important; width: 100%; height: 100%; overflow: hidden !important; }
-    .app-root, .app-root[data-theme] { background: transparent !important; width: 100vw; height: 100vh; min-height: 0; padding: 0; display: block; place-items: unset; overflow: hidden !important; }
-    .app-root > :not(.floating-pet) { display: none !important; }
-    .app-root > section { display: none !important; }
-    .surface-grid { display: none !important; }
-    body::before, body::after, html::before, html::after { display: none !important; }
-  `);
+  win.webContents.on("did-finish-load", () => {
+    win.webContents.insertCSS(`
+      html, body, #app { margin: 0; padding: 0; background: transparent !important; width: 100%; height: 100%; overflow: hidden !important; }
+      .app-root, .app-root[data-theme] { background: transparent !important; min-height: 0; padding: 0; display: block; place-items: unset; overflow: hidden !important; }
+      .app-root > :not(.floating-pet):not(.pet-dialog):not(.pet-bubble) { display: none !important; }
+      .app-root > section { display: none !important; }
+      .surface-grid { display: none !important; }
+      body::before, body::after, html::before, html::after { display: none !important; }
+      ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+      .floating-pet, .pet-sprite { will-change: transform, filter !important; backface-visibility: hidden !important; }
+      .floating-pet:not(.float-mode) { transform: translateZ(0) !important; }
+    `);
+  });
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  win.setIgnoreMouseEvents(true, { forward: true });
   win.webContents.once("did-finish-load", () => {
     if (!win.isDestroyed()) {
       win.show();
@@ -119,8 +135,16 @@ function loadRenderer(win, query = {}) {
     win.loadURL(`${DEV_SERVER_URL}${params ? `?${params}` : ""}`);
     return;
   }
-  win.loadFile(path.join(app.getAppPath(), "dist", "index.html"), {
-    query
+
+  const filePath = path.join(app.getAppPath(), "dist", "index.html");
+  console.log("[loadRenderer] loading:", filePath, "query:", query);
+  win.loadFile(filePath, { query }).catch((err) => {
+    console.error("[loadRenderer] loadFile failed:", err.message);
+    win.loadURL(`data:text/html,<h1>加载失败</h1><pre>${err.message}</pre>`);
+  });
+
+  win.webContents.on("did-fail-load", (_, code, desc) => {
+    console.error("[loadRenderer] did-fail-load:", code, desc);
   });
 }
 
@@ -329,152 +353,140 @@ function ensureMainWindow() {
 }
 
 function showMainWindow(screen) {
-  const win = ensureMainWindow();
-  const sendScreen = () => {
-    if (screen) {
-      win.webContents.send("wageclaw:navigate", { screen });
-    }
-  };
-
-  if (win.webContents.isLoading()) {
-    win.webContents.once("did-finish-load", sendScreen);
-  } else {
-    sendScreen();
-  }
-
-  if (win.isMinimized()) {
-    win.restore();
-  }
-  if (!win.isVisible()) {
-    win.show();
-  }
-  win.show();
-  win.focus();
-  updateDockVisibility();
-}
-
-function togglePetWindow(enabled) {
-  if (enabled) {
-    if (!petWindow || petWindow.isDestroyed()) {
-      petWindow = createPetWindow();
-    }
-    petWindow.show();
-    return true;
-  }
-  if (petWindow && !petWindow.isDestroyed()) {
-    petWindow.hide();
-  }
-  return false;
-}
-
-app.whenReady().then(() => {
-  ipcMain.handle("wageclaw:focus-screen", (_, screen) => {
-    showMainWindow(screen);
-    return { ok: true, screen };
-  });
-
-  ipcMain.handle("wageclaw:open-main-panel", () => {
-    showMainWindow("converter");
-    return { ok: true };
-  });
-
-  ipcMain.handle("wageclaw:toggle-pet", (_, enabled) => {
-    const visible = togglePetWindow(Boolean(enabled));
-    return { ok: true, visible };
-  });
-
-  ipcMain.handle("wageclaw:pet-command", (_, payload) => {
-    const command = payload || {};
-    sendPetCommandToMain(command);
-    return { ok: true };
-  });
-
-  ipcMain.handle("wageclaw:pet-resize", (_, { width, height }) => {
-    if (petWindow && !petWindow.isDestroyed()) {
-      petWindow.setSize(width || 200, height || 320);
-    }
-    return { ok: true };
-  });
-
-  ipcMain.on("wageclaw:pet-hit-test", (event, interactive) => {
-    if (!petWindow || petWindow.isDestroyed() || event.sender !== petWindow.webContents) return;
-    petWindow.setIgnoreMouseEvents(!interactive, { forward: true });
-  });
-
-  ipcMain.handle("wageclaw:show-pet", () => {
-    if (!petWindow || petWindow.isDestroyed()) {
-      petWindow = createPetWindow();
-    }
-    petWindow.setSize(240, 340);
-    const { workArea } = screen.getPrimaryDisplay();
-    petWindow.setPosition(
-      workArea.x + workArea.width - 260,
-      workArea.y + workArea.height - 360
-    );
-    petWindow.show();
-    return { ok: true };
-  });
-
-  ipcMain.handle("wageclaw:trigger-blackout", (_, payload) => {
-    triggerDesktopBlackout(payload || {});
-    return { ok: true };
-  });
-
-  ipcMain.handle("wageclaw:pet-ricochet", () => {
-    const visible = triggerPetRicochet();
-    return { ok: true, visible };
-  });
-
-  ipcMain.handle("wageclaw:pet-storm", () => {
-    const visible = triggerPetStorm();
-    return { ok: true, visible };
-  });
-
-  ipcMain.handle("wageclaw:pet-nuke", () => {
-    const visible = triggerPetNuke();
-    return { ok: true, visible };
-  });
-
-  ipcMain.on("wageclaw:close-main-window", () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.close();
-    }
-  });
-
-  ipcMain.on("wageclaw:minimize-main-window", () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.minimize();
-    }
-  });
-
-  ipcMain.on("wageclaw:maximize-main-window", () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      if (mainWindow.isMaximized()) {
-        mainWindow.unmaximize();
-      } else {
-        mainWindow.maximize();
+    const win = ensureMainWindow();
+    const sendScreen = () => {
+      if (screen && !win.isDestroyed()) {
+        win.webContents.send("wageclaw:navigate", { screen });
       }
+    };
+
+    if (win.webContents.isLoading()) {
+      win.webContents.once("did-finish-load", sendScreen);
+    } else {
+      sendScreen();
     }
-  });
 
-  if (PET_ONLY_PREVIEW) {
-    petWindow = createPetWindow();
-    petWindow.show();
-  } else {
-    mainWindow = createMainWindow();
-    mainWindow.show();
+    if (win.isMinimized()) {
+      win.restore();
+    }
+    win.show();
+    win.focus();
+    updateDockVisibility();
   }
-  updateDockVisibility();
 
-  app.on("activate", () => {
-    if (PET_ONLY_PREVIEW) {
+  function togglePetWindow(enabled) {
+    if (enabled) {
       if (!petWindow || petWindow.isDestroyed()) {
         petWindow = createPetWindow();
       }
       petWindow.show();
-      return;
+      return true;
     }
-    showMainWindow("converter");
+    if (petWindow && !petWindow.isDestroyed()) {
+      petWindow.hide();
+    }
+    return false;
+  }
+
+  app.whenReady().then(() => {
+    ipcMain.handle("wageclaw:focus-screen", (_, screen) => {
+      showMainWindow(screen);
+      return { ok: true, screen };
+    });
+
+    ipcMain.handle("wageclaw:open-main-panel", () => {
+      showMainWindow("converter");
+      return { ok: true };
+    });
+
+    ipcMain.handle("wageclaw:toggle-pet", (_, enabled) => {
+      const visible = togglePetWindow(Boolean(enabled));
+      return { ok: true, visible };
+    });
+
+    ipcMain.handle("wageclaw:pet-command", (_, payload) => {
+      const command = payload || {};
+      sendPetCommandToMain(command);
+      return { ok: true };
+    });
+
+    ipcMain.handle("wageclaw:pet-resize", (_, { width, height }) => {
+      if (petWindow && !petWindow.isDestroyed()) {
+        petWindow.setSize(width || 200, height || 320);
+      }
+      return { ok: true };
+    });
+
+    ipcMain.on("wageclaw:pet-hit-test", (event, interactive) => {
+      if (!petWindow || petWindow.isDestroyed() || event.sender !== petWindow.webContents) return;
+      petWindow.setIgnoreMouseEvents(!interactive, { forward: true });
+    });
+
+    ipcMain.handle("wageclaw:show-pet", () => {
+      if (!petWindow || petWindow.isDestroyed()) {
+        petWindow = createPetWindow();
+      }
+      petWindow.setSize(240, 340);
+      const { workArea } = screen.getPrimaryDisplay();
+      petWindow.setPosition(
+        workArea.x + workArea.width - 260,
+        workArea.y + workArea.height - 360
+      );
+      petWindow.show();
+      return { ok: true };
+    });
+
+    ipcMain.handle("wageclaw:trigger-blackout", (_, payload) => {
+      triggerDesktopBlackout(payload || {});
+      return { ok: true };
+    });
+
+    ipcMain.handle("wageclaw:pet-ricochet", () => {
+      const visible = triggerPetRicochet();
+      return { ok: true, visible };
+    });
+
+    ipcMain.handle("wageclaw:pet-storm", () => {
+      const visible = triggerPetStorm();
+      return { ok: true, visible };
+    });
+
+    ipcMain.handle("wageclaw:pet-nuke", () => {
+      const visible = triggerPetNuke();
+      return { ok: true, visible };
+    });
+
+    ipcMain.on("wageclaw:close-main-window", () => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.hide();
+      }
+    });
+
+    ipcMain.on("wageclaw:minimize-main-window", () => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.minimize();
+      }
+    });
+
+    ipcMain.on("wageclaw:maximize-main-window", () => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow.isMaximized()) {
+          mainWindow.unmaximize();
+        } else {
+          mainWindow.maximize();
+        }
+      }
+    });
+
+    mainWindow = createMainWindow();
+    petWindow = createPetWindow();
+    petWindow.show();
+    updateDockVisibility();
+
+  app.on("activate", () => {
+    if (petWindow && !petWindow.isDestroyed()) {
+      petWindow.show();
+    }
   });
 });
 
@@ -482,4 +494,8 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  app.isQuitting = true;
 });

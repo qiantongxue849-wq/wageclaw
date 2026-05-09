@@ -3,7 +3,7 @@ export type CountMode = "natural" | "workday";
 export type Mood = "rage" | "stable" | "numb";
 export type Currency = "wallet" | "rage";
 export type ScreenKey = "converter" | "mall" | "pet" | "ninja" | "community" | "sync" | "settings";
-export type PetStyle = "rageBlob" | "capybaraZen" | "lazyCat" | "lazyDog";
+export type PetStyle = "rageBlob" | "capybaraZen" | "lazyCat" | "lazyDog" | "honestCow";
 
 export type PetStagePalette = {
   body: string;
