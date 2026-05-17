@@ -1,0 +1,382 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1365" viewBox="0 0 2048 1365">
+  <defs>
+    <linearGradient id="windowBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5edcf"/>
+      <stop offset="0.55" stop-color="#e8dec0"/>
+      <stop offset="1" stop-color="#d8d0b7"/>
+    </linearGradient>
+    <linearGradient id="sideBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e563d"/>
+      <stop offset="0.3" stop-color="#143f30"/>
+      <stop offset="1" stop-color="#0d2c23"/>
+    </linearGradient>
+    <linearGradient id="sideCard" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5c765b" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="#274c3c" stop-opacity="0.88"/>
+    </linearGradient>
+    <linearGradient id="darkPanel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#194c38"/>
+      <stop offset="1" stop-color="#081f18"/>
+    </linearGradient>
+    <linearGradient id="panelBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbf4dc"/>
+      <stop offset="1" stop-color="#eee2bf"/>
+    </linearGradient>
+    <linearGradient id="fieldBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff9e8"/>
+      <stop offset="1" stop-color="#efe2be"/>
+    </linearGradient>
+    <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a17144"/>
+      <stop offset="1" stop-color="#6f452d"/>
+    </linearGradient>
+    <linearGradient id="button" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#438267"/>
+      <stop offset="1" stop-color="#16523f"/>
+    </linearGradient>
+    <linearGradient id="headerArt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f4e5c0"/>
+      <stop offset="0.62" stop-color="#d5bf86"/>
+      <stop offset="1" stop-color="#183427"/>
+    </linearGradient>
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="145%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#7b6a48" flood-opacity="0.18"/>
+    </filter>
+    <filter id="cardShadow" x="-15%" y="-15%" width="130%" height="145%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#776641" flood-opacity="0.12"/>
+    </filter>
+    <pattern id="paperNoise" width="28" height="28" patternUnits="userSpaceOnUse">
+      <rect width="28" height="28" fill="transparent"/>
+      <circle cx="4" cy="7" r="1" fill="#6b5a37" opacity="0.045"/>
+      <circle cx="20" cy="17" r="1" fill="#6b5a37" opacity="0.04"/>
+    </pattern>
+    <style>
+      .ui { font-family: "LXGW WenKai", "STKaiti", "KaiTi", "Microsoft YaHei", sans-serif; }
+      .sans { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+      .title { fill: #1f1a13; font-size: 44px; font-weight: 500; letter-spacing: 0; }
+      .subtitle { fill: #6b604f; font-size: 24px; letter-spacing: 0; }
+      .sideTitle { fill: #fff8df; font-size: 30px; font-weight: 600; letter-spacing: 0; }
+      .sideText { fill: #d9d2bd; font-size: 20px; letter-spacing: 0; }
+      .sectionTitle { fill: #292017; font-size: 32px; font-weight: 500; letter-spacing: 0; }
+      .cardTitle { fill: #2a2118; font-size: 25px; font-weight: 600; letter-spacing: 0; }
+      .body { fill: #6d6252; font-size: 18px; letter-spacing: 0; }
+      .small { fill: #7c725f; font-size: 16px; letter-spacing: 0; }
+      .tiny { fill: #817663; font-size: 14px; letter-spacing: 0; }
+      .money { fill: #ffd37e; font-size: 56px; font-family: Georgia, serif; font-weight: 400; }
+      .metric { fill: #1d684e; font-size: 54px; font-family: Georgia, serif; font-weight: 400; }
+      .btnText { fill: #fff8df; font-size: 23px; font-weight: 600; letter-spacing: 0; }
+      .btnTextGreen { fill: #1f6d54; font-size: 21px; font-weight: 600; letter-spacing: 0; }
+      .panel { fill: url(#panelBg); stroke: rgba(99,87,60,0.24); stroke-width: 2; }
+      .softPanel { fill: rgba(255,248,226,0.72); stroke: rgba(99,87,60,0.22); stroke-width: 2; }
+      .line { stroke: rgba(99,87,60,0.2); stroke-width: 2; }
+      .green { fill: #1f6d54; }
+      .amber { fill: #d4943c; }
+      .red { fill: #b94d42; }
+      .blue { fill: #526f9f; }
+    </style>
+  </defs>
+
+  <rect width="2048" height="1365" fill="#111b17"/>
+  <rect x="16" y="16" width="2016" height="1332" rx="26" fill="url(#windowBg)" filter="url(#softShadow)"/>
+  <rect x="16" y="16" width="2016" height="1332" rx="26" fill="url(#paperNoise)"/>
+
+  <g class="ui">
+    <!-- app chrome -->
+    <rect x="16" y="16" width="2016" height="60" rx="26" fill="#efe4c5"/>
+    <rect x="16" y="54" width="2016" height="42" fill="#efe4c5"/>
+    <circle cx="1785" cy="46" r="13" fill="#6d6757"/>
+    <path d="M1772 51 q13 -18 26 0" fill="#4d493f"/>
+    <path d="M1841 46 h20" stroke="#6d6757" stroke-width="3"/>
+    <rect x="1902" y="37" width="18" height="18" fill="none" stroke="#6d6757" stroke-width="3"/>
+    <path d="M1968 36 l28 28 M1996 36 l-28 28" stroke="#6d6757" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- sidebar -->
+    <rect x="16" y="16" width="430" height="1332" rx="26" fill="url(#sideBg)"/>
+    <rect x="16" y="76" width="430" height="1272" fill="#0f3026" opacity="0.62"/>
+
+    <g transform="translate(44 112)">
+      <rect x="0" y="0" width="84" height="84" rx="18" fill="#7aa071"/>
+      <circle cx="42" cy="48" r="30" fill="#e9dfc1"/>
+      <ellipse cx="25" cy="39" rx="9" ry="15" fill="#fff8df"/>
+      <ellipse cx="41" cy="31" rx="10" ry="16" fill="#fff8df"/>
+      <ellipse cx="57" cy="39" rx="9" ry="15" fill="#fff8df"/>
+      <circle cx="42" cy="55" r="18" fill="#fff8df"/>
+      <text x="110" y="34" class="sideTitle">忍了吧</text>
+      <text x="108" y="72" class="sideText">WageClaw · 怨气管理器</text>
+    </g>
+
+    <g transform="translate(44 222)">
+      <rect width="366" height="230" rx="12" fill="url(#sideCard)" stroke="rgba(255,248,223,0.22)" stroke-width="2"/>
+      <text x="26" y="56" fill="#d9d2bd" font-size="30">今日情绪气压</text>
+      <text x="26" y="112" fill="#fff8df" font-size="36" font-weight="600">火大但清醒</text>
+      <rect x="26" y="142" width="320" height="15" rx="8" fill="#788564" opacity="0.55"/>
+      <rect x="26" y="142" width="88" height="15" rx="8" fill="#d3a04c"/>
+      <text x="26" y="197" class="sideText">怨气 9 / 500</text>
+    </g>
+
+    <g transform="translate(44 476)">
+      <rect width="366" height="108" rx="12" fill="rgba(116,143,112,0.45)"/>
+      <rect width="6" height="108" rx="3" fill="#f4bf6f"/>
+      <rect x="22" y="24" width="56" height="56" rx="18" fill="none" stroke="#aeb8a0" stroke-width="2"/>
+      <path d="M50 20 l27 28 -16 28 h-23 l-16 -28z" fill="#fff7df"/>
+      <text x="98" y="46" class="sideTitle">忍了吧</text>
+      <text x="98" y="82" class="sideText">余额、心愿、账本</text>
+    </g>
+
+    <g transform="translate(44 620)">
+      <rect x="22" y="0" width="56" height="56" rx="18" fill="none" stroke="#aeb8a0" stroke-width="2"/>
+      <path d="M37 17 h27 v26 h-27 z M44 24 h13 M44 32 h13" fill="none" stroke="#fff8df" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="98" y="22" class="sideTitle">补给仓</text>
+      <text x="98" y="60" class="sideText">商城、背包、使用记录</text>
+    </g>
+
+    <g transform="translate(44 732)">
+      <rect width="366" height="108" rx="12" fill="rgba(116,143,112,0.45)"/>
+      <rect width="6" height="108" rx="3" fill="#f4bf6f"/>
+      <rect x="22" y="24" width="56" height="56" rx="18" fill="none" stroke="#aeb8a0" stroke-width="2"/>
+      <circle cx="50" cy="52" r="22" fill="#fff8df"/>
+      <circle cx="39" cy="49" r="9" fill="#78916e"/>
+      <circle cx="61" cy="49" r="9" fill="#78916e"/>
+      <path d="M50 70 v-28" stroke="#78916e" stroke-width="4" stroke-linecap="round"/>
+      <text x="98" y="46" class="sideTitle">怨气桌宠</text>
+      <text x="98" y="82" class="sideText">菜园、投喂、对练</text>
+    </g>
+
+    <g transform="translate(44 856)">
+      <rect x="22" y="0" width="56" height="56" rx="18" fill="none" stroke="#aeb8a0" stroke-width="2" stroke-dasharray="4 10"/>
+      <text x="98" y="22" class="sideTitle">设置</text>
+      <text x="98" y="60" class="sideText">资料、主题、数据</text>
+    </g>
+
+    <g transform="translate(44 950)">
+      <rect y="0" width="376" height="356" rx="12" fill="rgba(255,248,223,0.1)" stroke="rgba(255,248,223,0.16)" stroke-width="2"/>
+      <text x="26" y="64" fill="#d9d2bd" font-size="30">今日可领</text>
+      <text x="26" y="126" fill="#fff8df" font-size="42">¥571.43</text>
+      <text x="26" y="182" class="sideText">已经下班后下班，别把终</text>
+      <text x="26" y="226" class="sideText">点前的时间白送出去。</text>
+      <rect x="26" y="258" width="324" height="74" rx="14" fill="url(#button)" stroke="rgba(149,224,192,0.28)" stroke-width="3"/>
+      <text x="100" y="306" class="btnText">领取 ¥571.43</text>
+    </g>
+
+    <rect x="446" y="76" width="1586" height="1272" fill="#f1e8cc" opacity="0.84"/>
+
+    <!-- header -->
+    <g transform="translate(488 108)">
+      <text x="0" y="28" class="title">晚上好，工位逃兵</text>
+      <text x="0" y="78" class="subtitle">软团今天在工位后面种菜，工分只负责把它养活。</text>
+      <rect x="684" y="-18" width="842" height="116" rx="12" fill="url(#headerArt)"/>
+      <rect x="684" y="-18" width="842" height="116" rx="12" fill="#fff8df" opacity="0.1"/>
+      <g transform="translate(1098 -4)">
+        <rect x="0" y="44" width="82" height="42" rx="14" fill="#265842"/>
+        <rect x="16" y="22" width="48" height="36" rx="10" fill="#f2e5c6"/>
+        <path d="M30 39 h20" stroke="#7d9a68" stroke-width="4"/>
+        <ellipse cx="40" cy="91" rx="44" ry="8" fill="#183427" opacity="0.2"/>
+        <path d="M139 10 v90 M202 10 v90" stroke="#6a5a3e" stroke-width="5"/>
+        <path d="M143 16 c8 52 48 52 56 0" fill="none" stroke="#e6d2a1" stroke-width="3"/>
+        <ellipse cx="171" cy="66" rx="30" ry="34" fill="#f5e8c9" opacity="0.72"/>
+        <circle cx="165" cy="69" r="5" fill="#c8943e"/>
+        <circle cx="178" cy="68" r="5" fill="#c8943e"/>
+        <circle cx="171" cy="79" r="5" fill="#c8943e"/>
+        <rect x="250" y="34" width="74" height="76" rx="10" fill="#1f3a2e"/>
+        <ellipse cx="287" cy="32" rx="28" ry="13" fill="#223e31"/>
+        <path d="M286 32 C280 8 300 7 302 -6 M286 32 C264 10 246 20 256 -2 M286 32 C307 13 327 18 324 -5" fill="none" stroke="#6f8c58" stroke-width="6" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <path d="M446 220 H2032" class="line"/>
+
+    <!-- main top cards -->
+    <g transform="translate(488 248)">
+      <rect width="680" height="338" rx="14" fill="url(#darkPanel)" filter="url(#cardShadow)"/>
+      <text x="32" y="64" fill="#d9d2bd" font-size="24">后勤工分余额</text>
+      <text x="32" y="138" class="money">126</text>
+      <text x="128" y="138" fill="#ffd37e" font-size="25">工分</text>
+      <text x="32" y="204" fill="#e9dec2" font-size="24">菜篮库存 8 件</text>
+      <text x="32" y="280" fill="#e9dec2" font-size="22">本轮可卖</text>
+      <text x="146" y="280" fill="#3bc37f" font-size="22">¥0</text>
+      <text x="232" y="280" fill="#e9dec2" font-size="22">不碰工资，只换后勤补给</text>
+      <g transform="translate(394 42)">
+        <rect x="0" y="56" width="182" height="102" rx="18" fill="#2b6a53"/>
+        <rect x="38" y="26" width="106" height="70" rx="16" fill="#e8d9b6"/>
+        <path d="M67 56 h52" stroke="#83a16d" stroke-width="8" stroke-linecap="round"/>
+        <ellipse cx="92" cy="170" rx="150" ry="24" fill="#071a14" opacity="0.25"/>
+        <circle cx="18" cy="140" r="20" fill="#d5943a"/>
+        <circle cx="210" cy="108" r="18" fill="#e7ad4e"/>
+        <circle cx="236" cy="156" r="14" fill="#c78332"/>
+        <path d="M84 192 c-30 -22 -32 -60 5 -68 c34 -7 65 22 50 54 c-10 21 -36 27 -55 14z" fill="#75a364"/>
+        <path d="M100 170 c-10 -21 0 -43 22 -58" fill="none" stroke="#f4e8c7" stroke-width="6" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <g transform="translate(1196 248)">
+      <rect width="776" height="338" rx="14" class="panel" filter="url(#cardShadow)"/>
+      <text x="32" y="64" class="body">软团生命体征</text>
+      <text x="32" y="114" class="subtitle">血压偏高，建议先换降压药再卖菜。</text>
+      <g transform="translate(32 150)">
+        <text x="0" y="18" class="small">饱食</text>
+        <rect x="78" y="6" width="360" height="16" rx="8" fill="#ded2b1"/>
+        <rect x="78" y="6" width="270" height="16" rx="8" fill="#2e775c"/>
+        <text x="462" y="20" class="small">75</text>
+        <text x="0" y="62" class="small">饥饿</text>
+        <rect x="78" y="50" width="360" height="16" rx="8" fill="#ded2b1"/>
+        <rect x="78" y="50" width="72" height="16" rx="8" fill="#d4943c"/>
+        <text x="462" y="64" class="small">20</text>
+        <text x="0" y="106" class="small">血压</text>
+        <rect x="78" y="94" width="360" height="16" rx="8" fill="#ded2b1"/>
+        <rect x="78" y="94" width="244" height="16" rx="8" fill="#b94d42"/>
+        <text x="462" y="108" class="small">68</text>
+      </g>
+      <g transform="translate(536 34)">
+        <rect width="196" height="196" rx="36" fill="#d5f5ed" stroke="#8bead9" stroke-width="3"/>
+        <ellipse cx="98" cy="118" rx="70" ry="58" fill="#527a61"/>
+        <ellipse cx="98" cy="140" rx="38" ry="25" fill="#f2d7a3"/>
+        <circle cx="73" cy="110" r="9" fill="#10211c"/>
+        <circle cx="123" cy="110" r="9" fill="#10211c"/>
+        <path d="M86 142 q12 9 27 0" fill="none" stroke="#10211c" stroke-width="4" stroke-linecap="round"/>
+        <path d="M51 82 C21 44 56 32 71 67 M145 68 C160 35 194 45 161 82" fill="none" stroke="#d4943c" stroke-width="9" stroke-linecap="round"/>
+      </g>
+      <rect x="488" y="248" width="102" height="58" rx="29" fill="#fffaf0" stroke="rgba(99,87,60,0.23)" stroke-width="2"/>
+      <text x="518" y="284" class="btnTextGreen">投喂</text>
+      <rect x="610" y="248" width="128" height="58" rx="29" fill="url(#button)"/>
+      <text x="638" y="284" class="btnText">采购</text>
+    </g>
+
+    <!-- garden board -->
+    <g transform="translate(488 616)">
+      <rect width="914" height="476" rx="14" class="panel" filter="url(#cardShadow)"/>
+      <text x="30" y="62" class="sectionTitle">工位后勤菜园</text>
+      <text x="30" y="98" class="body">6 块地，成熟后收进菜篮。卖菜只得工分，工资余额不参与。</text>
+      <rect x="748" y="26" width="118" height="58" rx="29" fill="#f2e6c9" stroke="#87a77a" stroke-width="2"/>
+      <text x="778" y="63" class="btnTextGreen">换一批</text>
+
+      <g transform="translate(26 122)">
+        <g>
+          <rect width="268" height="158" rx="12" fill="url(#fieldBg)" stroke="rgba(99,87,60,0.25)" stroke-width="2"/>
+          <text x="24" y="38" class="cardTitle">摸鱼葱</text>
+          <text x="190" y="38" class="small">04:18</text>
+          <rect x="24" y="64" width="220" height="50" rx="8" fill="url(#soil)"/>
+          <path d="M48 91 H226" stroke="#c99661" stroke-width="2" opacity="0.5"/>
+          <path d="M112 104 C110 74 126 73 128 48 M128 85 C150 68 164 78 174 55 M126 86 C107 68 89 76 82 56" fill="none" stroke="#2c7759" stroke-width="6" stroke-linecap="round"/>
+          <rect x="24" y="132" width="118" height="12" rx="6" fill="#d8cbaa"/>
+          <rect x="24" y="132" width="86" height="12" rx="6" fill="#2d755b"/>
+          <text x="164" y="145" class="tiny">快熟</text>
+        </g>
+
+        <g transform="translate(294 0)">
+          <rect width="268" height="158" rx="12" fill="url(#fieldBg)" stroke="#2d755b" stroke-width="3"/>
+          <text x="24" y="38" class="cardTitle">会议土豆</text>
+          <text x="181" y="38" class="green" font-size="16" font-weight="700">可收菜</text>
+          <rect x="24" y="64" width="220" height="50" rx="8" fill="url(#soil)"/>
+          <ellipse cx="95" cy="90" rx="26" ry="24" fill="#c98835"/>
+          <ellipse cx="135" cy="89" rx="30" ry="25" fill="#dda24a"/>
+          <ellipse cx="176" cy="92" rx="24" ry="22" fill="#bd7830"/>
+          <path d="M76 72 C112 52 170 52 209 72" fill="none" stroke="#2c7759" stroke-width="6" stroke-linecap="round"/>
+          <rect x="24" y="122" width="96" height="32" rx="8" fill="url(#button)"/>
+          <text x="52" y="144" class="btnText" font-size="18">收菜</text>
+          <text x="138" y="144" class="tiny">预计 +32 工分</text>
+        </g>
+
+        <g transform="translate(588 0)">
+          <rect width="268" height="158" rx="12" fill="url(#fieldBg)" stroke="rgba(99,87,60,0.25)" stroke-width="2"/>
+          <text x="24" y="38" class="cardTitle">画饼麦</text>
+          <text x="190" y="38" class="small">21:40</text>
+          <rect x="24" y="64" width="220" height="50" rx="8" fill="url(#soil)"/>
+          <path d="M94 108 V64 M132 108 V54 M170 108 V70" stroke="#d2a33d" stroke-width="6" stroke-linecap="round"/>
+          <path d="M82 76 h28 M118 68 h32 M157 80 h29" stroke="#eac461" stroke-width="5" stroke-linecap="round"/>
+          <rect x="24" y="132" width="118" height="12" rx="6" fill="#d8cbaa"/>
+          <rect x="24" y="132" width="74" height="12" rx="6" fill="#d4943c"/>
+          <text x="164" y="145" class="tiny">品质 63</text>
+        </g>
+
+        <g transform="translate(0 188)">
+          <rect width="268" height="158" rx="12" fill="url(#fieldBg)" stroke="rgba(99,87,60,0.25)" stroke-width="2"/>
+          <text x="24" y="38" class="cardTitle">空地</text>
+          <text x="164" y="38" class="small">推荐薄荷</text>
+          <rect x="24" y="64" width="220" height="50" rx="8" fill="#8a5e3d"/>
+          <path d="M48 90 H224 M50 102 H221" stroke="#c99661" stroke-width="2" opacity="0.48"/>
+          <rect x="84" y="73" width="100" height="34" rx="8" fill="#fff8df"/>
+          <text x="116" y="96" class="btnTextGreen" font-size="18">播种</text>
+          <text x="62" y="144" class="tiny">带薪薄荷可做降压贴</text>
+        </g>
+
+        <g transform="translate(294 188)">
+          <rect width="268" height="158" rx="12" fill="url(#fieldBg)" stroke="rgba(185,77,66,0.45)" stroke-width="2"/>
+          <text x="24" y="38" class="cardTitle">复盘萝卜</text>
+          <text x="187" y="38" class="red" font-size="16" font-weight="700">虫害</text>
+          <rect x="24" y="64" width="220" height="50" rx="8" fill="url(#soil)"/>
+          <path d="M125 108 C122 78 137 66 148 48" fill="none" stroke="#2c7759" stroke-width="6" stroke-linecap="round"/>
+          <ellipse cx="140" cy="97" rx="30" ry="20" fill="#da7661"/>
+          <path d="M188 72 c20 13 22 42 0 54" fill="none" stroke="#b94d42" stroke-width="5"/>
+          <rect x="24" y="122" width="96" height="32" rx="8" fill="#b94d42"/>
+          <text x="52" y="144" class="btnText" font-size="18">处理</text>
+          <text x="140" y="144" class="tiny">拖久会掉价</text>
+        </g>
+
+        <g transform="translate(588 188)">
+          <rect width="268" height="158" rx="12" fill="url(#fieldBg)" stroke="rgba(99,87,60,0.25)" stroke-width="2"/>
+          <text x="24" y="38" class="cardTitle">KPI 玉米</text>
+          <text x="190" y="38" class="small">09:12</text>
+          <rect x="24" y="64" width="220" height="50" rx="8" fill="url(#soil)"/>
+          <path d="M120 108 V55 M156 108 V62" stroke="#2c7759" stroke-width="6" stroke-linecap="round"/>
+          <path d="M108 70 C78 56 76 88 108 86 M134 78 C167 60 171 94 135 96 M146 70 C118 57 116 87 146 86 M174 82 C206 66 208 98 175 99" fill="#78ae5c"/>
+          <rect x="24" y="132" width="118" height="12" rx="6" fill="#d8cbaa"/>
+          <rect x="24" y="132" width="92" height="12" rx="6" fill="#526f9f"/>
+          <text x="164" y="145" class="tiny">波动价</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- right lower panels -->
+    <g transform="translate(1440 616)">
+      <rect width="532" height="476" rx="14" class="panel" filter="url(#cardShadow)"/>
+      <text x="30" y="62" class="sectionTitle">后勤采购</text>
+      <text x="396" y="62" class="body">用工分</text>
+      <g transform="translate(30 104)">
+        <rect width="472" height="74" rx="12" fill="#fff8df" stroke="rgba(99,87,60,0.22)" stroke-width="2"/>
+        <path d="M28 21 h28 v30 h-28 z M36 15 h12 v8" fill="none" stroke="#b94d42" stroke-width="4" stroke-linejoin="round"/>
+        <text x="78" y="34" class="cardTitle">降压药</text>
+        <text x="78" y="60" class="small">血压 -35</text>
+        <rect x="382" y="20" width="62" height="34" rx="9" fill="#2d755b"/>
+        <text x="401" y="43" fill="#fff8df" font-size="18" font-weight="700">45</text>
+
+        <rect y="94" width="472" height="74" rx="12" fill="#fff8df" stroke="rgba(99,87,60,0.22)" stroke-width="2"/>
+        <circle cx="42" cy="131" r="22" fill="none" stroke="#b94d42" stroke-width="4"/>
+        <text x="78" y="128" class="cardTitle">速效救心丸</text>
+        <text x="78" y="154" class="small">血压 -55，灵力 +10</text>
+        <rect x="382" y="114" width="62" height="34" rx="9" fill="#2d755b"/>
+        <text x="401" y="137" fill="#fff8df" font-size="18" font-weight="700">90</text>
+
+        <rect y="188" width="472" height="74" rx="12" fill="#fff8df" stroke="rgba(99,87,60,0.22)" stroke-width="2"/>
+        <path d="M25 233 q18 18 42 0 M31 220 h30" fill="none" stroke="#d4943c" stroke-width="5" stroke-linecap="round"/>
+        <text x="78" y="222" class="cardTitle">热汤面</text>
+        <text x="78" y="248" class="small">饱食 +28，饥饿 -35</text>
+        <rect x="382" y="208" width="62" height="34" rx="9" fill="#2d755b"/>
+        <text x="401" y="231" fill="#fff8df" font-size="18" font-weight="700">22</text>
+      </g>
+      <path d="M30 398 H502" class="line"/>
+      <text x="30" y="442" class="cardTitle">菜价小黑板</text>
+      <text x="30" y="474" class="body">会议土豆 32　　画饼麦 18-46　　带薪薄荷 54</text>
+    </g>
+
+    <!-- bottom panels -->
+    <g transform="translate(488 1122)">
+      <rect width="728" height="186" rx="14" class="panel"/>
+      <text x="30" y="58" class="sectionTitle">菜篮与加工</text>
+      <text x="30" y="104" class="body">会议土豆 x3　带薪薄荷 x1　画饼麦 x4</text>
+      <rect x="30" y="128" width="144" height="48" rx="12" fill="url(#button)"/>
+      <text x="58" y="159" class="btnText" font-size="22">批量卖菜</text>
+      <rect x="194" y="128" width="144" height="48" rx="12" fill="#efe4c5" stroke="#a9b28d" stroke-width="2"/>
+      <text x="224" y="159" class="btnTextGreen">打开灶台</text>
+    </g>
+
+    <g transform="translate(1248 1122)">
+      <rect width="724" height="186" rx="14" class="panel"/>
+      <text x="30" y="58" class="sectionTitle">办公室事件</text>
+      <text x="30" y="104" class="body">老板临时拉会：会议土豆生长 +12%，软团血压 +4</text>
+      <text x="30" y="142" class="body">茶水间没人：获得咖啡渣肥料 x1</text>
+    </g>
+
+    <!-- thin scrollbar to match current app -->
+    <rect x="2014" y="84" width="8" height="560" rx="4" fill="#c6baa0"/>
+  </g>
+</svg>

@@ -1,10 +1,47 @@
-import type { CountMode, MallItem, Mood, Part, PetStage, PetStyle, ScreenKey, Theme, TransactionCategory } from "@/types";
+import type { CountMode, MallItem, Mood, Part, PetStage, PetStyle, ScreenKey, Theme, TransactionCategory, WorkEvent } from "@/types";
 
 export const parts: Part[] = [
-  { id: "screen", name: "屏幕", ratio: 0.38, narrative: "屏幕最贵，未来摸鱼和跑路计划都得靠它发光。" },
-  { id: "memory", name: "内存", ratio: 0.2, narrative: "脑子快炸时，先把设备的脑容量补上。" },
-  { id: "trackpad", name: "触控板", ratio: 0.14, narrative: "适合当第一块点亮的碎片，给人一点踏实感。" },
-  { id: "shell", name: "外壳", ratio: 0.28, narrative: "外壳是体面，你表面稳住，里面再慢慢攒。" }
+  { id: "shell", wishItemId: "macbook_pro_14", name: "一体成型外壳", ratio: 0.18, narrative: "先把体面攒出来。外壳稳住，里面的野心就有地方安放。" },
+  { id: "screen", wishItemId: "macbook_pro_14", name: "Liquid Retina 屏幕", ratio: 0.26, narrative: "屏幕负责发光，也提醒你：你的生活不该只亮给工作看。" },
+  { id: "battery", wishItemId: "macbook_pro_14", name: "电池模组", ratio: 0.12, narrative: "续航不是逞强，是允许自己撑得更久，也休得更早。" },
+  { id: "memory", wishItemId: "macbook_pro_14", name: "内存与芯片", ratio: 0.22, narrative: "把被会议挤爆的脑容量，换成真正属于自己的算力。" },
+  { id: "keyboard", wishItemId: "macbook_pro_14", name: "妙控键盘", ratio: 0.1, narrative: "以后敲下去的每个字，都先服务你自己的计划。" },
+  { id: "trackpad", wishItemId: "macbook_pro_14", name: "触控板", ratio: 0.12, narrative: "从这一小块开始，手指落下去，目标就不再只是想想。" },
+
+  { id: "iphone_frame", wishItemId: "iphone16_pro_max_1tb", name: "钛金属机身", ratio: 0.18, narrative: "先把上一代顶配的质感攒住。边框稳住，消息再多也不能把你压扁。" },
+  { id: "iphone_screen", wishItemId: "iphone16_pro_max_1tb", name: "超视网膜屏幕", ratio: 0.2, narrative: "屏幕亮起来，提醒你：生活的清晰度，应该先属于自己。" },
+  { id: "iphone_battery", wishItemId: "iphone16_pro_max_1tb", name: "长续航电池", ratio: 0.14, narrative: "续航不是硬撑，是给自己留够不用慌的余量。" },
+  { id: "iphone_camera", wishItemId: "iphone16_pro_max_1tb", name: "方形三摄影像模组", ratio: 0.18, narrative: "把值得记住的瞬间留给自己，不只给工位截图和会议纪要。" },
+  { id: "iphone_chip", wishItemId: "iphone16_pro_max_1tb", name: "芯片与主板", ratio: 0.16, narrative: "把脑内后台清一清，真正的性能应该服务你的计划。" },
+  { id: "iphone_storage", wishItemId: "iphone16_pro_max_1tb", name: "1TB 存储", ratio: 0.14, narrative: "给照片、文件和未来都留空间。你的人生不该总提示容量不足。" },
+
+  { id: "iphone17_frame", wishItemId: "iphone17_pro_max_1tb", name: "一体式铝金属机身", ratio: 0.18, narrative: "先把新的外壳点亮。你的底气可以换一副更轻、更亮、更像未来的样子。" },
+  { id: "iphone17_screen", wishItemId: "iphone17_pro_max_1tb", name: "Pro 显示屏", ratio: 0.2, narrative: "屏幕亮起来，今天不只显示工作消息，也显示你正在认真靠近自己。" },
+  { id: "iphone17_battery", wishItemId: "iphone17_pro_max_1tb", name: "长续航电池", ratio: 0.14, narrative: "电量一点点补上，像是在提醒你：真正的强大，也包括不被耗干。" },
+  { id: "iphone17_camera_plateau", wishItemId: "iphone17_pro_max_1tb", name: "横向相机平台", ratio: 0.18, narrative: "新相机平台归位，把人生里值得放大的画面，交还给你自己。" },
+  { id: "iphone17_chip", wishItemId: "iphone17_pro_max_1tb", name: "A 系芯片与主板", ratio: 0.16, narrative: "性能点亮，后台清空。你也可以把算力留给自己的计划和野心。" },
+  { id: "iphone17_storage", wishItemId: "iphone17_pro_max_1tb", name: "1TB 存储", ratio: 0.14, narrative: "容量点亮，照片、灵感和未来都不用再被迫删掉。" },
+
+  { id: "phuket_flight", wishItemId: "phuket_7_day_trip", name: "往返机票", ratio: 0.22, narrative: "第一步是离开工位。登机牌点亮，世界就从待办列表里走出来。" },
+  { id: "phuket_resort", wishItemId: "phuket_7_day_trip", name: "海边酒店", ratio: 0.28, narrative: "床、海风和没有闹钟的早晨，都值得被认真预订。" },
+  { id: "phuket_boat", wishItemId: "phuket_7_day_trip", name: "离岛快艇", ratio: 0.14, narrative: "让船把你带离消息提示音，去看真的蓝色。" },
+  { id: "phuket_snorkel", wishItemId: "phuket_7_day_trip", name: "浮潜体验", ratio: 0.1, narrative: "把头埋进海里，暂时听不见需求，心就会自己浮上来。" },
+  { id: "phuket_food", wishItemId: "phuket_7_day_trip", name: "海岛餐食", ratio: 0.1, narrative: "好好吃饭不是奖励，是恢复体力的正当流程。" },
+  { id: "phuket_fund", wishItemId: "phuket_7_day_trip", name: "旅行备用金", ratio: 0.16, narrative: "有余量的旅行才叫休息。给自己一点不用精打细算的自由。" },
+
+  { id: "chair_headrest", wishItemId: "ergonomic_chair", name: "可调头枕", ratio: 0.1, narrative: "先把脖子从低头赶工里赎回来。休息也需要支点。" },
+  { id: "chair_backrest", wishItemId: "ergonomic_chair", name: "透气椅背", ratio: 0.24, narrative: "背不用一直替压力站岗。它也可以被稳稳托住。" },
+  { id: "chair_lumbar", wishItemId: "ergonomic_chair", name: "动态腰托", ratio: 0.15, narrative: "腰托点亮，说明你开始把身体当成长期资产，而不是耗材。" },
+  { id: "chair_cushion", wishItemId: "ergonomic_chair", name: "承托坐垫", ratio: 0.18, narrative: "坐下不是继续消耗，而是让每一小时少伤自己一点。" },
+  { id: "chair_base", wishItemId: "ergonomic_chair", name: "金属底盘", ratio: 0.2, narrative: "底盘稳，节奏就稳。工作可以忙，但人不能散架。" },
+  { id: "chair_caster", wishItemId: "ergonomic_chair", name: "静音脚轮", ratio: 0.13, narrative: "脚轮转动，代表你还有移动的余地，不必被一个工位钉住。" },
+
+  { id: "robovac_robot", wishItemId: "robot_vacuum_mop", name: "扫拖主机", ratio: 0.28, narrative: "把下班后的第一场家务交出去。你回家应该先坐下。" },
+  { id: "robovac_dock", wishItemId: "robot_vacuum_mop", name: "自清洁基站", ratio: 0.24, narrative: "会自己收尾的系统，才配叫解放双手。" },
+  { id: "robovac_tank", wishItemId: "robot_vacuum_mop", name: "清水箱", ratio: 0.12, narrative: "水箱点亮，家里开始有自动变干净的可能。" },
+  { id: "robovac_mop", wishItemId: "robot_vacuum_mop", name: "拖布模组", ratio: 0.12, narrative: "拖布不是你的第二份工作。让机器把地面慢慢擦亮。" },
+  { id: "robovac_brush", wishItemId: "robot_vacuum_mop", name: "边刷组件", ratio: 0.08, narrative: "连角落都有人管了，你可以少管一点。" },
+  { id: "robovac_bag", wishItemId: "robot_vacuum_mop", name: "尘袋滤芯", ratio: 0.16, narrative: "把灰尘和疲惫都收起来，别再让它们铺满晚上。" }
 ];
 
 export const petStages: PetStage[] = [
@@ -736,13 +773,85 @@ export const petStageSeries: Record<PetStyle, PetStage[]> = {
 
 export const mallItems: MallItem[] = [
   {
+    id: "macbook_pro_14",
+    name: "MacBook Pro 14",
+    price: 15000,
+    tag: "实体心愿",
+    category: "real",
+    kind: "physical",
+    wishable: true,
+    description: "当前版本的首个实体目标。许愿后会在主页拆成外壳、屏幕、电池、内存、键盘和触控板逐步点亮。",
+    effect: "设为唯一心愿后，工资余额只用于衡量和推进这台设备的获得进度。",
+    icon: "💻"
+  },
+  {
+    id: "iphone16_pro_max_1tb",
+    name: "苹果 16 Pro Max 1TB",
+    price: 13999,
+    tag: "实体心愿",
+    category: "real",
+    kind: "physical",
+    wishable: true,
+    description: "保留上一版方形三摄岛的顶配手机心愿。许愿后拆成机身、屏幕、电池、影像模组、芯片和 1TB 存储逐步点亮。",
+    effect: "把每一次忍住换成握在手里的高性能通讯与影像工具。",
+    icon: "📱"
+  },
+  {
+    id: "iphone17_pro_max_1tb",
+    name: "苹果 17 Pro Max 1TB",
+    price: 13999,
+    tag: "实体心愿",
+    category: "real",
+    kind: "physical",
+    wishable: true,
+    description: "按 17 系列新外观重做的顶配手机心愿。许愿后拆成一体式机身、屏幕、电池、横向相机平台、芯片和 1TB 存储逐步点亮。",
+    effect: "把忍耐攒成一次真正的换代感，提醒自己值得拥有更清晰、更轻快的日常。",
+    icon: "📱"
+  },
+  {
+    id: "phuket_7_day_trip",
+    name: "普吉岛 7 日回血游",
+    price: 12800,
+    tag: "旅行心愿",
+    category: "real",
+    kind: "physical",
+    wishable: true,
+    description: "给打工人的海岛回血目标。拆成机票、酒店、离岛、浮潜、餐食和备用金逐步点亮。",
+    effect: "工资余额不只是买东西，也可以换成一段真正离开工位的时间。",
+    icon: "🏝️"
+  },
+  {
+    id: "ergonomic_chair",
+    name: "人体工学椅",
+    price: 6499,
+    tag: "健康心愿",
+    category: "real",
+    kind: "physical",
+    wishable: true,
+    description: "给长期久坐的身体一个交代。拆成头枕、椅背、腰托、坐垫、底盘和脚轮逐步点亮。",
+    effect: "把每天硬撑的腰背，换成一个不再把人当耗材的座位。",
+    icon: "🪑"
+  },
+  {
+    id: "robot_vacuum_mop",
+    name: "扫拖机器人旗舰套装",
+    price: 5999,
+    tag: "家务解放",
+    category: "real",
+    kind: "physical",
+    wishable: true,
+    description: "下班后的地面交给机器。拆成主机、基站、水箱、拖布、边刷和尘袋逐步点亮。",
+    effect: "把忍住的加班怨气，换成回家不用立刻做家务的自由。",
+    icon: "🤖"
+  },
+  {
     id: "noodle_soup",
     name: "板面",
     price: 18,
     tag: "主食",
     category: "food",
     description: "热腾腾的宽面配辣椒，给软团补一口实在的。",
-    effect: "投喂后饱食 +28，饥饿 -35",
+    effect: "投喂后饱食 +35",
     icon: "🍜",
     petBoost: { hunger: 35, satiety: 28, affection: 2 }
   },
@@ -753,7 +862,7 @@ export const mallItems: MallItem[] = [
     tag: "甜点",
     category: "food",
     description: "一小块绵密的奶油蛋糕，软团吃完心情会好。",
-    effect: "投喂后饱食 +22，饥饿 -25，亲密 +8",
+    effect: "投喂后饱食 +25，亲密 +8",
     icon: "🍰",
     petBoost: { hunger: 25, satiety: 22, affection: 8 }
   },
@@ -764,7 +873,7 @@ export const mallItems: MallItem[] = [
     tag: "主食",
     category: "food",
     description: "刚出笼的肉包子，软团闻到味就凑过来了。",
-    effect: "投喂后饱食 +20，饥饿 -20",
+    effect: "投喂后饱食 +20",
     icon: "🥟",
     petBoost: { hunger: 20, satiety: 20, affection: 2 }
   },
@@ -775,7 +884,7 @@ export const mallItems: MallItem[] = [
     tag: "主食",
     category: "food",
     description: "皮薄馅大的手工饺子，蘸醋更香。",
-    effect: "投喂后饱食 +24，饥饿 -28，亲密 +3",
+    effect: "投喂后饱食 +28，亲密 +3",
     icon: "🥟",
     petBoost: { hunger: 28, satiety: 24, affection: 3 }
   },
@@ -786,7 +895,7 @@ export const mallItems: MallItem[] = [
     tag: "大餐",
     category: "food",
     description: "一小锅咕嘟咕嘟的麻辣火锅，治愈一整天。",
-    effect: "投喂后饱食 +50，饥饿 -60，亲密 +15",
+    effect: "投喂后饱食 +60，亲密 +15",
     icon: "🍲",
     petBoost: { hunger: 60, satiety: 50, affection: 15 }
   },
@@ -797,7 +906,7 @@ export const mallItems: MallItem[] = [
     tag: "饮品",
     category: "food",
     description: "三分糖去冰加珍珠，软团吸一口就眯眼。",
-    effect: "投喂后饱食 +18，饥饿 -18，亲密 +6",
+    effect: "投喂后饱食 +18，亲密 +6",
     icon: "🧋",
     petBoost: { hunger: 18, satiety: 18, affection: 6 }
   },
@@ -808,7 +917,7 @@ export const mallItems: MallItem[] = [
     tag: "小吃",
     category: "food",
     description: "外酥里嫩的脆皮鸡腿，加班夜的最佳搭档。",
-    effect: "投喂后饱食 +32，饥饿 -35，亲密 +5",
+    effect: "投喂后饱食 +35，亲密 +5",
     icon: "🍗",
     petBoost: { hunger: 35, satiety: 32, affection: 5 }
   },
@@ -819,7 +928,7 @@ export const mallItems: MallItem[] = [
     tag: "主食",
     category: "food",
     description: "三角饭团裹海苔，中间夹着咸蛋黄。简单但管饱。",
-    effect: "投喂后饱食 +16，饥饿 -15",
+    effect: "投喂后饱食 +15",
     icon: "🍙",
     petBoost: { hunger: 15, satiety: 16, affection: 1 }
   },
@@ -830,7 +939,7 @@ export const mallItems: MallItem[] = [
     tag: "甜点",
     category: "food",
     description: "草莓味甜筒，给被折磨的下午来一点清凉。",
-    effect: "投喂后饱食 +14，饥饿 -14，灵力 +8",
+    effect: "投喂后饱食 +14，亲密 +4",
     icon: "🍦",
     petBoost: { hunger: 14, satiety: 14, light: 8, affection: 4 }
   },
@@ -841,7 +950,7 @@ export const mallItems: MallItem[] = [
     tag: "甜点",
     category: "food",
     description: "黑巧入口先苦后甜，让人重新相信生活。",
-    effect: "投喂后饱食 +16，饥饿 -14，亲密 +4",
+    effect: "投喂后饱食 +14，亲密 +4",
     icon: "🍫",
     petBoost: { hunger: 14, satiety: 16, affection: 4 }
   },
@@ -852,7 +961,7 @@ export const mallItems: MallItem[] = [
     tag: "大餐",
     category: "food",
     description: "三文鱼、甜虾、鳗鱼各两贯，软团的豪华日料。",
-    effect: "投喂后饱食 +45，饥饿 -55，亲密 +18，灵力 +15",
+    effect: "投喂后饱食 +55，亲密 +18",
     icon: "🍣",
     petBoost: { hunger: 55, satiety: 45, affection: 18, light: 15 }
   },
@@ -863,7 +972,7 @@ export const mallItems: MallItem[] = [
     tag: "大餐",
     category: "food",
     description: "葱姜清蒸，鲜嫩不腻。认真吃一顿才算活着。",
-    effect: "投喂后饱食 +42，饥饿 -50，灵力 +20",
+    effect: "投喂后饱食 +50，亲密 +8",
     icon: "🐟",
     petBoost: { hunger: 50, satiety: 42, light: 20, affection: 8 }
   },
@@ -874,7 +983,7 @@ export const mallItems: MallItem[] = [
     tag: "药品",
     category: "medicine",
     description: "硝苯地平一颗，把飙升的血压拉回安全区。",
-    effect: "使用后血压 -35，饱食 +2",
+    effect: "使用后血压 -35",
     icon: "💊",
     petBoost: { bloodPressure: -35, satiety: 2 }
   },
@@ -885,7 +994,7 @@ export const mallItems: MallItem[] = [
     tag: "药品",
     category: "medicine",
     description: "被气到胸闷时含一粒，先稳住心跳再说。",
-    effect: "使用后血压 -55，灵力 +10",
+    effect: "使用后血压 -55，亲密 +3",
     icon: "❤️‍🩹",
     petBoost: { bloodPressure: -55, light: 10, affection: 3 }
   },
@@ -896,7 +1005,7 @@ export const mallItems: MallItem[] = [
     tag: "药品",
     category: "medicine",
     description: "Deadline 前最后一针，搏一搏把命续上。",
-    effect: "使用后血压 -20，饥饿 -10",
+    effect: "使用后血压 -20，饱食 +10",
     icon: "💉",
     petBoost: { bloodPressure: -20, hunger: 10, satiety: 5 }
   },
@@ -907,7 +1016,7 @@ export const mallItems: MallItem[] = [
     tag: "药品",
     category: "medicine",
     description: "加班焦虑患者标配，喝一管脑子能静下来。",
-    effect: "使用后血压 -30，灵力 +15，亲密 +5",
+    effect: "使用后血压 -30，亲密 +5",
     icon: "🧪",
     petBoost: { bloodPressure: -30, light: 15, affection: 5 }
   },
@@ -918,7 +1027,7 @@ export const mallItems: MallItem[] = [
     tag: "药品",
     category: "medicine",
     description: "工位常备铝碳酸镁，外卖吃坏肚子全靠它。",
-    effect: "使用后血压 -15，饱食 +8，饥饿 -10",
+    effect: "使用后血压 -15，饱食 +10",
     icon: "💊",
     petBoost: { bloodPressure: -15, satiety: 8, hunger: 10 }
   },
@@ -929,7 +1038,7 @@ export const mallItems: MallItem[] = [
     tag: "急救",
     category: "medicine",
     description: "连续开完 4 个会后对着吸两口，感觉还能再撑。",
-    effect: "使用后血压 -40，灵力 +20，法力 +40",
+    effect: "使用后血压 -40，法力 +40",
     icon: "🫧",
     petBoost: { bloodPressure: -40, light: 20, mana: 40, affection: 4 }
   },
@@ -962,7 +1071,7 @@ export const mallItems: MallItem[] = [
     tag: "保健品",
     category: "medicine",
     description: "被 PUA 到怀疑人生时，先补一补气血。",
-    effect: "使用后血压 -25，灵力 +25",
+    effect: "使用后血压 -25，亲密 +5",
     icon: "🍵",
     petBoost: { bloodPressure: -25, light: 25, affection: 5 }
   },
@@ -973,7 +1082,7 @@ export const mallItems: MallItem[] = [
     tag: "急救",
     category: "medicine",
     description: "内含纱布碘伏创可贴，工位真的什么都会发生。",
-    effect: "使用后血压 -60，灵力 +30，法力上限 +10",
+    effect: "使用后血压 -60，法力上限 +10",
     icon: "🩹",
     petBoost: { bloodPressure: -60, light: 30, manaCap: 10, affection: 8 }
   },
@@ -984,7 +1093,7 @@ export const mallItems: MallItem[] = [
     tag: "保健品",
     category: "medicine",
     description: "对着颈椎来几下，僵硬的肩颈终于松了。",
-    effect: "使用后血压 -20，饱食 -5（消耗热量）",
+    effect: "使用后血压 -20，亲密 +6",
     icon: "🔫",
     petBoost: { bloodPressure: -20, satiety: 5, affection: 6 }
   }
@@ -1021,7 +1130,7 @@ export const sampleStories = [
 
 export const screenTitles: Record<ScreenKey, string> = {
   converter: "忍了吧控制台",
-  mall: "情绪补给",
+  mall: "补给仓",
   pet: "怨气桌宠",
   ninja: "AI 忍术参谋",
   community: "匿名树洞",
@@ -1032,10 +1141,7 @@ export const screenTitles: Record<ScreenKey, string> = {
 export const navItems: Array<{ key: ScreenKey; label: string; hint: string }> = [
   { key: "converter", label: "忍了吧", hint: "余额、心愿、账本" },
   { key: "mall", label: "补给仓", hint: "商城、背包、使用记录" },
-  { key: "pet", label: "怨气桌宠", hint: "桌宠、投喂、对练" },
-  { key: "ninja", label: "AI 忍术", hint: "三段式回复" },
-  { key: "community", label: "匿名树洞", hint: "脱敏发布" },
-  { key: "sync", label: "多端提醒", hint: "倒计时、推送文案" },
+  { key: "pet", label: "怨气桌宠", hint: "桌宠、投喂、炼化" },
   { key: "settings", label: "设置", hint: "资料、主题、数据" }
 ];
 
@@ -1100,8 +1206,100 @@ export const dailyRageMilestones = [
   { id: "nuke-500", threshold: 500, title: "怨气核爆 500", action: "nuke" }
 ];
 
+export const workEvents: WorkEvent[] = [
+  {
+    id: "overtime-meeting",
+    title: "临时加班会",
+    prompt: "领导说今晚临时开会，主题是“下次会议开什么会”。软团盯着日历，爪子已经放在关机键上。",
+    tone: "边界感考试",
+    choices: [
+      { id: "refuse", label: "严词拒绝", detail: "把时间边界说清楚，明天同步结论。", effect: { paw: 12, rage: 4, bloodPressure: -4 } },
+      { id: "network", label: "假装网络不好", detail: "头像卡住，但爪币没有卡住。", effect: { paw: 8, hunger: -4, affection: 2 } },
+      { id: "accept", label: "忍气吞声加班", detail: "人到会场，魂在下班路上。", effect: { paw: -8, rage: 12, bloodPressure: 8, satiety: -4 } }
+    ]
+  },
+  {
+    id: "coworker-blame",
+    title: "同事甩锅",
+    prompt: "同事说“这个锅你先背一下，之后请你喝奶茶”。软团已经把聊天框截图命名为证据一。",
+    tone: "锅具鉴定",
+    choices: [
+      { id: "receipt", label: "保存聊天记录", detail: "先留证据，再礼貌同步责任边界。", effect: { paw: 10, rage: 3, bloodPressure: -2 } },
+      { id: "clarify", label: "群里确认分工", detail: "让锅回到该去的灶台。", effect: { paw: 8, rage: 5, affection: 2 } },
+      { id: "carry", label: "接锅", detail: "锅很沉，软团也很担心。", effect: { paw: -6, rage: 14, bloodPressure: 10 } }
+    ]
+  },
+  {
+    id: "boss-pie",
+    title: "老板画饼",
+    prompt: "老板说“今年先苦一苦，明年你就是核心骨干”。软团问：骨干能不能写进合同。",
+    tone: "大饼烘焙",
+    choices: [
+      { id: "contract", label: "问能否写进合同", detail: "把抽象激励翻译成具体条款。", effect: { paw: 14, rage: 2, bloodPressure: -5 } },
+      { id: "screenshot", label: "截图收藏大饼", detail: "今日菜单：云端烙饼。", effect: { paw: 7, rage: 4 } },
+      { id: "believe", label: "当场感动", detail: "软团默默把降压药推近一点。", effect: { paw: -5, rage: 9, bloodPressure: 7 } }
+    ]
+  },
+  {
+    id: "tea-room-break",
+    title: "茶水间摸鱼",
+    prompt: "茶水间没人，咖啡机还热着。软团的小工牌显示：合理补能不算逃跑。",
+    tone: "补能窗口",
+    choices: [
+      { id: "micro-break", label: "摸鱼五分钟", detail: "短暂回血，继续做人。", effect: { paw: 8, hunger: 4, satiety: 3, bloodPressure: -2 } },
+      { id: "patrol", label: "假装路过三次", detail: "路线规划非常专业。", effect: { paw: 10, affection: 1 } },
+      { id: "roll", label: "回工位继续卷", detail: "咖啡机热，血压也热。", effect: { paw: -4, rage: 7, bloodPressure: 5 } }
+    ]
+  },
+  {
+    id: "void-meeting",
+    title: "无效会议",
+    prompt: "会议已经开了四十分钟，没人知道要解决什么。软团把纪要标题写成《我们为什么在这里》。",
+    tone: "会议逃生",
+    choices: [
+      { id: "ask-result", label: "追问结论", detail: "把漂浮的话拽回地面。", effect: { paw: 11, rage: 3, bloodPressure: -3 } },
+      { id: "cart", label: "整理购物车", detail: "会议没结果，购物车有。", effect: { paw: 7, light: 3 } },
+      { id: "notes", label: "认真做纪要", detail: "很敬业，也很耗电。", effect: { paw: -3, rage: 8, satiety: -5 } }
+    ]
+  },
+  {
+    id: "kpi-shift",
+    title: "KPI 玄学调整",
+    prompt: "KPI 又变了，这次叫“动态目标共创”。软团试图打开字典，字典选择了下班。",
+    tone: "指标算命",
+    choices: [
+      { id: "scope", label: "问清考核口径", detail: "先定义清楚，别让玄学扣工资。", effect: { paw: 13, rage: 4, bloodPressure: -3 } },
+      { id: "sheet", label: "建玄学目标表", detail: "用表格封印随机变化。", effect: { paw: 8, light: 4 } },
+      { id: "self-blame", label: "立刻自我反思", detail: "不是你的错，不要先审判自己。", effect: { paw: -7, rage: 12, bloodPressure: 8 } }
+    ]
+  },
+  {
+    id: "client-last-minute",
+    title: "客户临时改口",
+    prompt: "客户下班前说“其实我们想要的是另一版”。软团把需求文档抱紧，像抱着一块漂流木。",
+    tone: "需求漂移",
+    choices: [
+      { id: "change-list", label: "列变更清单", detail: "把临时想法变成可估算工作量。", effect: { paw: 12, rage: 5, bloodPressure: -2 } },
+      { id: "minimum", label: "只交最小版本", detail: "先让船靠岸，再谈豪华装修。", effect: { paw: 9, satiety: -2 } },
+      { id: "redo", label: "今晚全重做", detail: "软团的血压条开始闪。", effect: { paw: -10, rage: 15, bloodPressure: 12, hunger: -6 } }
+    ]
+  },
+  {
+    id: "manager-praise",
+    title: "口头表扬",
+    prompt: "领导说你最近辛苦了，然后转身又塞来两个需求。软团怀疑这是一种免费燃料。",
+    tone: "表扬折现",
+    choices: [
+      { id: "resource", label: "顺势要资源", detail: "既然认可辛苦，那就补人补时间。", effect: { paw: 13, rage: 3, bloodPressure: -4 } },
+      { id: "thanks-boundary", label: "感谢并排期", detail: "礼貌收下，不立刻加塞。", effect: { paw: 9, affection: 2 } },
+      { id: "free-work", label: "继续白干", detail: "表扬很轻，工作很重。", effect: { paw: -6, rage: 10, bloodPressure: 7 } }
+    ]
+  }
+];
+
 export const mallFilters = [
   { key: "all", label: "全部" },
+  { key: "real", label: "心愿" },
   { key: "food", label: "食物" },
   { key: "medicine", label: "药品" }
 ];

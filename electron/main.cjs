@@ -4,6 +4,11 @@ const { app, BrowserWindow, ipcMain, screen } = require("electron");
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || process.env.WAGECLAW_DEV_SERVER_URL || "http://127.0.0.1:5173";
 const PET_ONLY_PREVIEW = process.env.WAGECLAW_PET_ONLY === "1" || process.argv.includes("--pet-only");
 const PET_CENTER_PREVIEW = process.env.WAGECLAW_PET_CENTER === "1" || process.argv.includes("--pet-center");
+const APP_ICON_PATH = path.join(__dirname, "assets", "app-icon.png");
+
+if (process.platform === "win32") {
+  app.setAppUserModelId("com.wageclaw.electron");
+}
 
 let mainWindow = null;
 let petWindow = null;
@@ -41,6 +46,7 @@ function createMainWindow() {
     backgroundColor: "#00000000",
     autoHideMenuBar: true,
     title: "忍了吧 WageClaw",
+    icon: APP_ICON_PATH,
     hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),

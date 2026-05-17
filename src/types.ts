@@ -1,9 +1,10 @@
 export type Theme = "forest" | "arcade" | "sakura" | "ink" | "citrus";
 export type CountMode = "natural" | "workday";
 export type Mood = "rage" | "stable" | "numb";
-export type Currency = "wallet" | "rage";
+export type Currency = "wallet" | "paw" | "rage";
 export type ScreenKey = "converter" | "mall" | "pet" | "ninja" | "community" | "sync" | "settings";
 export type PetStyle = "rageBlob" | "capybaraZen" | "lazyCat" | "lazyDog" | "honestCow";
+export type PetInteractionMode = "normal" | "rage";
 
 export type PetStagePalette = {
   body: string;
@@ -32,6 +33,7 @@ export type PetStage = {
 
 export type Part = {
   id: string;
+  wishItemId: string;
   name: string;
   ratio: number;
   narrative: string;
@@ -55,6 +57,8 @@ export type MallItem = {
   currency?: Currency;
   tag: string;
   category: string;
+  kind?: "supply" | "physical";
+  wishable?: boolean;
   description: string;
   effect: string;
   icon: string;
@@ -73,11 +77,32 @@ export type Transaction = {
   category: TransactionCategory;
 };
 
+export type PawLedgerBucket = "attendance" | "interaction" | "event" | "supply";
+
+export type PawLedgerItem = {
+  id: string;
+  title: string;
+  amount: number;
+  note: string;
+  time: string;
+  date: string;
+  bucket: PawLedgerBucket;
+};
+
 export type UsageLogItem = {
   id: string;
   name: string;
   icon: string;
   effect: string;
+  time: string;
+};
+
+export type EarnedGood = {
+  id: string;
+  itemId: string;
+  name: string;
+  icon: string;
+  source: string;
   time: string;
 };
 
@@ -105,10 +130,52 @@ export type PetState = {
   touchCount: number;
   touchHeat: number;
   touchMood: string;
+  interactionMode: PetInteractionMode;
   battleWins: number;
   battleLosses: number;
   battleBestCombo: number;
   lastBusinessHint: string;
+};
+
+export type DailyPawLedger = {
+  date: string;
+  attendanceEarned: number;
+  interactionEarned: number;
+  eventEarned: number;
+  handledEvents: string[];
+  lastAttendanceAt: number;
+  nextEventAt: number;
+};
+
+export type MonthlyPawLedger = {
+  month: string;
+  earned: number;
+};
+
+export type WorkEventEffect = {
+  paw?: number;
+  rage?: number;
+  bloodPressure?: number;
+  hunger?: number;
+  satiety?: number;
+  affection?: number;
+  light?: number;
+  mana?: number;
+};
+
+export type WorkEventChoice = {
+  id: string;
+  label: string;
+  detail: string;
+  effect: WorkEventEffect;
+};
+
+export type WorkEvent = {
+  id: string;
+  title: string;
+  prompt: string;
+  tone: string;
+  choices: WorkEventChoice[];
 };
 
 export type WageClawState = {
@@ -126,16 +193,23 @@ export type WageClawState = {
   payday: number;
   walletBalance: number;
   rageBalance: number;
+  pawBalance: number;
   dailyRage: {
     date: string;
     value: number;
     triggered: string[];
   };
+  dailyPaw: DailyPawLedger;
+  monthlyPaw: MonthlyPawLedger;
+  activeWorkEventId: string;
   lastClaimTime: string;
+  activeWishId: string;
   unlockedParts: string[];
   inventory: Record<string, number>;
+  earnedGoods: EarnedGood[];
   pet: PetState;
   transactions: Transaction[];
+  pawLedger: PawLedgerItem[];
   usageLog: UsageLogItem[];
   petLog: PetLogItem[];
   transactionFilter: "all" | TransactionCategory;
