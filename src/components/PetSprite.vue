@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import type { CSSProperties } from "vue";
 import stage01 from "@/assets/pet-stages/level-01-mist.png";
 import stage02 from "@/assets/pet-stages/level-02-cable.png";
@@ -15,15 +15,31 @@ import capybaraZenSheet from "@/assets/pet-sheets/capybara-zen-sheet.png";
 import lazyCatSheet from "@/assets/pet-sheets/lazy-cat-sheet.png";
 import lazyDogSheet from "@/assets/pet-sheets/lazy-dog-sheet.png";
 import honestCowSheet from "@/assets/pet-sheets/honest-cow-sheet.png";
+import rageBlobPlayAction from "@/assets/pet-actions/rageBlob-play.webp";
+import rageBlobSleepAction from "@/assets/pet-actions/rageBlob-sleep.webp";
+import capybaraZenPlayAction from "@/assets/pet-actions/capybaraZen-play.webp";
+import capybaraZenSleepAction from "@/assets/pet-actions/capybaraZen-sleep.webp";
+import lazyCatPlayAction from "@/assets/pet-actions/lazyCat-play.webp";
+import lazyCatSleepAction from "@/assets/pet-actions/lazyCat-sleep.webp";
+import lazyDogPlayAction from "@/assets/pet-actions/lazyDog-play.webp";
+import lazyDogSleepAction from "@/assets/pet-actions/lazyDog-sleep.webp";
+import honestCowPlayAction from "@/assets/pet-actions/honestCow-play.webp";
+import honestCowSleepAction from "@/assets/pet-actions/honestCow-sleep.webp";
 import type { PetStage, PetStyle } from "@/types";
+
+type PetMotionAction = "idle" | "play" | "sleep";
 
 const props = withDefaults(
   defineProps<{
     stage: PetStage;
     mode?: "mini" | "compact" | "hero";
+    action?: PetMotionAction;
+    motionKey?: number;
   }>(),
   {
-    mode: "compact"
+    mode: "compact",
+    action: "idle",
+    motionKey: 0
   }
 );
 
@@ -47,9 +63,44 @@ const petSheets: Partial<Record<PetStyle, string>> = {
   honestCow: honestCowSheet
 };
 
-const spriteClass = computed(() => [`stage-${props.stage.level}`, `mode-${props.mode}`, `pet-style-${props.stage.style || "rageBlob"}`]);
+const petActionSheets: Record<PetStyle, Record<Exclude<PetMotionAction, "idle">, string>> = {
+  rageBlob: {
+    play: rageBlobPlayAction,
+    sleep: rageBlobSleepAction
+  },
+  capybaraZen: {
+    play: capybaraZenPlayAction,
+    sleep: capybaraZenSleepAction
+  },
+  lazyCat: {
+    play: lazyCatPlayAction,
+    sleep: lazyCatSleepAction
+  },
+  lazyDog: {
+    play: lazyDogPlayAction,
+    sleep: lazyDogSleepAction
+  },
+  honestCow: {
+    play: honestCowPlayAction,
+    sleep: honestCowSleepAction
+  }
+};
+
+const actionLoadFailed = ref(false);
+const activeStyle = computed(() => props.stage.style || "rageBlob");
 const sheetUrl = computed(() => petSheets[props.stage.style || "rageBlob"]);
 const artUrl = computed(() => (sheetUrl.value ? "" : petArt[props.stage.id]));
+const actionSheetUrl = computed(() => {
+  if (props.action === "idle") return "";
+  return petActionSheets[activeStyle.value]?.[props.action] || "";
+});
+const renderedAction = computed<PetMotionAction>(() => (actionSheetUrl.value && !actionLoadFailed.value ? props.action : "idle"));
+const spriteClass = computed(() => [
+  `stage-${props.stage.level}`,
+  `mode-${props.mode}`,
+  `pet-style-${activeStyle.value}`,
+  `pet-action-${renderedAction.value}`
+]);
 const styleVars = computed(
   () =>
     ({
@@ -60,14 +111,34 @@ const styleVars = computed(
       "--pet-eye": props.stage.palette.eye,
       "--pet-shadow": props.stage.palette.shadow,
       "--pet-sheet": sheetUrl.value ? `url(${sheetUrl.value})` : "none",
-      "--pet-position": `${Math.max(0, props.stage.level - 1) * (100 / 9)}%`
+      "--pet-position": `${Math.max(0, props.stage.level - 1) * (100 / 9)}%`,
+      "--pet-action-sheet": actionSheetUrl.value ? `url(${actionSheetUrl.value})` : "none",
+      "--pet-action-row-position": `${Math.max(0, props.stage.level - 1) * (100 / 9)}%`
     }) as CSSProperties
 );
+const actionRenderKey = computed(() => `${renderedAction.value}-${activeStyle.value}-${props.stage.level}-${props.motionKey}`);
+
+watch(
+  () => [props.action, props.stage.id, activeStyle.value],
+  () => {
+    actionLoadFailed.value = false;
+  }
+);
+
+function markActionLoadFailed() {
+  actionLoadFailed.value = true;
+}
 </script>
 
 <template>
   <span class="pet-sprite" :class="spriteClass" :style="styleVars" :aria-label="`${stage.name}：${stage.visual}`" role="img">
-    <span v-if="sheetUrl" class="pet-sheet-art" aria-hidden="true"></span>
+    <template v-if="renderedAction !== 'idle'">
+      <img class="pet-action-probe" :src="actionSheetUrl" alt="" aria-hidden="true" draggable="false" @error="markActionLoadFailed" />
+      <span :key="actionRenderKey" class="pet-action-art" aria-hidden="true"></span>
+    </template>
+    <template v-else-if="sheetUrl">
+      <span class="pet-sheet-art" aria-hidden="true"></span>
+    </template>
     <img v-else-if="artUrl" class="pet-art" :src="artUrl" :alt="stage.name" draggable="false" />
     <template v-else>
       <span class="pet-orbit pet-orbit-a"></span>
@@ -127,6 +198,41 @@ const styleVars = computed(
   pointer-events: none;
   transform-origin: 50% 72%;
   user-select: none;
+}
+
+.pet-action-play,
+.pet-action-sleep {
+  animation: none;
+}
+
+.pet-action-probe {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pet-action-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: var(--pet-action-sheet);
+  background-position: 0 var(--pet-action-row-position);
+  background-repeat: no-repeat;
+  pointer-events: none;
+  transform-origin: 50% 72%;
+  user-select: none;
+}
+
+.pet-action-play .pet-action-art {
+  background-size: 1200% 1000%;
+  animation: pet-action-play 1.3s steps(11, end) both;
+}
+
+.pet-action-sleep .pet-action-art {
+  background-size: 1800% 1000%;
+  animation: pet-action-sleep 2.8s steps(17, end) both;
 }
 
 .mode-mini {
@@ -598,6 +704,24 @@ const styleVars = computed(
 @keyframes pet-orbit-spin {
   to {
     transform: rotate(342deg);
+  }
+}
+
+@keyframes pet-action-play {
+  from {
+    background-position: 0 var(--pet-action-row-position);
+  }
+  to {
+    background-position: 100% var(--pet-action-row-position);
+  }
+}
+
+@keyframes pet-action-sleep {
+  from {
+    background-position: 0 var(--pet-action-row-position);
+  }
+  to {
+    background-position: 100% var(--pet-action-row-position);
   }
 }
 </style>

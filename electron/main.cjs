@@ -1,10 +1,14 @@
 const path = require("path");
-const { app, BrowserWindow, ipcMain, screen } = require("electron");
+const { app, BrowserWindow, ipcMain, screen, Menu, Tray } = require("electron");
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || process.env.WAGECLAW_DEV_SERVER_URL || "http://127.0.0.1:5173";
 const PET_ONLY_PREVIEW = process.env.WAGECLAW_PET_ONLY === "1" || process.argv.includes("--pet-only");
 const PET_CENTER_PREVIEW = process.env.WAGECLAW_PET_CENTER === "1" || process.argv.includes("--pet-center");
 const APP_ICON_PATH = path.join(__dirname, "assets", "app-icon.png");
+const CACHE_PATH = path.join(app.getPath("temp"), "wageclaw-electron-cache");
+
+app.commandLine.appendSwitch("disk-cache-dir", CACHE_PATH);
+app.commandLine.appendSwitch("disable-gpu-shader-disk-cache");
 
 if (process.platform === "win32") {
   app.setAppUserModelId("com.wageclaw.electron");
@@ -13,6 +17,19 @@ if (process.platform === "win32") {
 let mainWindow = null;
 let petWindow = null;
 let blackoutWindow = null;
+let tray = null;
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    showMainWindow("converter");
+    if (petWindow && !petWindow.isDestroyed()) {
+      petWindow.show();
+    }
+  });
+}
 
 process.on("uncaughtException", (err) => {
   console.error("[FATAL]", err);
@@ -32,6 +49,67 @@ function updateDockVisibility() {
       app.dock.hide();
     }
   }
+}
+
+function isPetWindowVisible() {
+  return Boolean(petWindow && !petWindow.isDestroyed() && petWindow.isVisible());
+}
+
+function buildTrayMenu() {
+  const petVisible = isPetWindowVisible();
+  return Menu.buildFromTemplate([
+    {
+      label: "\u6253\u5f00\u4e3b\u754c\u9762",
+      click: () => showMainWindow("converter")
+    },
+    {
+      label: petVisible ? "\u9690\u85cf\u684c\u5ba0" : "\u663e\u793a\u684c\u5ba0",
+      click: () => {
+        togglePetWindow(!petVisible);
+        updateTrayMenu();
+      }
+    },
+    { type: "separator" },
+    {
+      label: "\u9000\u51fa WageClaw",
+      click: quitApp
+    }
+  ]);
+}
+
+function updateTrayMenu() {
+  if (!tray) return;
+  tray.setContextMenu(buildTrayMenu());
+}
+
+function showTrayMenu() {
+  if (!tray) return;
+  updateTrayMenu();
+  tray.popUpContextMenu();
+}
+
+function createTray() {
+  if (tray) return tray;
+  tray = new Tray(APP_ICON_PATH);
+  tray.setToolTip("WageClaw \u684c\u5ba0");
+  tray.on("click", showTrayMenu);
+  updateTrayMenu();
+  return tray;
+}
+
+function quitApp() {
+  app.isQuitting = true;
+  clearInterval(petRicochetTimer);
+  clearInterval(petStormTimer);
+  clearInterval(petNukeTimer);
+  if (blackoutWindow && !blackoutWindow.isDestroyed()) {
+    blackoutWindow.close();
+  }
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
+  app.quit();
 }
 
 function createMainWindow() {
@@ -126,8 +204,11 @@ function createPetWindow() {
     win.setPosition(pos[0] + dx, pos[1] + dy, true);
   });
 
+  win.on("show", updateTrayMenu);
+  win.on("hide", updateTrayMenu);
   win.on("closed", () => {
     petWindow = null;
+    updateTrayMenu();
   });
   return win;
 }
@@ -481,9 +562,11 @@ function showMainWindow(screen) {
       }
     });
 
+    createTray();
     mainWindow = createMainWindow();
     petWindow = createPetWindow();
     petWindow.show();
+    updateTrayMenu();
     updateDockVisibility();
 
   app.on("activate", () => {
@@ -501,4 +584,8 @@ app.on("window-all-closed", () => {
 
 app.on("before-quit", () => {
   app.isQuitting = true;
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
 });

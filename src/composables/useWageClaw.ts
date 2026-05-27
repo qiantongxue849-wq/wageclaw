@@ -46,16 +46,45 @@ const PAW_ATTENDANCE_RATE_PER_MINUTE = 0.45;
 const WORK_EVENT_MIN_GAP_MS = 8 * 60 * 1000;
 const WORK_EVENT_RANDOM_GAP_MS = 12 * 60 * 1000;
 const WORK_EVENT_DAILY_LIMIT = 5;
-const PET_SHAKE_MIN_HORIZONTAL_TRAVEL = 180;
-const PET_SHAKE_MIN_DIRECTION_CHANGES = 3;
-const PET_SHAKE_MAX_VERTICAL_DRIFT = 120;
-const PET_SHAKE_HORIZONTAL_DOMINANCE = 1.6;
-const PET_SHAKE_MIN_DIRECTION_RUN = 24;
-const PET_SHAKE_PICKER_REVEAL_DELAY_MS = 80;
+const PET_SHAKE_MIN_HORIZONTAL_TRAVEL = 120;
+const PET_SHAKE_MIN_HORIZONTAL_RANGE = 48;
+const PET_SHAKE_MIN_DIRECTION_CHANGES = 2;
+const PET_SHAKE_MAX_VERTICAL_DRIFT = 160;
+const PET_SHAKE_HORIZONTAL_DOMINANCE = 1.35;
+const PET_SHAKE_MIN_DIRECTION_RUN = 20;
+const PET_SHAKE_PICKER_REVEAL_DELAY_MS = 120;
+const DEFAULT_START_TIME = "08:30";
+const DEFAULT_END_TIME = "18:00";
+const DEFAULT_PAYDAY = 15;
+const LEGACY_DEFAULT_START_TIME = "09:30";
+const LEGACY_DEFAULT_END_TIME = "18:30";
+const LEGACY_DEFAULT_PAYDAY = 10;
+const PET_SATIETY_DECAY_PER_SECOND = 0.0018;
+const PET_TOUCH_HEAT_DECAY_PER_SECOND = 0.004;
+const PET_MANA_BONUS_MAX = 60;
+const BLOOD_PRESSURE_MIN = 80;
+const BLOOD_PRESSURE_IDEAL = 118;
+const BLOOD_PRESSURE_MAX = 180;
+const RELAX_BLOOD_PRESSURE_FLOOR = 96;
+const MEDICINE_BLOOD_PRESSURE_FLOOR = 90;
 
 type PageKey = "transactions" | "pawLedger" | "mall" | "wishShop" | "supplyShop" | "inventory" | "usage" | "petSupply" | "petLog" | "community";
 type MallTab = "wishShop" | "supplyShop" | "inventory";
 type TouchKey = keyof typeof petTouchProfiles;
+type QuickCareAction = "feed" | "play" | "sleep";
+type TouchHeatTier = "low" | "warm" | "tired";
+type PetDelta = {
+  rage?: number;
+  growth?: number;
+  light?: number;
+  satiety?: number;
+  affection?: number;
+  manaCap?: number;
+  mana?: number;
+  bloodPressure?: number;
+  touchHeat?: number;
+  bloodPressureFloor?: number;
+};
 
 const rawViewMode = new URLSearchParams(window.location.search).get("view");
 const viewMode = (rawViewMode === "pet" ? "pet" : rawViewMode === "float" ? "float" : "main") as "main" | "pet" | "float";
@@ -77,20 +106,21 @@ function getCurrentMonthKey(date = new Date()) {
 function createDefaultState(): WageClawState {
   return {
     nickname: "工位逃兵",
-    salary: 12000,
-    wish: "MacBook Pro",
-    price: 15000,
-    rageMinutes: 45,
+    onboardingDone: false,
+    salary: 0,
+    wish: "",
+    price: 0,
+    rageMinutes: 0,
     mood: "rage",
     theme: "forest",
-    petStyle: "rageBlob",
+    petStyle: "capybaraZen",
     countMode: "natural",
-    startTime: "09:30",
-    endTime: "18:30",
-    payday: 10,
-    walletBalance: 4242,
+    startTime: "",
+    endTime: "",
+    payday: DEFAULT_PAYDAY,
+    walletBalance: 0,
     rageBalance: 0,
-    pawBalance: 88,
+    pawBalance: 0,
     dailyRage: {
       date: getLocalDateKey(),
       value: 0,
@@ -98,26 +128,23 @@ function createDefaultState(): WageClawState {
     },
     dailyPaw: createDailyPawLedger(),
     monthlyPaw: createMonthlyPawLedger(),
-    activeWorkEventId: "overtime-meeting",
+    activeWorkEventId: "",
     lastClaimTime: "",
-    activeWishId: "macbook_pro_14",
+    activeWishId: "",
     unlockedParts: [],
-    inventory: {
-      coffee: 1,
-      meeting_jar: 1
-    },
+    inventory: {},
     earnedGoods: [],
     pet: {
       name: "怨息雾团",
       rage: 35,
+      growth: 35,
       light: 0,
       mana: 46,
       manaBonus: 0,
       cultivation: 0,
-      satiety: 62,
-      affection: 18,
-      hunger: 20,
-      bloodPressure: 30,
+      satiety: 56,
+      affection: 40,
+      bloodPressure: BLOOD_PRESSURE_IDEAL,
       summoned: false,
       gameBest: 0,
       lastLine: "把今天吞下去的那口气给我，我会慢慢长成能保护你的样子。",
@@ -131,64 +158,31 @@ function createDefaultState(): WageClawState {
       battleBestCombo: 0,
       lastBusinessHint: ""
     },
-    transactions: [
-      {
-        id: crypto.randomUUID(),
-        title: "初始薪资账户余额",
-        amount: 6380,
-        note: "来自前几天硬扛记录",
-        time: "刚刚",
-        category: "income",
-        date: getLocalDateKey()
-      },
-      {
-        id: crypto.randomUUID(),
-        title: "点亮 触控板",
-        amount: -2100,
-        note: "MacBook Pro",
-        time: "刚刚",
-        category: "wish",
-        date: getLocalDateKey()
-      },
-      {
-        id: crypto.randomUUID(),
-        title: "购买 带薪续命咖啡券",
-        amount: -38,
-        note: "情绪补给",
-        time: "刚刚",
-        category: "mall",
-        date: getLocalDateKey()
-      }
-    ],
-    pawLedger: [
-      {
-        id: crypto.randomUUID(),
-        title: "初始爪币余额",
-        amount: 88,
-        note: "软团小金库迁入",
-        time: "刚刚",
-        bucket: "event",
-        date: getLocalDateKey()
-      }
-    ],
+    transactions: [],
+    pawLedger: [],
     usageLog: [],
-    petLog: [
-      {
-        title: "怨气软团醒了",
-        detail: "一团怨气在桌角成形，正在等你投喂。",
-        time: "刚刚"
-      }
-    ],
+    petLog: [],
     transactionFilter: "all",
     mallFilter: "all",
     privacyMode: false
   };
 }
 
+function createFirstRunState(): WageClawState {
+  const state = createDefaultState();
+  state.transactions = [];
+  state.pawLedger = [];
+  state.usageLog = [];
+  state.petLog = [];
+  return state;
+}
+
 function sanitizeState(input: unknown): WageClawState {
   const base = createDefaultState();
-  if (!input || typeof input !== "object") return base;
+  if (!input || typeof input !== "object") return createFirstRunState();
   const stored = input as Partial<WageClawState>;
+  const storedPet = (stored.pet || {}) as Partial<WageClawState["pet"]> & { hunger?: number };
+  const { hunger: legacyHunger, ...storedPetWithoutLegacy } = storedPet;
   const dailyPaw = normalizeDailyPawLedger(stored.dailyPaw, base.dailyPaw);
   const currentMonth = getCurrentMonthKey();
   const monthlyPawFallback = {
@@ -198,29 +192,38 @@ function sanitizeState(input: unknown): WageClawState {
   const merged: WageClawState = {
     ...base,
     ...stored,
-    pet: { ...base.pet, ...(stored.pet || {}) },
+    pet: { ...base.pet, ...storedPetWithoutLegacy },
     dailyRage: { ...base.dailyRage, ...(stored.dailyRage || {}) },
     dailyPaw,
     monthlyPaw: normalizeMonthlyPawLedger(stored.monthlyPaw, monthlyPawFallback),
     inventory: { ...base.inventory, ...(stored.inventory || {}) },
     unlockedParts: Array.isArray(stored.unlockedParts) ? stored.unlockedParts.filter((id) => parts.some((part) => part.id === id)) : base.unlockedParts,
     earnedGoods: Array.isArray(stored.earnedGoods) ? stored.earnedGoods.map(normalizeEarnedGood) : base.earnedGoods,
-    transactions: Array.isArray(stored.transactions) ? stored.transactions.map(normalizeTransaction) : base.transactions,
-    pawLedger: Array.isArray(stored.pawLedger) ? stored.pawLedger.map(normalizePawLedgerItem) : base.pawLedger,
-    usageLog: Array.isArray(stored.usageLog) ? stored.usageLog : base.usageLog,
-    petLog: Array.isArray(stored.petLog) ? stored.petLog : base.petLog
+    transactions: Array.isArray(stored.transactions) ? stored.transactions.map(normalizeTransaction) : [],
+    pawLedger: Array.isArray(stored.pawLedger) ? stored.pawLedger.map(normalizePawLedgerItem) : [],
+    usageLog: Array.isArray(stored.usageLog) ? stored.usageLog : [],
+    petLog: Array.isArray(stored.petLog) ? stored.petLog : []
   };
+  const legacySatiety = Number(legacyHunger);
+  const storedSatiety = Number(storedPetWithoutLegacy.satiety);
+  merged.pet.satiety = clamp(Number.isFinite(legacySatiety) ? legacySatiety : Number.isFinite(storedSatiety) ? storedSatiety : base.pet.satiety, 0, 100);
+  merged.pet.affection = clamp(Number(merged.pet.affection) || 0, 0, 100);
+  merged.pet.bloodPressure = normalizeBloodPressure(merged.pet.bloodPressure, base.pet.bloodPressure);
+  merged.pet.rage = Math.max(0, Number(merged.pet.rage) || 0);
+  merged.pet.growth = Math.max(0, Number(merged.pet.growth ?? merged.pet.rage) || 0);
+  merged.pet.manaBonus = clamp(Number(merged.pet.manaBonus) || 0, 0, PET_MANA_BONUS_MAX);
   if (merged.activeWishId === "iphone17_pro_max_1tb" && merged.unlockedParts.some((id) => legacyIphone16PartIds.includes(id))) {
     merged.activeWishId = "iphone16_pro_max_1tb";
   }
-  const wishedItem = mallItems.find((item) => item.id === merged.activeWishId && item.kind === "physical") ||
-    mallItems.find((item) => item.id === "macbook_pro_14");
-  merged.activeWishId = wishedItem?.id || base.activeWishId;
-  merged.wish = wishedItem?.name || merged.wish || base.wish;
-  merged.price = wishedItem?.price || merged.price || base.price;
+  const storedWishName = typeof stored.wish === "string" ? stored.wish.trim() : "";
+  const wishedItem = mallItems.find((item) => item.id === merged.activeWishId && item.kind === "physical")
+    || (storedWishName ? mallItems.find((item) => item.kind === "physical" && item.name === storedWishName) : undefined);
+  merged.activeWishId = wishedItem?.id || "";
+  merged.wish = wishedItem?.name || "";
+  merged.price = wishedItem?.price || 0;
   merged.unlockedParts = merged.unlockedParts.filter((id) => parts.some((part) => part.id === id && part.wishItemId === merged.activeWishId));
-  merged.salary = Math.max(1, Number(merged.salary) || base.salary);
-  merged.price = Math.max(1, Number(merged.price) || base.price);
+  merged.salary = Math.max(0, Number(merged.salary) || 0);
+  merged.price = Math.max(0, Number(merged.price) || 0);
   merged.rageMinutes = Math.max(0, Number(merged.rageMinutes) || 0);
   merged.walletBalance = Number(merged.walletBalance) || 0;
   merged.rageBalance = Math.max(0, Number(merged.rageBalance) || 0);
@@ -238,16 +241,25 @@ function sanitizeState(input: unknown): WageClawState {
         }]
       : [];
   }
-  merged.payday = Math.min(31, Math.max(1, Number(merged.payday) || 10));
+  const hasLegacyDefaultWorkTime = stored.startTime === LEGACY_DEFAULT_START_TIME && stored.endTime === LEGACY_DEFAULT_END_TIME;
+  merged.startTime = hasLegacyDefaultWorkTime ? DEFAULT_START_TIME : normalizeClockTime(merged.startTime, base.startTime);
+  merged.endTime = hasLegacyDefaultWorkTime ? DEFAULT_END_TIME : normalizeClockTime(merged.endTime, base.endTime);
+  merged.payday = Math.min(31, Math.max(1, Number(merged.payday) || DEFAULT_PAYDAY));
+  if (Number(stored.payday) === LEGACY_DEFAULT_PAYDAY) {
+    merged.payday = DEFAULT_PAYDAY;
+  }
   merged.theme = (Object.keys(themeLabels).includes(merged.theme) ? merged.theme : "forest") as WageClawState["theme"];
   merged.petStyle = (Object.keys(petStageSeries).includes(merged.petStyle) ? merged.petStyle : "rageBlob") as WageClawState["petStyle"];
   merged.countMode = (Object.keys(modeLabels).includes(merged.countMode) ? merged.countMode : "natural") as CountMode;
   merged.mood = (Object.keys(moodCopy).includes(merged.mood) ? merged.mood : "rage") as Mood;
   merged.pet.interactionMode = merged.pet.interactionMode === "rage" ? "rage" : "normal";
   merged.privacyMode = Boolean(merged.privacyMode);
+  merged.onboardingDone = typeof stored.onboardingDone === "boolean"
+    ? stored.onboardingDone
+    : Boolean(merged.salary > 0 && merged.startTime && merged.endTime && merged.activeWishId);
   if (!merged.dailyRage.triggered) merged.dailyRage.triggered = [];
   if (!workEvents.some((event) => event.id === merged.activeWorkEventId)) {
-    merged.activeWorkEventId = workEvents[0]?.id || "";
+    merged.activeWorkEventId = merged.onboardingDone ? workEvents[0]?.id || "" : "";
   }
   return merged;
 }
@@ -280,11 +292,14 @@ function normalizePawLedgerItem(item: Partial<PawLedgerItem>): PawLedgerItem {
 }
 
 function normalizeEarnedGood(item: Partial<EarnedGood>): EarnedGood {
+  const itemId = item.itemId || "macbook_pro_14";
+  const mallItem = mallItems.find((entry) => entry.id === itemId);
   return {
     id: item.id || crypto.randomUUID(),
-    itemId: item.itemId || "macbook_pro_14",
-    name: item.name || "MacBook Pro 14",
-    icon: item.icon || "💻",
+    itemId,
+    name: item.name || mallItem?.name || "MacBook Pro 14",
+    icon: item.icon || mallItem?.icon || "💻",
+    amount: Math.max(0, Number(item.amount) || mallItem?.price || 0),
     source: item.source || "忍耐白捡",
     time: item.time || "刚刚"
   };
@@ -295,8 +310,20 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     return sanitizeState(raw ? JSON.parse(raw) : null);
   } catch {
-    return createDefaultState();
+    return createFirstRunState();
   }
+}
+
+function normalizeClockTime(value: unknown, fallback: string) {
+  if (typeof value !== "string") return fallback;
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return fallback;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return fallback;
+  }
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function timeToMinutes(value: string) {
@@ -310,6 +337,56 @@ function formatTime(date = new Date()) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function percentOf(value: number, max = 100) {
+  return clamp(Math.round((value / Math.max(1, max)) * 100), 0, 100);
+}
+
+function clampBloodPressure(value: number) {
+  return clamp(value, BLOOD_PRESSURE_MIN, BLOOD_PRESSURE_MAX);
+}
+
+function normalizeBloodPressure(value: unknown, fallback = BLOOD_PRESSURE_IDEAL) {
+  const raw = Number(value);
+  if (!Number.isFinite(raw)) return fallback;
+  const systolic = raw > 0 && raw < BLOOD_PRESSURE_MIN ? 90 + raw * 0.9 : raw;
+  return clampBloodPressure(systolic);
+}
+
+function bloodPressurePercent(value: number) {
+  return percentOf(clampBloodPressure(value) - BLOOD_PRESSURE_MIN, BLOOD_PRESSURE_MAX - BLOOD_PRESSURE_MIN);
+}
+
+function settleDailyBloodPressure(value: number) {
+  const current = clampBloodPressure(value);
+  if (current >= 120) return clampBloodPressure(current - Math.min(10, current - BLOOD_PRESSURE_IDEAL));
+  if (current < 90) return clampBloodPressure(current + Math.min(4, BLOOD_PRESSURE_IDEAL - current));
+  return current;
+}
+
+function getTouchHeatTier(heat: number): TouchHeatTier {
+  if (heat >= 85) return "tired";
+  if (heat >= 60) return "warm";
+  return "low";
+}
+
+function softenPositiveDelta(value: number, tier: TouchHeatTier) {
+  const delta = Math.round(Number(value) || 0);
+  if (delta <= 0) return delta;
+  if (tier === "tired") return 0;
+  if (tier === "warm") return Math.max(1, Math.round(delta / 2));
+  return delta;
+}
+
+function adjustTouchPressureDelta(value: number, tier: TouchHeatTier) {
+  const delta = Math.round(Number(value) || 0);
+  if (tier === "tired") {
+    if (delta < 0) return 0;
+    if (delta > 0) return delta + 1;
+  }
+  if (tier === "warm" && delta < 0) return -Math.max(1, Math.round(Math.abs(delta) / 2));
+  return delta;
 }
 
 function formatMonthDay(date: Date) {
@@ -342,6 +419,15 @@ function randomPick<T>(items: T[]) {
 
 function randomInt(min: number, max: number) {
   return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function getNextWorkEventAt(base = Date.now()) {
@@ -408,7 +494,7 @@ export function useWageClaw() {
   const mallTab = ref<MallTab>("wishShop");
   const inventorySubTab = ref<"items" | "log">("items");
   const petTab = ref<"status" | "refine" | "feed" | "log">("status");
-  const settingsTab = ref<"profile" | "appearance" | "schedule" | "data">("profile");
+  const settingsTab = ref<"profile" | "appearance" | "data">("profile");
   const pages = reactive<Record<PageKey, number>>({
     transactions: 1,
     pawLedger: 1,
@@ -429,6 +515,7 @@ export function useWageClaw() {
   const blackoutActive = ref(false);
   const summonedBubble = ref("");
   const petReaction = ref("");
+  const petMotionKey = ref(0);
   const petModePicker = ref(false);
   const petPos = reactive({ x: 0, y: 0 });
   const petDragging = ref(false);
@@ -439,8 +526,23 @@ export function useWageClaw() {
   });
   const petDialog = ref("");
   let petDragOffset = { x: 0, y: 0 };
-  let petDragStart = { x: 0, y: 0 };
-  let petShake = { lastX: 0, lastY: 0, lastDir: 0, directionChanges: 0, horizontalTravel: 0, verticalTravel: 0, directionRun: 0, modePickerReady: false };
+  let petDragStart = { x: 0, y: 0, screenX: 0, screenY: 0 };
+  let petShake = {
+    lastX: 0,
+    lastY: 0,
+    lastScreenX: 0,
+    lastScreenY: 0,
+    gestureX: 0,
+    gestureY: 0,
+    minGestureX: 0,
+    maxGestureX: 0,
+    lastDir: 0,
+    directionChanges: 0,
+    horizontalTravel: 0,
+    verticalTravel: 0,
+    directionRun: 0,
+    modePickerReady: false
+  };
   let consolePetClickCount = 0;
   let desktopPetClickCount = 0;
   let lastFloatPetInteractive = false;
@@ -450,6 +552,9 @@ export function useWageClaw() {
   let bubbleTimer: number | undefined;
   let consolePetClickTimer: number | undefined;
   let desktopPetClickTimer: number | undefined;
+  const petDialogHistory: string[] = [];
+  let petReactionTimer: number | undefined;
+  let petReactionToken = 0;
   let syncingFromStorage = false;
   let bridgeCleanup: Array<() => void> = [];
 
@@ -521,6 +626,12 @@ export function useWageClaw() {
     const elapsed = Math.max(0, cappedSeconds - sinceSeconds);
     return Math.max(0, elapsed * secondSalary.value);
   });
+  const todayClaimedSalary = computed(() => {
+    const today = getLocalDateKey(now.value);
+    return state.transactions
+      .filter((item) => item.date === today && item.title === "领取今日薪资额度" && item.amount > 0)
+      .reduce((sum, item) => sum + item.amount, 0);
+  });
   const walletCoins = computed(() => Math.max(0, state.walletBalance));
   const totalAvailable = computed(() => Math.max(0, state.walletBalance + claimableToday.value));
   const salaryCycleProgress = computed(() => {
@@ -538,7 +649,13 @@ export function useWageClaw() {
     };
   });
   const physicalMallItems = computed(() => mallItems.filter((item) => item.kind === "physical"));
-  const activeWishItem = computed(() => physicalMallItems.value.find((item) => item.id === state.activeWishId) || physicalMallItems.value[0]);
+  const activeWishItem = computed(() => physicalMallItems.value.find((item) => item.id === state.activeWishId));
+  const hasValidWorkTime = computed(() => {
+    const start = normalizeClockTime(state.startTime, "");
+    const end = normalizeClockTime(state.endTime, "");
+    return Boolean(start && end && timeToMinutes(end) > timeToMinutes(start));
+  });
+  const isProfileReady = computed(() => state.salary > 0 && hasValidWorkTime.value && Boolean(activeWishItem.value));
   const activeParts = computed(() => parts.filter((part) => part.wishItemId === activeWishItem.value?.id));
   const unlockedCount = computed(() => activeParts.value.filter((part) => state.unlockedParts.includes(part.id)).length);
   const wishSpent = computed(() => activeParts.value.reduce((total, part) => (state.unlockedParts.includes(part.id) ? total + getPartPrice(part.id) : total), 0));
@@ -549,16 +666,18 @@ export function useWageClaw() {
   const daysNeeded = computed(() => Math.max(0, Math.ceil(wishRemaining.value / Math.max(1, dailySalary.value))));
   const activePetStages = computed(() => petStageSeries[state.petStyle] || petStageSeries.rageBlob);
   const currentPetStage = computed(() => {
-    return [...activePetStages.value].reverse().find((stage) => state.pet.rage >= stage.threshold) || activePetStages.value[0];
+    return [...activePetStages.value].reverse().find((stage) => state.pet.growth >= stage.threshold) || activePetStages.value[0];
   });
-  const nextPetStage = computed(() => activePetStages.value.find((stage) => stage.threshold > state.pet.rage) || null);
+  const nextPetStage = computed(() => activePetStages.value.find((stage) => stage.threshold > state.pet.growth) || null);
+  const petGrowthGoal = computed(() => Math.round(nextPetStage.value?.threshold || Math.max(currentPetStage.value.threshold, state.pet.growth, 1)));
   const petProgress = computed(() => {
     const next = nextPetStage.value;
     if (!next) return 1;
     const current = currentPetStage.value;
-    return clamp((state.pet.rage - current.threshold) / Math.max(1, next.threshold - current.threshold), 0, 1);
+    return clamp((state.pet.growth - current.threshold) / Math.max(1, next.threshold - current.threshold), 0, 1);
   });
   const petManaMax = computed(() => 60 + currentPetStage.value.level * 12 + state.pet.manaBonus);
+  const petEnergyMax = computed(() => Math.max(1, Math.round(petManaMax.value)));
   const petAffinity = computed(() => {
     const diff = state.pet.light - state.pet.rage * 0.28;
     if (diff > 90) return { label: "澄明", type: "light" };
@@ -566,21 +685,71 @@ export function useWageClaw() {
     if (diff < -120) return { label: "暴戾", type: "dark" };
     return { label: "混沌", type: "neutral" };
   });
-  const petHungerLabel = computed(() => {
-    const h = state.pet.hunger;
-    if (h >= 80) return { label: "撑到了", color: "#e8a838" };
-    if (h >= 50) return { label: "吃饱了", color: "#56b886" };
-    if (h >= 25) return { label: "有点饿", color: "#d4a64a" };
-    if (h >= 10) return { label: "很饿了", color: "#d4783b" };
+  const petSatietyLabel = computed(() => {
+    const satiety = state.pet.satiety;
+    if (satiety >= 80) return { label: "撑到了", color: "#e8a838" };
+    if (satiety >= 50) return { label: "吃饱了", color: "#56b886" };
+    if (satiety >= 25) return { label: "有点饿", color: "#d4a64a" };
+    if (satiety >= 10) return { label: "很饿了", color: "#d4783b" };
     return { label: "饿晕了", color: "#d44a4a" };
   });
+  const petBloodPressurePercent = computed(() => bloodPressurePercent(state.pet.bloodPressure));
+  const petAttributes = computed(() => [
+    {
+      key: "satiety",
+      label: "饱食度",
+      icon: "🍐",
+      value: Math.round(state.pet.satiety),
+      max: 100,
+      percent: percentOf(state.pet.satiety),
+      color: "#58a96f"
+    },
+    {
+      key: "mood",
+      label: "心情值",
+      icon: "🙂",
+      value: Math.round(state.pet.affection),
+      max: 100,
+      percent: percentOf(state.pet.affection),
+      color: "#f0a457"
+    },
+    {
+      key: "bloodPressure",
+      label: "血压",
+      icon: "💓",
+      value: Math.round(state.pet.bloodPressure),
+      max: BLOOD_PRESSURE_MAX,
+      unit: " mmHg",
+      percent: petBloodPressurePercent.value,
+      color: petPressureLabel.value.color
+    },
+    {
+      key: "energy",
+      label: "能量",
+      icon: "⚡",
+      value: Math.round(state.pet.mana),
+      max: petEnergyMax.value,
+      percent: percentOf(state.pet.mana, petEnergyMax.value),
+      color: "#f2a43f"
+    },
+    {
+      key: "growth",
+      label: "成长值",
+      icon: "⭐",
+      value: Math.round(state.pet.growth),
+      max: petGrowthGoal.value,
+      percent: percentOf(state.pet.growth, petGrowthGoal.value),
+      color: "#e7a84c"
+    }
+  ]);
   const petPressureLabel = computed(() => {
     const bp = state.pet.bloodPressure;
-    if (bp >= 80) return { label: "血压爆表", color: "#d44a4a" };
-    if (bp >= 55) return { label: "血压偏高", color: "#d4783b" };
-    if (bp >= 30) return { label: "正常偏高", color: "#d4a64a" };
-    if (bp >= 10) return { label: "血压正常", color: "#56b886" };
-    return { label: "过于平稳", color: "#5b93c8" };
+    if (bp >= 160) return { label: "高压警报", color: "#d44a4a" };
+    if (bp >= 140) return { label: "二级偏高", color: "#d45c3b" };
+    if (bp >= 130) return { label: "一级偏高", color: "#d4783b" };
+    if (bp >= 120) return { label: "略高", color: "#d4a64a" };
+    if (bp >= 90) return { label: "正常", color: "#56b886" };
+    return { label: "偏低", color: "#5b93c8" };
   });
   const petStageLore = computed(() => currentPetStage.value.features.join(" · "));
   const activeWorkEvent = computed(() => workEvents.find((event) => event.id === state.activeWorkEventId) || null);
@@ -640,10 +809,11 @@ export function useWageClaw() {
   });
 
   function updatePetDecay() {
-    state.pet.hunger = clamp(state.pet.hunger - 0.03, 0, 100);
+    state.pet.satiety = clamp(state.pet.satiety - PET_SATIETY_DECAY_PER_SECOND, 0, 100);
+    state.pet.touchHeat = clamp(state.pet.touchHeat - PET_TOUCH_HEAT_DECAY_PER_SECOND, 0, 100);
     const dailyRageNorm = Math.min(100, (ensureDailyRageBucket().value / 500) * 100);
-    const pressureAdd = Math.max(0, (dailyRageNorm - state.pet.bloodPressure * 0.2) * 0.02);
-    state.pet.bloodPressure = clamp(state.pet.bloodPressure + pressureAdd, 0, 100);
+    const pressureAdd = dailyRageNorm > 20 ? ((dailyRageNorm - 20) / 80) * 0.002 : 0;
+    state.pet.bloodPressure = clampBloodPressure(state.pet.bloodPressure + pressureAdd);
   }
   const monthlyStats = computed(() => {
     const month = getCurrentMonthKey(now.value);
@@ -728,11 +898,13 @@ export function useWageClaw() {
     ensureDailyPawLedger();
     tickTimer = window.setInterval(() => {
       now.value = new Date();
-      ensureDailyRageBucket();
-      ensureDailyPawLedger();
-      updatePetDecay();
-      updatePawAttendance();
-      maybeTriggerWorkEvent();
+      if (state.onboardingDone) {
+        ensureDailyRageBucket();
+        ensureDailyPawLedger();
+        updatePetDecay();
+        updatePawAttendance();
+        maybeTriggerWorkEvent();
+      }
     }, 1000);
     bindDesktopBridge();
     window.addEventListener("keydown", handleGlobalKeydown);
@@ -746,6 +918,7 @@ export function useWageClaw() {
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
     if (consolePetClickTimer) window.clearTimeout(consolePetClickTimer);
     if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
+    if (petReactionTimer) window.clearTimeout(petReactionTimer);
     if (runnerTimer) window.clearInterval(runnerTimer);
     window.removeEventListener("keydown", handleGlobalKeydown);
     window.removeEventListener("keyup", handleGlobalKeyup);
@@ -762,6 +935,27 @@ export function useWageClaw() {
     notifyTimer = window.setTimeout(() => {
       notification.value = "";
     }, 2800);
+  }
+
+  function playPetReaction(reaction: string, durationMs = 500) {
+    const token = ++petReactionToken;
+    petMotionKey.value += 1;
+    if (petReactionTimer) window.clearTimeout(petReactionTimer);
+    const applyReaction = () => {
+      if (token === petReactionToken) petReaction.value = reaction;
+    };
+    if (petReaction.value === reaction) {
+      petReaction.value = "";
+      window.requestAnimationFrame(applyReaction);
+    } else {
+      applyReaction();
+    }
+    petReactionTimer = window.setTimeout(() => {
+      if (token === petReactionToken) {
+        petReaction.value = "";
+        petReactionTimer = undefined;
+      }
+    }, durationMs);
   }
 
   function pageItems<T>(items: T[], page: number, pageSize = PAGE_SIZE) {
@@ -877,6 +1071,33 @@ export function useWageClaw() {
     notify(`${item.name} 已设为心愿。`);
   }
 
+  function completeOnboarding() {
+    if (!hasValidWorkTime.value) {
+      notify("请先设置有效的上下班时间。");
+      return false;
+    }
+    if (state.salary <= 0) {
+      notify("请先填写月薪。");
+      return false;
+    }
+    const item = activeWishItem.value;
+    if (!item) {
+      notify("请先选择一个心愿。");
+      return false;
+    }
+    state.activeWishId = item.id;
+    state.wish = item.name;
+    state.price = item.price;
+    state.unlockedParts = [];
+    state.onboardingDone = true;
+    if (!state.activeWorkEventId) state.activeWorkEventId = workEvents[0]?.id || "";
+    ensureDailyRageBucket();
+    ensureDailyPawLedger();
+    activeScreen.value = "converter";
+    notify("设置完成，今天的工资进度开始记录。");
+    return true;
+  }
+
   function getPartPrice(partId: string) {
     const part = activeParts.value.find((item) => item.id === partId);
     return part ? Math.round(state.price * part.ratio) : 0;
@@ -887,6 +1108,10 @@ export function useWageClaw() {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
     })}`;
+  }
+
+  function roundMoney(value: number) {
+    return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
   }
 
   function formatBalance(value: number, decimals = 2) {
@@ -903,7 +1128,57 @@ export function useWageClaw() {
   }
 
   function formatLight(value: number) {
-    return `${Math.round(value || 0)} 清气`;
+    return `${Math.round(value || 0)} 气质`;
+  }
+
+  function formatBloodPressureDelta(value: number) {
+    const delta = Math.round(value || 0);
+    return `血压 ${delta > 0 ? "+" : ""}${delta}mmHg`;
+  }
+
+  function formatStatDelta(label: string, value: number | undefined, unit = "") {
+    const delta = Math.round(Number(value) || 0);
+    if (!delta) return "";
+    return `${label} ${delta > 0 ? "+" : ""}${delta}${unit}`;
+  }
+
+  function applyPetDelta(delta: PetDelta) {
+    const rage = Math.round(Number(delta.rage) || 0);
+    const growth = Math.round(Number(delta.growth) || 0);
+    const light = Math.round(Number(delta.light) || 0);
+    const satiety = Number(delta.satiety) || 0;
+    const affection = Math.round(Number(delta.affection) || 0);
+    const manaCap = Math.round(Number(delta.manaCap) || 0);
+    const mana = Number(delta.mana) || 0;
+    const bloodPressure = Number(delta.bloodPressure) || 0;
+    const touchHeat = Number(delta.touchHeat) || 0;
+
+    if (rage) state.pet.rage = Math.max(0, state.pet.rage + rage);
+    if (growth) state.pet.growth = Math.max(0, state.pet.growth + growth);
+    if (light) state.pet.light += light;
+    if (satiety) state.pet.satiety = clamp(state.pet.satiety + satiety, 0, 100);
+    if (affection) state.pet.affection = clamp(state.pet.affection + affection, 0, 100);
+    if (manaCap) state.pet.manaBonus = clamp(state.pet.manaBonus + manaCap, 0, PET_MANA_BONUS_MAX);
+    if (mana) state.pet.mana = clamp(state.pet.mana + mana, 0, petManaMax.value);
+    if (bloodPressure) {
+      const current = clampBloodPressure(state.pet.bloodPressure);
+      const next = clampBloodPressure(current + bloodPressure);
+      const floor = delta.bloodPressureFloor;
+      state.pet.bloodPressure = bloodPressure < 0 && typeof floor === "number"
+        ? Math.max(next, Math.min(current, floor))
+        : next;
+    }
+    if (touchHeat) state.pet.touchHeat = clamp(state.pet.touchHeat + touchHeat, 0, 100);
+  }
+
+  function formatPetDeltaSummary(delta: Pick<PetDelta, "affection" | "light" | "mana" | "satiety" | "bloodPressure">) {
+    return [
+      formatStatDelta("心情", delta.affection),
+      formatStatDelta("气质", delta.light),
+      formatStatDelta("法力", delta.mana),
+      formatStatDelta("饱食", delta.satiety),
+      delta.bloodPressure ? formatBloodPressureDelta(delta.bloodPressure) : ""
+    ].filter(Boolean).join("，");
   }
 
   function addTransaction(title: string, amount: number, note = "", category: TransactionCategory = "expense") {
@@ -945,9 +1220,25 @@ export function useWageClaw() {
       itemId: item.id,
       name: item.name,
       icon: item.icon,
+      amount: item.price,
       source: "忍耐白捡",
       time: formatTime()
     });
+  }
+
+  function deleteEarnedGood(goodId: string) {
+    const index = state.earnedGoods.findIndex((item) => item.id === goodId);
+    if (index < 0) return;
+    const good = normalizeEarnedGood(state.earnedGoods[index]);
+    const refundAmount = roundMoney(good.amount);
+    if (!window.confirm(`确定删除「${good.name}」吗？会退回 ${formatMoney(refundAmount)} 到工资余额。`)) return;
+    state.earnedGoods.splice(index, 1);
+    if (refundAmount > 0) {
+      state.walletBalance += refundAmount;
+      addTransaction(`删除已实现心愿退款 ${good.name}`, refundAmount, "已实现心愿删除回退", "income");
+    }
+    addPetLog("已实现心愿删除", `${good.name} 已从陈列移除，工资余额退回 ${formatMoney(refundAmount)}。`);
+    notify(`已删除 ${good.name}，退回 ${formatMoney(refundAmount)}。`);
   }
 
   function claimWishReward() {
@@ -976,7 +1267,11 @@ export function useWageClaw() {
   }
 
   function claimDailyWallet() {
-    const amount = Math.max(0.01, claimableToday.value);
+    const amount = roundMoney(claimableToday.value);
+    if (amount <= 0) {
+      notify("今日暂无可领取额度。");
+      return;
+    }
     state.walletBalance += amount;
     state.lastClaimTime = String(now.value.getTime());
     addTransaction("领取今日薪资额度", amount, `${state.startTime} - ${state.endTime}`, "income");
@@ -1082,18 +1377,18 @@ export function useWageClaw() {
 
   function restorePetMana(amount?: number) {
     const target = amount ?? Math.round(petManaMax.value * 0.35);
-    state.pet.mana = clamp(state.pet.mana + target, 0, petManaMax.value);
+    applyPetDelta({ mana: target });
   }
 
   function formatPetBoost(boost: PetBoost = {}) {
     const result = [
-      boost.rage ? `怨气 +${boost.rage}` : "",
-      boost.light ? `清气 +${boost.light}` : "",
-      boost.affection ? `亲密 +${boost.affection}` : "",
-      boost.manaCap ? `法力上限 +${boost.manaCap}` : "",
-      boost.mana ? `法力 +${boost.mana}` : "",
-      boost.hunger ? `饱食 +${boost.hunger}` : "",
-      boost.bloodPressure ? (boost.bloodPressure < 0 ? `血压 ${boost.bloodPressure}` : `血压 +${boost.bloodPressure}`) : ""
+      formatStatDelta("怨气", boost.rage),
+      formatStatDelta("气质", boost.light),
+      formatStatDelta("心情", boost.affection),
+      formatStatDelta("法力上限", boost.manaCap),
+      formatStatDelta("法力", boost.mana),
+      formatStatDelta("饱食", boost.satiety),
+      boost.bloodPressure ? formatBloodPressureDelta(boost.bloodPressure) : ""
     ].filter(Boolean);
     return result.join(" / ");
   }
@@ -1101,14 +1396,24 @@ export function useWageClaw() {
   function feedPet(item: MallItem) {
     const boost = item.petBoost || {};
     const beforeStage = currentPetStage.value.id;
-    state.pet.rage += Number(boost.rage) || 0;
-    state.pet.light += Number(boost.light) || 0;
-    state.pet.satiety = clamp(state.pet.satiety + (Number(boost.satiety) || 0), 0, 100);
-    state.pet.affection = clamp(state.pet.affection + (Number(boost.affection) || 0), 0, 100);
-    state.pet.manaBonus += Number(boost.manaCap) || 0;
-    state.pet.hunger = clamp(state.pet.hunger + (Number(boost.hunger) || 0), 0, 100);
-    state.pet.bloodPressure = clamp(state.pet.bloodPressure + (Number(boost.bloodPressure) || 0), 0, 100);
-    restorePetMana(Number(boost.mana) || 0);
+    const rageBoost = Number(boost.rage) || 0;
+    if (rageBoost > 0) {
+      addRageCoins(rageBoost, "补给怨气", Number(boost.bloodPressure) || 0, Math.max(0, rageBoost));
+    } else if (rageBoost < 0) {
+      applyPetDelta({ rage: rageBoost });
+    }
+    const pressure = Number(boost.bloodPressure) || 0;
+    applyPetDelta({
+      light: boost.light,
+      satiety: boost.satiety,
+      affection: boost.affection,
+      manaCap: boost.manaCap,
+      mana: boost.mana,
+      bloodPressure: rageBoost > 0 ? 0 : pressure,
+      bloodPressureFloor: pressure < 0
+        ? item.category === "medicine" ? MEDICINE_BLOOD_PRESSURE_FLOOR : RELAX_BLOOD_PRESSURE_FLOOR
+        : undefined
+    });
     const evolved = beforeStage !== currentPetStage.value.id;
     state.pet.lastLine = evolved
       ? `${item.name} 很对胃口。我进化成 ${currentPetStage.value.name} 了。`
@@ -1117,12 +1422,17 @@ export function useWageClaw() {
     notify(`${item.name} 已投喂。`);
   }
 
-  function addRageCoins(amount: number, source = "怨气增长", pressureGain?: number) {
+  function addRageCoins(amount: number, source = "怨气增长", pressureGain?: number, growthGain?: number) {
     const gained = Math.max(0, Math.round(amount));
     if (!gained) return 0;
-    state.pet.rage += gained;
-    const pressure = pressureGain ?? gained * 0.04;
-    state.pet.bloodPressure = clamp(state.pet.bloodPressure + pressure, 0, 100);
+    const growth = Math.max(0, Math.round(growthGain ?? gained));
+    const pressure = pressureGain ?? Math.min(8, Math.max(1, Math.round(gained * 0.06)));
+    applyPetDelta({
+      rage: gained,
+      growth,
+      bloodPressure: pressure,
+      bloodPressureFloor: pressure < 0 ? RELAX_BLOOD_PRESSURE_FLOOR : undefined
+    });
     const bucket = ensureDailyRageBucket();
     bucket.value += gained;
     dailyRageMilestones.forEach((milestone) => {
@@ -1132,7 +1442,8 @@ export function useWageClaw() {
         if (milestone.action === "blackout") triggerBlackoutSkill({ automatic: true });
       }
     });
-    addPetLog(source, `新增 ${formatRage(gained)}${pressureGain ? `，血压 +${Math.round(pressureGain)}` : ""}。`);
+    const growthLine = growth !== gained ? `，成长 +${growth}` : "";
+    addPetLog(source, `新增 ${formatRage(gained)}${growthLine}${pressure ? `，${formatBloodPressureDelta(pressure)}` : ""}。`);
     return gained;
   }
 
@@ -1144,7 +1455,7 @@ export function useWageClaw() {
       state.pet.rage = 0;
       state.pet.cultivation = 0;
       state.pet.touchHeat = 0;
-      state.pet.bloodPressure = clamp(state.pet.bloodPressure - 18, 0, 100);
+      state.pet.bloodPressure = settleDailyBloodPressure(state.pet.bloodPressure);
       state.pet.lastLine = yesterdayRage > 0
         ? `昨天的 ${formatRage(yesterdayRage)} 已沉淀，今天重新从一小团怨气开始养。`
         : "新工作日开始，软团把怨气炉清空，等你投喂今天的糟心事。";
@@ -1256,10 +1567,10 @@ export function useWageClaw() {
     const result = [
       effect.paw ? (effect.paw > 0 ? `爪币 +${effect.paw}` : `爪币 ${effect.paw}`) : "",
       effect.rage ? (effect.rage > 0 ? `怨气 +${effect.rage}` : `怨气 ${effect.rage}`) : "",
-      effect.bloodPressure ? (effect.bloodPressure > 0 ? `血压 +${effect.bloodPressure}` : `血压 ${effect.bloodPressure}`) : "",
-      effect.hunger ? (effect.hunger > 0 ? `饱食 +${effect.hunger}` : `饱食 ${effect.hunger}`) : "",
-      effect.affection ? (effect.affection > 0 ? `亲密 +${effect.affection}` : `亲密 ${effect.affection}`) : "",
-      effect.light ? (effect.light > 0 ? `清气 +${effect.light}` : `清气 ${effect.light}`) : "",
+      effect.bloodPressure ? formatBloodPressureDelta(effect.bloodPressure) : "",
+      effect.satiety ? (effect.satiety > 0 ? `饱食 +${effect.satiety}` : `饱食 ${effect.satiety}`) : "",
+      effect.affection ? (effect.affection > 0 ? `心情 +${effect.affection}` : `心情 ${effect.affection}`) : "",
+      effect.light ? (effect.light > 0 ? `气质 +${effect.light}` : `气质 ${effect.light}`) : "",
       effect.mana ? (effect.mana > 0 ? `法力 +${effect.mana}` : `法力 ${effect.mana}`) : ""
     ].filter(Boolean);
     return result.join(" / ") || "状态稳定";
@@ -1270,15 +1581,17 @@ export function useWageClaw() {
     const actualPaw = pawDelta ? addPawCoins(pawDelta, "打工选择结算", "event", true) : 0;
     if (effect.rage) {
       const rage = Number(effect.rage) || 0;
-      if (rage > 0) addRageCoins(rage, "打工怨气");
-      else state.pet.rage = Math.max(0, state.pet.rage + rage);
+      if (rage > 0) addRageCoins(rage, "打工怨气", 0);
+      else applyPetDelta({ rage });
     }
-    state.pet.bloodPressure = clamp(state.pet.bloodPressure + (Number(effect.bloodPressure) || 0), 0, 100);
-    state.pet.hunger = clamp(state.pet.hunger + (Number(effect.hunger) || 0), 0, 100);
-    state.pet.satiety = clamp(state.pet.satiety + (Number(effect.satiety) || 0), 0, 100);
-    state.pet.affection = clamp(state.pet.affection + (Number(effect.affection) || 0), 0, 100);
-    state.pet.light += Number(effect.light) || 0;
-    restorePetMana(Number(effect.mana) || 0);
+    applyPetDelta({
+      bloodPressure: effect.bloodPressure,
+      bloodPressureFloor: Number(effect.bloodPressure) < 0 ? RELAX_BLOOD_PRESSURE_FLOOR : undefined,
+      satiety: effect.satiety,
+      affection: effect.affection,
+      light: effect.light,
+      mana: effect.mana
+    });
     return actualPaw;
   }
 
@@ -1310,32 +1623,14 @@ export function useWageClaw() {
     const moodBonus = state.mood === "rage" ? 12 : state.mood === "numb" ? 8 : 6;
     const workBonus = Math.min(40, Math.round(state.rageMinutes / 6));
     const gained = base + moodBonus + workBonus;
-    addRageCoins(gained, "糟心事炼化");
-    const manaRecover = Math.max(8, Math.round(gained * 0.28));
+    const growthGain = Math.min(80, Math.round(gained * 0.65));
+    addRageCoins(gained, "糟心事炼化", -4, growthGain);
+    const manaRecover = Math.max(8, Math.round(gained * 0.22));
     restorePetMana(manaRecover);
-    state.pet.affection = clamp(state.pet.affection + 2, 0, 100);
-    state.pet.lastLine = `炼出 ${formatRage(gained)}，顺手回了 ${manaRecover} 点法力。这段糟心事我先收着。`;
+    applyPetDelta({ affection: 2 });
+    state.pet.lastLine = `炼出 ${formatRage(gained)}，沉淀 ${growthGain} 点成长，顺手回了 ${manaRecover} 点法力。这段糟心事我先收着。`;
     rantText.value = "";
     notify(`炼化完成：${formatRage(gained)}。`);
-  }
-
-  function refineLightFromRant() {
-    const text = rantText.value.trim();
-    if (!text) {
-      notify("先写下想转化的心事。");
-      return;
-    }
-    const base = clamp(Math.round(text.length * 0.9), 12, 120);
-    const moodBonus = state.mood === "numb" ? 8 : 6;
-    const workBonus = Math.min(40, Math.round(state.rageMinutes / 6));
-    const gained = base + moodBonus + workBonus;
-    state.pet.light += gained;
-    restorePetMana(Math.max(8, Math.round(gained * 0.28)));
-    state.pet.affection = clamp(state.pet.affection + 3, 0, 100);
-    state.pet.lastLine = `转化出 ${formatLight(gained)}。现在体内是${petAffinity.value.label}的气息。`;
-    addPetLog("心事转化", `新增 ${formatLight(gained)}。`);
-    rantText.value = "";
-    notify(`已转化 ${formatLight(gained)}。`);
   }
 
   function cultivatePet() {
@@ -1344,13 +1639,80 @@ export function useWageClaw() {
       notify(`法力还差 ${Math.round(cost - state.pet.mana)} 点，先投喂或转化一点心事。`);
       return;
     }
-    state.pet.mana = clamp(state.pet.mana - cost, 0, petManaMax.value);
+    applyPetDelta({ mana: -cost });
     state.pet.cultivation += 1;
     const rageGain = 12 + currentPetStage.value.level * 5 + Math.floor(cost / 14);
-    addRageCoins(rageGain, "怨气修炼");
-    state.pet.affection = clamp(state.pet.affection + 3, 0, 100);
+    addRageCoins(rageGain, "怨气修炼", 2);
+    applyPetDelta({ affection: 3 });
     state.pet.lastLine = `闭关结束，当前修炼 ${state.pet.cultivation} 重。`;
     addPetLog("怨气修炼", `消耗 ${Math.round(cost)} 点法力，新增 ${formatRage(rageGain)}。`);
+  }
+
+  function quickCarePet(action: QuickCareAction) {
+    if (action === "feed") {
+      const food = inventoryItems.value.find((entry) => entry.item.petBoost && entry.item.category === "food");
+      if (food) {
+        useItem(food.item);
+        return;
+      }
+      mallTab.value = "supplyShop";
+      activeScreen.value = "mall";
+      notify("背包里暂时没有吃的，已打开补给仓。");
+      return;
+    }
+
+    if (action === "play") {
+      const tier = getTouchHeatTier(state.pet.touchHeat);
+      const baseCost = Math.max(6, Math.round(petManaMax.value * 0.08));
+      const manaCost = tier === "tired" ? Math.max(3, Math.round(baseCost / 2)) : baseCost;
+      if (state.pet.mana < manaCost) {
+        state.pet.touchMood = "电量不足";
+        state.pet.lastLine = "软团已经困到追不动光点了，先让它小睡一会儿。";
+        notify("能量不够玩耍，先小睡恢复一下。");
+        showPetBubble(state.pet.lastLine);
+        return;
+      }
+      const affectionDelta = tier === "low" ? 4 : tier === "warm" ? 2 : 0;
+      const pressureDelta = tier === "low" ? -3 : tier === "warm" ? -1 : 1;
+      const heatDelta = tier === "low" ? 12 : tier === "warm" ? 10 : 6;
+      applyPetDelta({
+        mana: -manaCost,
+        affection: affectionDelta,
+        bloodPressure: pressureDelta,
+        bloodPressureFloor: pressureDelta < 0 ? RELAX_BLOOD_PRESSURE_FLOOR : undefined,
+        touchHeat: heatDelta
+      });
+      state.pet.touchMood = tier === "tired" ? "玩累了" : "开心打滚";
+      state.pet.lastLine = tier === "tired"
+        ? "软团还是扑了一下小光点，但明显已经玩累了，得缓一缓。"
+        : "软团追着桌面小光点绕了一圈，回来时尾巴都快摇成残影了。";
+      addPetLog("陪玩放电", `${formatPetDeltaSummary({ affection: affectionDelta, bloodPressure: pressureDelta, mana: -manaCost }) || "状态稳定"}，热度 +${heatDelta}。`);
+      notify(tier === "tired" ? "软团玩累了，这次没有继续涨心情。" : "软团玩累了一点，但心情明显变好了。");
+      showPetBubble(state.pet.lastLine);
+      playPetReaction("play", 1300);
+      return;
+    }
+
+    const shouldRecover = state.pet.mana < petManaMax.value * 0.9 || state.pet.bloodPressure > BLOOD_PRESSURE_IDEAL || state.pet.touchHeat > 30;
+    const manaRecover = shouldRecover ? Math.round(petManaMax.value * 0.3) : 0;
+    const pressureDelta = shouldRecover ? -8 : 0;
+    const heatDelta = shouldRecover ? -35 : -8;
+    applyPetDelta({
+      mana: manaRecover,
+      bloodPressure: pressureDelta,
+      bloodPressureFloor: pressureDelta < 0 ? RELAX_BLOOD_PRESSURE_FLOOR : undefined,
+      touchHeat: heatDelta
+    });
+    state.pet.touchMood = "安心打盹";
+    state.pet.lastLine = shouldRecover
+      ? "软团打了个小盹，能量慢慢回来了，呼吸也平稳了一些。"
+      : "软团已经挺精神了，只是闭眼趴了一小会儿。";
+    addPetLog("小睡恢复", shouldRecover
+      ? `${formatPetDeltaSummary({ mana: manaRecover, bloodPressure: pressureDelta })}，热度 ${heatDelta}。`
+      : `状态已经稳定，只降低一点互动热度。`);
+    notify(shouldRecover ? "软团睡醒后精神了一点。" : "软团现在不困，短暂趴了一会儿。");
+    showPetBubble(state.pet.lastLine);
+    playPetReaction("sleep", 2800);
   }
 
   async function setPetSummoned(enabled = !state.pet.summoned) {
@@ -1392,7 +1754,7 @@ export function useWageClaw() {
     if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
     const line = mode === "rage"
       ? "已切到怨气收集模式。下次点击会变成小锤敲击，随机收集怨气和血压，同时照常赚爪币。"
-      : "已切回普通模式。点击只赚爪币，双击播报，三击打开后台。";
+        : "已切回陪伴模式。点击只赚爪币，双击播报，三击打开后台。";
     state.pet.lastLine = line;
     addPetLog("桌宠互动模式", line);
     showPetBubble(line);
@@ -1401,14 +1763,26 @@ export function useWageClaw() {
   function handlePetTouch(key: string) {
     if (!(key in petTouchProfiles)) return;
     const profile = petTouchProfiles[key as TouchKey];
+    const tier = getTouchHeatTier(state.pet.touchHeat);
+    const affectionDelta = softenPositiveDelta(profile.affection, tier);
+    const lightDelta = softenPositiveDelta(profile.light, tier);
+    const pressureDelta = adjustTouchPressureDelta(profile.bloodPressure, tier);
+    const heatDelta = Number(profile.heat) || 0;
     state.pet.touchCount += 1;
-    state.pet.touchHeat = clamp(state.pet.touchHeat + profile.rage + 1, 0, 100);
-    state.pet.touchMood = profile.mood;
-    state.pet.light += profile.light;
-    state.pet.satiety = clamp(state.pet.satiety + profile.satiety, 0, 100);
-    state.pet.affection = clamp(state.pet.affection + profile.affection, 0, 100);
+    applyPetDelta({
+      affection: affectionDelta,
+      light: lightDelta,
+      bloodPressure: pressureDelta,
+      bloodPressureFloor: pressureDelta < 0 ? RELAX_BLOOD_PRESSURE_FLOOR : undefined,
+      touchHeat: heatDelta
+    });
+    state.pet.touchMood = tier === "tired" ? "需要休息" : profile.mood;
     const pawGain = addPawCoins(profile.nourish, profile.logTitle, "interaction", true);
-    const line = `${profile.label}成功，软团进入「${profile.mood}」状态${pawGain ? `，顺手赚到 ${formatPawCoins(pawGain)}` : ""}。`;
+    const heatLine = tier === "warm"
+      ? "，互动有点频繁，收益减半"
+      : tier === "tired" ? "，软团已经玩累了，先让它休息一下" : "";
+    const effectLine = formatPetDeltaSummary({ affection: affectionDelta, light: lightDelta, bloodPressure: pressureDelta });
+    const line = `${profile.label}成功，软团进入「${state.pet.touchMood}」状态${effectLine ? `，${effectLine}` : ""}${heatLine}${pawGain ? `，顺手赚到 ${formatPawCoins(pawGain)}` : ""}。`;
     state.pet.lastLine = line;
     showPetBubble(line);
   }
@@ -1416,16 +1790,20 @@ export function useWageClaw() {
   function handlePetHammerTouch(key: string) {
     if (!(key in petTouchProfiles)) return;
     const profile = petTouchProfiles[key as TouchKey];
+    const touchKey = key as TouchKey;
+    const tier = getTouchHeatTier(state.pet.touchHeat);
+    const moodDeltaByTouch: Record<TouchKey, number> = { head: 0, face: -1, belly: 0, horn: -1, tail: -3 };
     state.pet.touchCount += 1;
-    state.pet.touchHeat = clamp(state.pet.touchHeat + randomInt(5, 12), 0, 100);
+    applyPetDelta({ affection: moodDeltaByTouch[touchKey], touchHeat: 18 });
     state.pet.touchMood = "怨气收集中";
-    state.pet.satiety = clamp(state.pet.satiety + profile.satiety, 0, 100);
-    state.pet.affection = clamp(state.pet.affection + Math.max(0, profile.affection - 1), 0, 100);
     const pawGain = addPawCoins(profile.nourish, "小锤互动", "interaction", true);
-    const rageGain = randomInt(4, 10) + Math.floor(currentPetStage.value.level / 3);
-    const pressureGain = randomInt(1, 4);
+    const baseRageGain = randomInt(4, 10) + Math.floor(currentPetStage.value.level / 3);
+    const rageGain = tier === "tired" ? Math.max(1, Math.round(baseRageGain * 0.5)) : baseRageGain;
+    const pressureGain = randomInt(2, 5) + (tier === "tired" ? 1 : 0);
     const actualRage = addRageCoins(rageGain, "小锤怨气收集", pressureGain);
-    const line = `小锤敲击成功，收集 ${formatRage(actualRage)}，血压 +${pressureGain}${pawGain ? `，爪币 +${Math.round(pawGain)}` : ""}。`;
+    const moodLine = moodDeltaByTouch[touchKey] ? `，心情 ${moodDeltaByTouch[touchKey]}` : "";
+    const tiredLine = tier === "tired" ? "，软团太烦了，收集效率下降" : "";
+    const line = `小锤敲击成功，收集 ${formatRage(actualRage)}，${formatBloodPressureDelta(pressureGain)}${moodLine}${tiredLine}${pawGain ? `，爪币 +${Math.round(pawGain)}` : ""}。`;
     state.pet.lastLine = line;
     showPetBubble(line);
   }
@@ -1453,39 +1831,65 @@ export function useWageClaw() {
   }
 
   function resetPetShakeTracker(e: MouseEvent) {
-    petShake = { lastX: e.clientX, lastY: e.clientY, lastDir: 0, directionChanges: 0, horizontalTravel: 0, verticalTravel: 0, directionRun: 0, modePickerReady: false };
+    petShake = {
+      lastX: e.clientX,
+      lastY: e.clientY,
+      lastScreenX: e.screenX,
+      lastScreenY: e.screenY,
+      gestureX: 0,
+      gestureY: 0,
+      minGestureX: 0,
+      maxGestureX: 0,
+      lastDir: 0,
+      directionChanges: 0,
+      horizontalTravel: 0,
+      verticalTravel: 0,
+      directionRun: 0,
+      modePickerReady: false
+    };
   }
 
   function trackPetShake(e: MouseEvent) {
-    const dx = e.movementX || e.clientX - petShake.lastX;
-    const dy = e.movementY || e.clientY - petShake.lastY;
+    const screenDx = e.screenX - petShake.lastScreenX;
+    const screenDy = e.screenY - petShake.lastScreenY;
+    const dx = screenDx || e.movementX || e.clientX - petShake.lastX;
+    const dy = screenDy || e.movementY || e.clientY - petShake.lastY;
     petShake.lastX = e.clientX;
     petShake.lastY = e.clientY;
+    petShake.lastScreenX = e.screenX;
+    petShake.lastScreenY = e.screenY;
+    petShake.gestureX += dx;
+    petShake.gestureY += dy;
+    petShake.minGestureX = Math.min(petShake.minGestureX, petShake.gestureX);
+    petShake.maxGestureX = Math.max(petShake.maxGestureX, petShake.gestureX);
     petShake.horizontalTravel += Math.abs(dx);
     petShake.verticalTravel += Math.abs(dy);
     const horizontalStep = Math.abs(dx);
-    if (horizontalStep < 3) return;
+    if (horizontalStep < 3) return { dx, dy };
     const dir = dx > 0 ? 1 : -1;
     if (!petShake.lastDir) {
       petShake.lastDir = dir;
       petShake.directionRun = horizontalStep;
-      return;
+      return { dx, dy };
     }
     if (petShake.lastDir === dir) {
       petShake.directionRun += horizontalStep;
-      return;
+      return { dx, dy };
     }
     if (petShake.directionRun >= PET_SHAKE_MIN_DIRECTION_RUN) {
       petShake.directionChanges += 1;
     }
     petShake.lastDir = dir;
     petShake.directionRun = horizontalStep;
+    return { dx, dy };
   }
 
   function didShakePet() {
     const mostlyHorizontal = petShake.horizontalTravel >= petShake.verticalTravel * PET_SHAKE_HORIZONTAL_DOMINANCE;
+    const horizontalRange = petShake.maxGestureX - petShake.minGestureX;
     return (
       petShake.horizontalTravel >= PET_SHAKE_MIN_HORIZONTAL_TRAVEL &&
+      horizontalRange >= PET_SHAKE_MIN_HORIZONTAL_RANGE &&
       petShake.directionChanges >= PET_SHAKE_MIN_DIRECTION_CHANGES &&
       petShake.verticalTravel <= PET_SHAKE_MAX_VERTICAL_DRIFT &&
       mostlyHorizontal
@@ -1508,6 +1912,8 @@ export function useWageClaw() {
     petDragOffset.y = e.clientY - petPos.y;
     petDragStart.x = e.clientX;
     petDragStart.y = e.clientY;
+    petDragStart.screenX = e.screenX;
+    petDragStart.screenY = e.screenY;
     if (viewMode === "float") {
       window.wageclawDesktop?.petDragStart();
     }
@@ -1517,10 +1923,10 @@ export function useWageClaw() {
 
   function onWindowPetMove(e: MouseEvent) {
     if (!petDragging.value) return;
-    trackPetShake(e);
+    const dragDelta = trackPetShake(e);
     if (!petShake.modePickerReady && didShakePet()) armPetShakeModePicker();
     if (viewMode === "float") {
-      window.wageclawDesktop?.petDragMove(e.movementX, e.movementY);
+      window.wageclawDesktop?.petDragMove(dragDelta.dx, dragDelta.dy);
       return;
     }
     petPos.x = e.clientX - petDragOffset.x;
@@ -1528,8 +1934,8 @@ export function useWageClaw() {
   }
 
   function onWindowPetUp(e: MouseEvent) {
-    const dx = e.clientX - petDragStart.x;
-    const dy = e.clientY - petDragStart.y;
+    const dx = e.screenX - petDragStart.screenX || e.clientX - petDragStart.x;
+    const dy = e.screenY - petDragStart.screenY || e.clientY - petDragStart.y;
     const dragged = Math.abs(dx) > 4 || Math.abs(dy) > 4;
     const shouldOpenModePicker = petShake.modePickerReady || didShakePet();
     petDragging.value = false;
@@ -1568,24 +1974,23 @@ export function useWageClaw() {
     const rect = el.getBoundingClientRect();
     const relY = (e.clientY - rect.top) / rect.height;
     let touchKey: string;
+    let reaction: string;
     if (relY < 0.35) {
       touchKey = Math.random() < 0.6 ? "head" : "face";
-      petReaction.value = isRageCollection ? "hammer" : "frown";
+      reaction = isRageCollection ? "hammer" : "frown";
     } else if (relY < 0.7) {
       touchKey = "belly";
-      petReaction.value = isRageCollection ? "hammer" : "squish";
+      reaction = isRageCollection ? "hammer" : "squish";
     } else {
       touchKey = Math.random() < 0.5 ? "horn" : "tail";
-      petReaction.value = isRageCollection ? "hammer" : "shake";
+      reaction = isRageCollection ? "hammer" : "shake";
     }
+    playPetReaction(reaction, isRageCollection ? 340 : 500);
     if (isRageCollection) {
       handlePetHammerTouch(touchKey);
     } else {
       handlePetTouch(touchKey);
     }
-    setTimeout(() => {
-      petReaction.value = "";
-    }, isRageCollection ? 650 : 500);
   }
 
   async function openMainPanelFromPet() {
@@ -1634,6 +2039,15 @@ export function useWageClaw() {
 
   function showPetDialog() {
     summonedBubble.value = "";
+    if (!state.onboardingDone || !isProfileReady.value) {
+      petDialog.value = `<span class="line">先去完成首次设置：上班时间、下班时间、月薪和心愿都填好后，我再帮你盯下班倒计时。</span>`;
+      if (bubbleTimer) window.clearTimeout(bubbleTimer);
+      bubbleTimer = window.setTimeout(() => {
+        petDialog.value = "";
+      }, 8000);
+      return;
+    }
+
     const cd = countdowns.value;
     const current = now.value;
     const seconds = (current.getHours() * 60 + current.getMinutes()) * 60 + current.getSeconds();
@@ -1642,54 +2056,125 @@ export function useWageClaw() {
     const cappedSeconds = clamp(seconds, startSeconds, endSeconds);
     const workedSeconds = Math.max(0, cappedSeconds - startSeconds);
     const earned = dailySalary.value * (workedSeconds / shiftSeconds.value);
+    const workedLabel = formatDuration(workedSeconds * 1000, false) || "刚刚开工";
+    const workRatio = clamp(workedSeconds / shiftSeconds.value, 0, 1);
+    const wishPercent = Math.round(wishProgress.value * 100);
+    const safeWish = escapeHtml(state.wish || activeWishItem.value?.name || "当前心愿");
+    const nextPart = activeParts.value.find((part) => !state.unlockedParts.includes(part.id));
+    const activeEvent = activeWorkEvent.value;
+    const timeBroadcasts: Array<{ kind: string; line: string; weight: number; reaction?: string }> = [];
+    const unrelatedBroadcasts: Array<{ kind: string; line: string; weight: number; reaction?: string }> = [];
+    const getBroadcastKind = (line: string) => {
+      const plain = line.replace(/<[^>]*>/g, "");
+      const marker = plain.indexOf("：");
+      return marker > 0 && marker <= 6 ? plain.slice(0, marker) : plain.slice(0, 8);
+    };
+    const addTimeBroadcast = (extra: string, weight = 1, reaction?: string) => {
+      const line = `${offWorkLine}；${extra}`;
+      timeBroadcasts.push({ kind: getBroadcastKind(line), line, weight, reaction });
+    };
+    const addUnrelatedBroadcast = (line: string, weight = 1, reaction?: string) => {
+      unrelatedBroadcasts.push({ kind: getBroadcastKind(line), line, weight, reaction });
+    };
+    const offWorkLine = cd.isOffWork
+      ? `下班雷达：已经下班，今天已扛 <b>${workedLabel}</b>，新需求明天再排队`
+      : `下班雷达：距离下班还有 <b>${cd.offWorkText}</b>，今天已扛 <b>${workedLabel}</b>`;
 
-    const mood = state.mood;
-    const stageLevel = currentPetStage.value.level;
-    const petName = currentPetStage.value.name;
+    addTimeBroadcast(`上班到现在已经白嫖 <b class="gold">${formatBalance(earned, 2)}</b>，每一分钟都在回收选择权`, 4, "pop");
+    addTimeBroadcast(`摸鱼账户今日已进账 <b>${formatPawCoins(pawTodayEarned.value)}</b>，余额 ${formatPawCoins(state.pawBalance)}`, 3);
+    addTimeBroadcast(`离最近的${cd.nextHoliday.name}还有 <b>${cd.nextHoliday.natural}</b> 个自然日，通常能放 ${cd.nextHoliday.daysOff} 天`, 3);
+    addTimeBroadcast(`发薪日是 ${cd.paydayLabel}，本周期工资进度 <b>${Math.round(salaryCycleProgress.value.percent * 100)}%</b>`, 2);
+    addTimeBroadcast(`心愿「${safeWish}」完成 <b>${wishPercent}%</b>，还差 ${formatBalance(wishRemaining.value, 0)}，今天这段班正在变成它`, 3);
+    addTimeBroadcast(
+      workRatio > 0.82 && !cd.isOffWork
+        ? `今天已经走完 <b>${Math.round(workRatio * 100)}%</b>，现在开始少接新坑`
+        : randomPick([
+            "先喝一口水，回来再和这个世界继续周旋",
+            "肩膀放下来十秒，别让工位偷走你的脖子",
+            "你没有拖慢世界，你只是在合理限速",
+            "今天允许低功耗运行，不必每秒都满血",
+            "能按时下线也是一种职业素养"
+          ]),
+      4,
+      "squish"
+    );
+    addTimeBroadcast(
+      randomPick([
+        "冷知识：工资条不会拥抱你，但它至少会承认你今天来过",
+        "冷笑话：闹钟最大的梦想是退休，因为它每天都被人第一时间打脸",
+        "冷笑话：键盘最羡慕空格键，什么都不用说，也能让句子喘口气",
+        "冷笑话：日历每天撕掉一页还不崩溃，可能是全公司情绪最稳定的同事"
+      ]),
+      2,
+      "pop"
+    );
 
-    const tonePool: string[] = [];
-    if (stageLevel <= 2) tonePool.push("软团缩了缩身子");
-    if (stageLevel >= 3 && stageLevel <= 5) tonePool.push(`${petName}凑过来`);
-    if (stageLevel >= 6 && stageLevel <= 8) tonePool.push(`${petName}低声道`);
-    if (stageLevel >= 9) tonePool.push(`${petName}用沉稳的声音说`);
+    addUnrelatedBroadcast(`到账播报：本班已炼成 <b class="gold">${formatBalance(earned, 2)}</b>，每一分钟都在回收选择权`, 4, "pop");
+    addUnrelatedBroadcast(`心愿雷达：「${safeWish}」完成 <b>${wishPercent}%</b>，还差 ${formatBalance(wishRemaining.value, 0)}`, 4);
+    addUnrelatedBroadcast(
+      nextPart
+        ? `拼装建议：下一块先盯 <b>${escapeHtml(nextPart.name)}</b>，别让心愿只停在购物车里`
+        : `心愿拼装完成：「${safeWish}」已经可以被正式领取`,
+      3,
+      "pop"
+    );
+    addUnrelatedBroadcast(`发薪日播报：${cd.paydayLabel}，本周期进度 <b>${Math.round(salaryCycleProgress.value.percent * 100)}%</b>`, 2);
+    addUnrelatedBroadcast(buildHolidayLine(cd.nextHoliday), 2);
+    addUnrelatedBroadcast(`摸鱼爪账：今天已赚 <b>${formatPawCoins(pawTodayEarned.value)}</b>，本月净赚 ${formatPawCoins(monthlyPawStats.value.net)}`, 3);
+    addUnrelatedBroadcast(
+      `摸鱼指令：${randomPick([
+            "去接一杯水，回来再处理这个世界",
+            "肩膀放下来十秒，别让工位偷走你的脖子",
+            "先眨眼三次，屏幕不会因为你喘口气就跑路",
+            "把最烦的一件事写成一句话，先把它从脑子里拿出来",
+            "今天允许低功耗运行，不必每秒都满血"
+          ])}`,
+      3,
+      "squish"
+    );
+    if (activeEvent) {
+      const choice = activeEvent.choices.length > 0 ? randomPick(activeEvent.choices) : null;
+      addUnrelatedBroadcast(
+        choice
+          ? `工位事件：「${escapeHtml(activeEvent.title)}」还没处理，建议先试试「${escapeHtml(choice.label)}」`
+          : `工位事件：「${escapeHtml(activeEvent.title)}」还没处理，先别让它在脑子里占满内存`,
+        4,
+        "shake"
+      );
+    }
+    if (petSupplyItems.value.length > 0) {
+      const supply = randomPick(petSupplyItems.value);
+      addUnrelatedBroadcast(`背包播报：还有 <b>${escapeHtml(supply.item.name)} x${supply.quantity}</b>，需要回血时别舍不得用`, 2);
+    }
 
-    const reminderPool: string[] = [
-      `「${state.wish}」正在一点点靠近`,
-      `${mood === "rage" ? "生气才是正常的反应，别憋着" : mood === "numb" ? "麻了也没关系，机器才全天在线" : "稳住了，但该休息还是要休息"}`,
-      "工作只是生活的一部分，不是你的全部",
-      "别忘了呼吸，你已经做得够多了",
-      "这破班不值得咬牙硬撑，该摸就摸",
-      "软团帮你记账，下班再算",
-      "每一分钟都在帮自己攒底气"
-    ];
+    let picked: { kind: string; line: string; weight: number; reaction?: string };
+    const pickBroadcast = (items: Array<{ kind: string; line: string; weight: number; reaction?: string }>) => {
+      const recentKinds = petDialogHistory.map(getBroadcastKind);
+      const freshChannelCandidates = items.filter((item) => !petDialogHistory.includes(item.line) && !recentKinds.includes(item.kind));
+      const freshLineCandidates = items.filter((item) => !petDialogHistory.includes(item.line));
+      const usable = freshChannelCandidates.length > 0 ? freshChannelCandidates : freshLineCandidates.length > 0 ? freshLineCandidates : items;
+      const weightedPool = usable.reduce<Array<{ kind: string; line: string; weight: number; reaction?: string }>>((pool, item) => {
+        for (let i = 0; i < item.weight; i += 1) pool.push(item);
+        return pool;
+      }, []);
+      return randomPick(weightedPool.length > 0 ? weightedPool : usable);
+    };
+    if (Math.random() < 0.9 || unrelatedBroadcasts.length === 0) {
+      picked = pickBroadcast(timeBroadcasts);
+    } else {
+      picked = pickBroadcast(unrelatedBroadcasts);
+    }
 
-    const tone = tonePool.length > 0 ? tonePool[Math.floor(Math.random() * tonePool.length)] : "";
-    const toneHtml = tone ? `<span class="tone">${tone}：</span>` : "";
-    const offWorkFact = cd.isOffWork ? "已经下班" : `还有 <b>${cd.offWorkText}</b> 下班`;
-    const festivalFact = buildHolidayLine(cd.nextHoliday);
-    const isWeekend = current.getDay() === 0 || current.getDay() === 6;
-    const weekendDayFact = current.getDay() === 6 ? "今天是周六" : "今天是周日";
-    const weekendPool = [
-      "今天不用倒计时下班，先把自己还给自己",
-      "周末就别替工位操心了，软团批准你彻底放空",
-      "能躺就躺，能慢就慢，电量先充回来",
-      "今天的任务是少想工作，多晒太阳或多睡觉",
-      "休息不是偷懒，是给下周的自己回血"
-    ];
-    const workdayExtras = [
-      `今天已扛 <b>${formatDuration(workedSeconds * 1000, false)}</b>`,
-      `攒了 <b class="gold">${formatMoney(earned, 2)}</b>`,
-      festivalFact,
-      randomPick(reminderPool)
-    ];
-    const weekendLines = [...weekendPool, festivalFact, randomPick(reminderPool)];
-    if (Math.random() < 0.25) weekendLines.push(weekendDayFact);
-    const line = isWeekend ? randomPick(weekendLines) : `${offWorkFact}，${randomPick(workdayExtras)}`;
-    petDialog.value = `<span class="line">${toneHtml}${line}。</span>`;
+    petDialogHistory.unshift(picked.line);
+    petDialogHistory.splice(6);
+    if (picked.reaction) playPetReaction(picked.reaction, 520);
+    petDialog.value = `<span class="line">${picked.line}。</span>`;
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
     bubbleTimer = window.setTimeout(() => {
       petDialog.value = "";
     }, 8000);
+    return;
+
   }
 
   async function triggerBlackoutSkill(options: { automatic?: boolean } = {}) {
@@ -1821,8 +2306,33 @@ export function useWageClaw() {
   function resetAllData() {
     if (!window.confirm("确定要重置所有数据吗？此操作不可撤销。")) return;
     localStorage.removeItem(STORAGE_KEY);
-    Object.assign(state, createDefaultState());
+    Object.assign(state, createFirstRunState());
     notify("数据已重置。");
+  }
+
+  function clearWalletBalance() {
+    const current = roundMoney(state.walletBalance);
+    if (Math.abs(current) < 0.01) {
+      notify("工资余额已经是 0。");
+      return;
+    }
+    if (!window.confirm(`确定清除工资余额 ${formatMoney(current, 2)} 吗？流水会保留，并新增一条清除记录。`)) return;
+    state.walletBalance = 0;
+    addTransaction("清除工资余额", roundMoney(-current), "数据管理", current >= 0 ? "expense" : "income");
+    pages.transactions = 1;
+    notify("工资余额已清零。");
+  }
+
+  function clearPawBalance() {
+    const current = Math.max(0, Number(state.pawBalance) || 0);
+    if (current <= 0) {
+      notify("爪币余额已经是 0。");
+      return;
+    }
+    if (!window.confirm(`确定清除爪币余额 ${formatPawCoins(current)} 吗？爪币账本会保留，并新增一条清除记录。`)) return;
+    state.pawBalance = 0;
+    addPawLedgerEntry("清除爪币余额", -current, "数据管理", "event");
+    notify("爪币余额已清零。");
   }
 
   function startDuel() {
@@ -2112,6 +2622,7 @@ export function useWageClaw() {
     blackoutActive,
     summonedBubble,
     petReaction,
+    petMotionKey,
     petModePicker,
     petPos,
     petDragging,
@@ -2125,11 +2636,14 @@ export function useWageClaw() {
     dailySalary,
     secondSalary,
     claimableToday,
+    todayClaimedSalary,
     walletCoins,
     totalAvailable,
     salaryCycleProgress,
     physicalMallItems,
     activeWishItem,
+    hasValidWorkTime,
+    isProfileReady,
     unlockedCount,
     wishSpent,
     wishRemaining,
@@ -2141,8 +2655,12 @@ export function useWageClaw() {
     nextPetStage,
     petProgress,
     petManaMax,
+    petEnergyMax,
+    petGrowthGoal,
+    petAttributes,
     petAffinity,
-    petHungerLabel,
+    petSatietyLabel,
+    petBloodPressurePercent,
     petPressureLabel,
     petStageLore,
     activeWorkEvent,
@@ -2194,6 +2712,7 @@ export function useWageClaw() {
     setPage,
     getMallItemCurrency,
     setWishItem,
+    completeOnboarding,
     getPartPrice,
     formatMoney,
     formatBalance,
@@ -2206,14 +2725,15 @@ export function useWageClaw() {
     buyPart,
     claimWishReward,
     closeAssembly,
+    deleteEarnedGood,
     buyMallItem,
     useItem,
     feedPet,
     formatPetBoost,
     refineRageFromRant,
-    refineLightFromRant,
     resolveWorkEventChoice,
     cultivatePet,
+    quickCarePet,
     setPetSummoned,
     startPetDrag,
     selectPetInteractionMode,
@@ -2226,6 +2746,8 @@ export function useWageClaw() {
     generateCoach,
     publishCommunityDraft,
     resetAllData,
+    clearWalletBalance,
+    clearPawBalance,
     startDuel,
     performDuelSkill,
     previewOnlineBattle,

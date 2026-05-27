@@ -46,7 +46,6 @@ export type PetBoost = {
   affection?: number;
   manaCap?: number;
   mana?: number;
-  hunger?: number;
   bloodPressure?: number;
 };
 
@@ -102,6 +101,7 @@ export type EarnedGood = {
   itemId: string;
   name: string;
   icon: string;
+  amount: number;
   source: string;
   time: string;
 };
@@ -115,13 +115,13 @@ export type PetLogItem = {
 export type PetState = {
   name: string;
   rage: number;
+  growth: number;
   light: number;
   mana: number;
   manaBonus: number;
   cultivation: number;
   satiety: number;
   affection: number;
-  hunger: number;
   bloodPressure: number;
   summoned: boolean;
   gameBest: number;
@@ -156,7 +156,6 @@ export type WorkEventEffect = {
   paw?: number;
   rage?: number;
   bloodPressure?: number;
-  hunger?: number;
   satiety?: number;
   affection?: number;
   light?: number;
@@ -180,6 +179,7 @@ export type WorkEvent = {
 
 export type WageClawState = {
   nickname: string;
+  onboardingDone: boolean;
   salary: number;
   wish: string;
   price: number;
