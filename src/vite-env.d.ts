@@ -5,8 +5,8 @@ type WageClawDesktopApi = {
   openMainPanel: () => Promise<{ ok: boolean }>;
   togglePet: (enabled: boolean) => Promise<{ ok: boolean; visible: boolean }>;
   closeMainWindow: () => void;
-   minimizeMainWindow: () => void;
-   maximizeMainWindow: () => void;
+  minimizeMainWindow: () => void;
+  maximizeMainWindow: () => void;
   petCommand: (payload: Record<string, unknown>) => Promise<{ ok: boolean }>;
   triggerBlackout: (payload: Record<string, unknown>) => Promise<{ ok: boolean }>;
   petRicochet: () => Promise<{ ok: boolean; visible: boolean }>;
@@ -20,6 +20,7 @@ type WageClawDesktopApi = {
   petHitTest: (interactive: boolean) => void;
   onNavigate: (callback: (payload: { screen?: string }) => void) => () => void;
   onPetCommand: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  onMainVisibility: (callback: (payload: { visible?: boolean }) => void) => () => void;
 };
 
 declare global {

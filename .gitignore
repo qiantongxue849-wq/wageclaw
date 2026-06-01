@@ -74,5 +74,8 @@ playwright-report/
 # TypeScript
 *.tsbuildinfo
 
+# ESLint
+.eslintcache
+
 # Project docs (if you don't want to track)
 需求文档.docx

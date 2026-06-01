@@ -134,11 +134,17 @@ function createMainWindow() {
   });
 
   loadRenderer(win, { view: "main" });
-  win.webContents.setBackgroundThrottling(false);
-  win.on("show", updateDockVisibility);
-  win.on("hide", updateDockVisibility);
+  win.on("show", () => {
+    updateDockVisibility();
+    notifyPetMainVisibility(true);
+  });
+  win.on("hide", () => {
+    updateDockVisibility();
+    notifyPetMainVisibility(false);
+  });
   win.on("closed", () => {
     mainWindow = null;
+    notifyPetMainVisibility(false);
     updateDockVisibility();
   });
   return win;
@@ -177,31 +183,12 @@ function createPetWindow() {
   });
 
   loadRenderer(win, { view: "float" });
-  win.webContents.on("did-finish-load", () => {
-    win.webContents.insertCSS(`
-      html, body, #app { margin: 0; padding: 0; background: transparent !important; width: 100%; height: 100%; overflow: hidden !important; }
-      .app-root, .app-root[data-theme] { background: transparent !important; min-height: 0; padding: 0; display: block; place-items: unset; overflow: hidden !important; }
-      .app-root > :not(.floating-pet):not(.pet-dialog):not(.pet-bubble) { display: none !important; }
-      .app-root > section { display: none !important; }
-      .surface-grid { display: none !important; }
-      body::before, body::after, html::before, html::after { display: none !important; }
-      ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
-      .floating-pet, .pet-sprite { will-change: transform, filter !important; backface-visibility: hidden !important; }
-      .floating-pet:not(.float-mode) { transform: translateZ(0) !important; }
-    `);
-  });
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.webContents.once("did-finish-load", () => {
     if (!win.isDestroyed()) {
       win.show();
       win.moveTop();
     }
-  });
-
-  ipcMain.on("wageclaw:pet-drag", (_, { dx, dy }) => {
-    if (!win || win.isDestroyed()) return;
-    const pos = win.getPosition();
-    win.setPosition(pos[0] + dx, pos[1] + dy, true);
   });
 
   win.on("show", updateTrayMenu);
@@ -244,6 +231,10 @@ function sendWhenReady(win, channel, payload) {
   } else {
     send();
   }
+}
+
+function notifyPetMainVisibility(visible) {
+  sendWhenReady(petWindow, "wageclaw:main-visibility", { visible: Boolean(visible) });
 }
 
 function sendPetCommandToMain(payload) {
@@ -455,6 +446,7 @@ function showMainWindow(screen) {
     }
     win.show();
     win.focus();
+    notifyPetMainVisibility(true);
     updateDockVisibility();
   }
 
@@ -506,6 +498,12 @@ function showMainWindow(screen) {
       petWindow.setIgnoreMouseEvents(!interactive, { forward: true });
     });
 
+    ipcMain.on("wageclaw:pet-drag", (event, { dx, dy }) => {
+      if (!petWindow || petWindow.isDestroyed() || event.sender !== petWindow.webContents) return;
+      const pos = petWindow.getPosition();
+      petWindow.setPosition(pos[0] + (Number(dx) || 0), pos[1] + (Number(dy) || 0), true);
+    });
+
     ipcMain.handle("wageclaw:show-pet", () => {
       if (!petWindow || petWindow.isDestroyed()) {
         petWindow = createPetWindow();
@@ -542,7 +540,7 @@ function showMainWindow(screen) {
 
     ipcMain.on("wageclaw:close-main-window", () => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.hide();
+        mainWindow.close();
       }
     });
 
@@ -563,7 +561,6 @@ function showMainWindow(screen) {
     });
 
     createTray();
-    mainWindow = createMainWindow();
     petWindow = createPetWindow();
     petWindow.show();
     updateTrayMenu();

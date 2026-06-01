@@ -1,82 +1,489 @@
-import type { CountMode, MallItem, Mood, Part, PetStage, PetStyle, ScreenKey, Theme, TransactionCategory, WorkEvent } from "@/types";
+import type {
+  CountMode,
+  MallItem,
+  Mood,
+  Part,
+  PetStage,
+  PetStyle,
+  ScreenKey,
+  Theme,
+  TransactionCategory,
+  WorkEvent
+} from "@/types";
 
 export const parts: Part[] = [
-  { id: "shell", wishItemId: "macbook_pro_14", name: "一体成型外壳", ratio: 0.18, narrative: "先把体面攒出来。外壳稳住，里面的野心就有地方安放。" },
-  { id: "screen", wishItemId: "macbook_pro_14", name: "Liquid Retina 屏幕", ratio: 0.26, narrative: "屏幕负责发光，也提醒你：你的生活不该只亮给工作看。" },
-  { id: "battery", wishItemId: "macbook_pro_14", name: "电池模组", ratio: 0.12, narrative: "续航不是逞强，是允许自己撑得更久，也休得更早。" },
-  { id: "memory", wishItemId: "macbook_pro_14", name: "内存与芯片", ratio: 0.22, narrative: "把被会议挤爆的脑容量，换成真正属于自己的算力。" },
-  { id: "keyboard", wishItemId: "macbook_pro_14", name: "妙控键盘", ratio: 0.1, narrative: "以后敲下去的每个字，都先服务你自己的计划。" },
-  { id: "trackpad", wishItemId: "macbook_pro_14", name: "触控板", ratio: 0.12, narrative: "从这一小块开始，手指落下去，目标就不再只是想想。" },
+  {
+    id: "shell",
+    wishItemId: "macbook_pro_14",
+    name: "一体成型外壳",
+    ratio: 0.18,
+    narrative: "先把体面攒出来。外壳稳住，里面的野心就有地方安放。"
+  },
+  {
+    id: "screen",
+    wishItemId: "macbook_pro_14",
+    name: "Liquid Retina 屏幕",
+    ratio: 0.26,
+    narrative: "屏幕负责发光，也提醒你：你的生活不该只亮给工作看。"
+  },
+  {
+    id: "battery",
+    wishItemId: "macbook_pro_14",
+    name: "电池模组",
+    ratio: 0.12,
+    narrative: "续航不是逞强，是允许自己撑得更久，也休得更早。"
+  },
+  {
+    id: "memory",
+    wishItemId: "macbook_pro_14",
+    name: "内存与芯片",
+    ratio: 0.22,
+    narrative: "把被会议挤爆的脑容量，换成真正属于自己的算力。"
+  },
+  {
+    id: "keyboard",
+    wishItemId: "macbook_pro_14",
+    name: "妙控键盘",
+    ratio: 0.1,
+    narrative: "以后敲下去的每个字，都先服务你自己的计划。"
+  },
+  {
+    id: "trackpad",
+    wishItemId: "macbook_pro_14",
+    name: "触控板",
+    ratio: 0.12,
+    narrative: "从这一小块开始，手指落下去，目标就不再只是想想。"
+  },
 
-  { id: "iphone_frame", wishItemId: "iphone16_pro_max_1tb", name: "钛金属机身", ratio: 0.18, narrative: "先把上一代顶配的质感攒住。边框稳住，消息再多也不能把你压扁。" },
-  { id: "iphone_screen", wishItemId: "iphone16_pro_max_1tb", name: "超视网膜屏幕", ratio: 0.2, narrative: "屏幕亮起来，提醒你：生活的清晰度，应该先属于自己。" },
-  { id: "iphone_battery", wishItemId: "iphone16_pro_max_1tb", name: "长续航电池", ratio: 0.14, narrative: "续航不是硬撑，是给自己留够不用慌的余量。" },
-  { id: "iphone_camera", wishItemId: "iphone16_pro_max_1tb", name: "方形三摄影像模组", ratio: 0.18, narrative: "把值得记住的瞬间留给自己，不只给工位截图和会议纪要。" },
-  { id: "iphone_chip", wishItemId: "iphone16_pro_max_1tb", name: "芯片与主板", ratio: 0.16, narrative: "把脑内后台清一清，真正的性能应该服务你的计划。" },
-  { id: "iphone_storage", wishItemId: "iphone16_pro_max_1tb", name: "1TB 存储", ratio: 0.14, narrative: "给照片、文件和未来都留空间。你的人生不该总提示容量不足。" },
+  {
+    id: "iphone_frame",
+    wishItemId: "iphone16_pro_max_1tb",
+    name: "钛金属机身",
+    ratio: 0.18,
+    narrative: "先把上一代顶配的质感攒住。边框稳住，消息再多也不能把你压扁。"
+  },
+  {
+    id: "iphone_screen",
+    wishItemId: "iphone16_pro_max_1tb",
+    name: "超视网膜屏幕",
+    ratio: 0.2,
+    narrative: "屏幕亮起来，提醒你：生活的清晰度，应该先属于自己。"
+  },
+  {
+    id: "iphone_battery",
+    wishItemId: "iphone16_pro_max_1tb",
+    name: "长续航电池",
+    ratio: 0.14,
+    narrative: "续航不是硬撑，是给自己留够不用慌的余量。"
+  },
+  {
+    id: "iphone_camera",
+    wishItemId: "iphone16_pro_max_1tb",
+    name: "方形三摄影像模组",
+    ratio: 0.18,
+    narrative: "把值得记住的瞬间留给自己，不只给工位截图和会议纪要。"
+  },
+  {
+    id: "iphone_chip",
+    wishItemId: "iphone16_pro_max_1tb",
+    name: "芯片与主板",
+    ratio: 0.16,
+    narrative: "把脑内后台清一清，真正的性能应该服务你的计划。"
+  },
+  {
+    id: "iphone_storage",
+    wishItemId: "iphone16_pro_max_1tb",
+    name: "1TB 存储",
+    ratio: 0.14,
+    narrative: "给照片、文件和未来都留空间。你的人生不该总提示容量不足。"
+  },
 
-  { id: "iphone17_frame", wishItemId: "iphone17_pro_max_1tb", name: "一体式铝金属机身", ratio: 0.18, narrative: "先把新的外壳点亮。你的底气可以换一副更轻、更亮、更像未来的样子。" },
-  { id: "iphone17_screen", wishItemId: "iphone17_pro_max_1tb", name: "Pro 显示屏", ratio: 0.2, narrative: "屏幕亮起来，今天不只显示工作消息，也显示你正在认真靠近自己。" },
-  { id: "iphone17_battery", wishItemId: "iphone17_pro_max_1tb", name: "长续航电池", ratio: 0.14, narrative: "电量一点点补上，像是在提醒你：真正的强大，也包括不被耗干。" },
-  { id: "iphone17_camera_plateau", wishItemId: "iphone17_pro_max_1tb", name: "横向相机平台", ratio: 0.18, narrative: "新相机平台归位，把人生里值得放大的画面，交还给你自己。" },
-  { id: "iphone17_chip", wishItemId: "iphone17_pro_max_1tb", name: "A 系芯片与主板", ratio: 0.16, narrative: "性能点亮，后台清空。你也可以把算力留给自己的计划和野心。" },
-  { id: "iphone17_storage", wishItemId: "iphone17_pro_max_1tb", name: "1TB 存储", ratio: 0.14, narrative: "容量点亮，照片、灵感和未来都不用再被迫删掉。" },
+  {
+    id: "iphone17_frame",
+    wishItemId: "iphone17_pro_max_1tb",
+    name: "一体式铝金属机身",
+    ratio: 0.18,
+    narrative: "先把新的外壳点亮。你的底气可以换一副更轻、更亮、更像未来的样子。"
+  },
+  {
+    id: "iphone17_screen",
+    wishItemId: "iphone17_pro_max_1tb",
+    name: "Pro 显示屏",
+    ratio: 0.2,
+    narrative: "屏幕亮起来，今天不只显示工作消息，也显示你正在认真靠近自己。"
+  },
+  {
+    id: "iphone17_battery",
+    wishItemId: "iphone17_pro_max_1tb",
+    name: "长续航电池",
+    ratio: 0.14,
+    narrative: "电量一点点补上，像是在提醒你：真正的强大，也包括不被耗干。"
+  },
+  {
+    id: "iphone17_camera_plateau",
+    wishItemId: "iphone17_pro_max_1tb",
+    name: "横向相机平台",
+    ratio: 0.18,
+    narrative: "新相机平台归位，把人生里值得放大的画面，交还给你自己。"
+  },
+  {
+    id: "iphone17_chip",
+    wishItemId: "iphone17_pro_max_1tb",
+    name: "A 系芯片与主板",
+    ratio: 0.16,
+    narrative: "性能点亮，后台清空。你也可以把算力留给自己的计划和野心。"
+  },
+  {
+    id: "iphone17_storage",
+    wishItemId: "iphone17_pro_max_1tb",
+    name: "1TB 存储",
+    ratio: 0.14,
+    narrative: "容量点亮，照片、灵感和未来都不用再被迫删掉。"
+  },
 
-  { id: "phuket_flight", wishItemId: "phuket_7_day_trip", name: "往返机票", ratio: 0.22, narrative: "第一步是离开工位。登机牌点亮，世界就从待办列表里走出来。" },
-  { id: "phuket_resort", wishItemId: "phuket_7_day_trip", name: "海边酒店", ratio: 0.28, narrative: "床、海风和没有闹钟的早晨，都值得被认真预订。" },
-  { id: "phuket_boat", wishItemId: "phuket_7_day_trip", name: "离岛快艇", ratio: 0.14, narrative: "让船把你带离消息提示音，去看真的蓝色。" },
-  { id: "phuket_snorkel", wishItemId: "phuket_7_day_trip", name: "浮潜体验", ratio: 0.1, narrative: "把头埋进海里，暂时听不见需求，心就会自己浮上来。" },
-  { id: "phuket_food", wishItemId: "phuket_7_day_trip", name: "海岛餐食", ratio: 0.1, narrative: "好好吃饭不是奖励，是恢复体力的正当流程。" },
-  { id: "phuket_fund", wishItemId: "phuket_7_day_trip", name: "旅行备用金", ratio: 0.16, narrative: "有余量的旅行才叫休息。给自己一点不用精打细算的自由。" },
+  {
+    id: "phuket_flight",
+    wishItemId: "phuket_7_day_trip",
+    name: "往返机票",
+    ratio: 0.22,
+    narrative: "第一步是离开工位。登机牌点亮，世界就从待办列表里走出来。"
+  },
+  {
+    id: "phuket_resort",
+    wishItemId: "phuket_7_day_trip",
+    name: "海边酒店",
+    ratio: 0.28,
+    narrative: "床、海风和没有闹钟的早晨，都值得被认真预订。"
+  },
+  {
+    id: "phuket_boat",
+    wishItemId: "phuket_7_day_trip",
+    name: "离岛快艇",
+    ratio: 0.14,
+    narrative: "让船把你带离消息提示音，去看真的蓝色。"
+  },
+  {
+    id: "phuket_snorkel",
+    wishItemId: "phuket_7_day_trip",
+    name: "浮潜体验",
+    ratio: 0.1,
+    narrative: "把头埋进海里，暂时听不见需求，心就会自己浮上来。"
+  },
+  {
+    id: "phuket_food",
+    wishItemId: "phuket_7_day_trip",
+    name: "海岛餐食",
+    ratio: 0.1,
+    narrative: "好好吃饭不是奖励，是恢复体力的正当流程。"
+  },
+  {
+    id: "phuket_fund",
+    wishItemId: "phuket_7_day_trip",
+    name: "旅行备用金",
+    ratio: 0.16,
+    narrative: "有余量的旅行才叫休息。给自己一点不用精打细算的自由。"
+  },
 
-  { id: "chair_headrest", wishItemId: "ergonomic_chair", name: "可调头枕", ratio: 0.1, narrative: "先把脖子从低头赶工里赎回来。休息也需要支点。" },
-  { id: "chair_backrest", wishItemId: "ergonomic_chair", name: "透气椅背", ratio: 0.24, narrative: "背不用一直替压力站岗。它也可以被稳稳托住。" },
-  { id: "chair_lumbar", wishItemId: "ergonomic_chair", name: "动态腰托", ratio: 0.15, narrative: "腰托点亮，说明你开始把身体当成长期资产，而不是耗材。" },
-  { id: "chair_cushion", wishItemId: "ergonomic_chair", name: "承托坐垫", ratio: 0.18, narrative: "坐下不是继续消耗，而是让每一小时少伤自己一点。" },
-  { id: "chair_base", wishItemId: "ergonomic_chair", name: "金属底盘", ratio: 0.2, narrative: "底盘稳，节奏就稳。工作可以忙，但人不能散架。" },
-  { id: "chair_caster", wishItemId: "ergonomic_chair", name: "静音脚轮", ratio: 0.13, narrative: "脚轮转动，代表你还有移动的余地，不必被一个工位钉住。" },
+  {
+    id: "chair_headrest",
+    wishItemId: "ergonomic_chair",
+    name: "可调头枕",
+    ratio: 0.1,
+    narrative: "先把脖子从低头赶工里赎回来。休息也需要支点。"
+  },
+  {
+    id: "chair_backrest",
+    wishItemId: "ergonomic_chair",
+    name: "透气椅背",
+    ratio: 0.24,
+    narrative: "背不用一直替压力站岗。它也可以被稳稳托住。"
+  },
+  {
+    id: "chair_lumbar",
+    wishItemId: "ergonomic_chair",
+    name: "动态腰托",
+    ratio: 0.15,
+    narrative: "腰托点亮，说明你开始把身体当成长期资产，而不是耗材。"
+  },
+  {
+    id: "chair_cushion",
+    wishItemId: "ergonomic_chair",
+    name: "承托坐垫",
+    ratio: 0.18,
+    narrative: "坐下不是继续消耗，而是让每一小时少伤自己一点。"
+  },
+  {
+    id: "chair_base",
+    wishItemId: "ergonomic_chair",
+    name: "金属底盘",
+    ratio: 0.2,
+    narrative: "底盘稳，节奏就稳。工作可以忙，但人不能散架。"
+  },
+  {
+    id: "chair_caster",
+    wishItemId: "ergonomic_chair",
+    name: "静音脚轮",
+    ratio: 0.13,
+    narrative: "脚轮转动，代表你还有移动的余地，不必被一个工位钉住。"
+  },
 
-  { id: "robovac_robot", wishItemId: "robot_vacuum_mop", name: "扫拖主机", ratio: 0.28, narrative: "把下班后的第一场家务交出去。你回家应该先坐下。" },
-  { id: "robovac_dock", wishItemId: "robot_vacuum_mop", name: "自清洁基站", ratio: 0.24, narrative: "会自己收尾的系统，才配叫解放双手。" },
-  { id: "robovac_tank", wishItemId: "robot_vacuum_mop", name: "清水箱", ratio: 0.12, narrative: "水箱点亮，家里开始有自动变干净的可能。" },
-  { id: "robovac_mop", wishItemId: "robot_vacuum_mop", name: "拖布模组", ratio: 0.12, narrative: "拖布不是你的第二份工作。让机器把地面慢慢擦亮。" },
-  { id: "robovac_brush", wishItemId: "robot_vacuum_mop", name: "边刷组件", ratio: 0.08, narrative: "连角落都有人管了，你可以少管一点。" },
-  { id: "robovac_bag", wishItemId: "robot_vacuum_mop", name: "尘袋滤芯", ratio: 0.16, narrative: "把灰尘和疲惫都收起来，别再让它们铺满晚上。" },
+  {
+    id: "robovac_robot",
+    wishItemId: "robot_vacuum_mop",
+    name: "扫拖主机",
+    ratio: 0.28,
+    narrative: "把下班后的第一场家务交出去。你回家应该先坐下。"
+  },
+  {
+    id: "robovac_dock",
+    wishItemId: "robot_vacuum_mop",
+    name: "自清洁基站",
+    ratio: 0.24,
+    narrative: "会自己收尾的系统，才配叫解放双手。"
+  },
+  {
+    id: "robovac_tank",
+    wishItemId: "robot_vacuum_mop",
+    name: "清水箱",
+    ratio: 0.12,
+    narrative: "水箱点亮，家里开始有自动变干净的可能。"
+  },
+  {
+    id: "robovac_mop",
+    wishItemId: "robot_vacuum_mop",
+    name: "拖布模组",
+    ratio: 0.12,
+    narrative: "拖布不是你的第二份工作。让机器把地面慢慢擦亮。"
+  },
+  {
+    id: "robovac_brush",
+    wishItemId: "robot_vacuum_mop",
+    name: "边刷组件",
+    ratio: 0.08,
+    narrative: "连角落都有人管了，你可以少管一点。"
+  },
+  {
+    id: "robovac_bag",
+    wishItemId: "robot_vacuum_mop",
+    name: "尘袋滤芯",
+    ratio: 0.16,
+    narrative: "把灰尘和疲惫都收起来，别再让它们铺满晚上。"
+  },
 
-  { id: "ai_glasses_frame", wishItemId: "ai_glasses_commute_kit", name: "轻量镜框", ratio: 0.18, narrative: "先把未来感架在鼻梁上。通勤路上，也可以有一点属于自己的从容。" },
-  { id: "ai_glasses_lenses", wishItemId: "ai_glasses_commute_kit", name: "通透镜片", ratio: 0.16, narrative: "镜片点亮，世界还是那个世界，但你终于不用只盯着工位消息。" },
-  { id: "ai_glasses_camera_mic", wishItemId: "ai_glasses_commute_kit", name: "感知模组", ratio: 0.18, narrative: "摄像头和麦克风就位，把灵感随手收住，不再让好点子掉进地铁缝里。" },
-  { id: "ai_glasses_speaker", wishItemId: "ai_glasses_commute_kit", name: "骨传导扬声器", ratio: 0.14, narrative: "声音贴着你走，不吵别人，也不让世界把你完全吞掉。" },
-  { id: "ai_glasses_battery", wishItemId: "ai_glasses_commute_kit", name: "细长电池", ratio: 0.16, narrative: "电量不是硬撑，是给每天多留一段不慌不忙的余地。" },
-  { id: "ai_glasses_case", wishItemId: "ai_glasses_commute_kit", name: "充电收纳盒", ratio: 0.18, narrative: "收进盒里，明天还能继续发光。连装备都知道下班要回血。" },
+  {
+    id: "ai_glasses_frame",
+    wishItemId: "ai_glasses_commute_kit",
+    name: "轻量镜框",
+    ratio: 0.18,
+    narrative: "先把未来感架在鼻梁上。通勤路上，也可以有一点属于自己的从容。"
+  },
+  {
+    id: "ai_glasses_lenses",
+    wishItemId: "ai_glasses_commute_kit",
+    name: "通透镜片",
+    ratio: 0.16,
+    narrative: "镜片点亮，世界还是那个世界，但你终于不用只盯着工位消息。"
+  },
+  {
+    id: "ai_glasses_camera_mic",
+    wishItemId: "ai_glasses_commute_kit",
+    name: "感知模组",
+    ratio: 0.18,
+    narrative: "摄像头和麦克风就位，把灵感随手收住，不再让好点子掉进地铁缝里。"
+  },
+  {
+    id: "ai_glasses_speaker",
+    wishItemId: "ai_glasses_commute_kit",
+    name: "骨传导扬声器",
+    ratio: 0.14,
+    narrative: "声音贴着你走，不吵别人，也不让世界把你完全吞掉。"
+  },
+  {
+    id: "ai_glasses_battery",
+    wishItemId: "ai_glasses_commute_kit",
+    name: "细长电池",
+    ratio: 0.16,
+    narrative: "电量不是硬撑，是给每天多留一段不慌不忙的余地。"
+  },
+  {
+    id: "ai_glasses_case",
+    wishItemId: "ai_glasses_commute_kit",
+    name: "充电收纳盒",
+    ratio: 0.18,
+    narrative: "收进盒里，明天还能继续发光。连装备都知道下班要回血。"
+  },
 
-  { id: "handheld_console_screen", wishItemId: "handheld_console_kit", name: "掌机屏幕", ratio: 0.24, narrative: "屏幕亮起，不是继续看报表，而是把今天的精神领回自己手里。" },
-  { id: "handheld_console_controllers", wishItemId: "handheld_console_kit", name: "左右手柄", ratio: 0.18, narrative: "手柄归位，手指终于不用只会敲键盘，也能掌控一点快乐。" },
-  { id: "handheld_console_chip", wishItemId: "handheld_console_kit", name: "游戏芯片", ratio: 0.18, narrative: "性能点亮，把高帧率留给冒险，把卡顿留给没写完的周报。" },
-  { id: "handheld_console_battery", wishItemId: "handheld_console_kit", name: "续航电池", ratio: 0.14, narrative: "电池补上，快乐不用刚开局就找插座。" },
-  { id: "handheld_console_dock", wishItemId: "handheld_console_kit", name: "桌面底座", ratio: 0.12, narrative: "底座站稳，游戏从手心延伸到房间，今晚不被工位收编。" },
-  { id: "handheld_console_pouch", wishItemId: "handheld_console_kit", name: "防护收纳包", ratio: 0.14, narrative: "把小宇宙装进包里，通勤、出差、周末都能偷偷回血。" },
+  {
+    id: "handheld_console_screen",
+    wishItemId: "handheld_console_kit",
+    name: "掌机屏幕",
+    ratio: 0.24,
+    narrative: "屏幕亮起，不是继续看报表，而是把今天的精神领回自己手里。"
+  },
+  {
+    id: "handheld_console_controllers",
+    wishItemId: "handheld_console_kit",
+    name: "左右手柄",
+    ratio: 0.18,
+    narrative: "手柄归位，手指终于不用只会敲键盘，也能掌控一点快乐。"
+  },
+  {
+    id: "handheld_console_chip",
+    wishItemId: "handheld_console_kit",
+    name: "游戏芯片",
+    ratio: 0.18,
+    narrative: "性能点亮，把高帧率留给冒险，把卡顿留给没写完的周报。"
+  },
+  {
+    id: "handheld_console_battery",
+    wishItemId: "handheld_console_kit",
+    name: "续航电池",
+    ratio: 0.14,
+    narrative: "电池补上，快乐不用刚开局就找插座。"
+  },
+  {
+    id: "handheld_console_dock",
+    wishItemId: "handheld_console_kit",
+    name: "桌面底座",
+    ratio: 0.12,
+    narrative: "底座站稳，游戏从手心延伸到房间，今晚不被工位收编。"
+  },
+  {
+    id: "handheld_console_pouch",
+    wishItemId: "handheld_console_kit",
+    name: "防护收纳包",
+    ratio: 0.14,
+    narrative: "把小宇宙装进包里，通勤、出差、周末都能偷偷回血。"
+  },
 
-  { id: "concert_weekend_ticket", wishItemId: "concert_weekend_pass", name: "演唱会门票", ratio: 0.32, narrative: "票根点亮，说明生活里终于有一晚不是为需求排期。" },
-  { id: "concert_weekend_transit", wishItemId: "concert_weekend_pass", name: "往返交通", ratio: 0.16, narrative: "车票备好，身体先离开工位，心情才追得上音乐。" },
-  { id: "concert_weekend_hotel", wishItemId: "concert_weekend_pass", name: "周末住宿", ratio: 0.18, narrative: "住处落定，散场后不用赶末班车，快乐可以慢慢降落。" },
-  { id: "concert_weekend_lightstick", wishItemId: "concert_weekend_pass", name: "应援灯棒", ratio: 0.12, narrative: "灯亮起来，你也在人海里亮了一小下。" },
-  { id: "concert_weekend_merch", wishItemId: "concert_weekend_pass", name: "周边托特包", ratio: 0.12, narrative: "把那晚的心跳装回日常，周一也能摸到一点现场余温。" },
-  { id: "concert_weekend_voucher", wishItemId: "concert_weekend_pass", name: "餐饮备用金", ratio: 0.1, narrative: "快乐不能饿着肚子结算。先吃好，再大声唱。" },
+  {
+    id: "concert_weekend_ticket",
+    wishItemId: "concert_weekend_pass",
+    name: "演唱会门票",
+    ratio: 0.32,
+    narrative: "票根点亮，说明生活里终于有一晚不是为需求排期。"
+  },
+  {
+    id: "concert_weekend_transit",
+    wishItemId: "concert_weekend_pass",
+    name: "往返交通",
+    ratio: 0.16,
+    narrative: "车票备好，身体先离开工位，心情才追得上音乐。"
+  },
+  {
+    id: "concert_weekend_hotel",
+    wishItemId: "concert_weekend_pass",
+    name: "周末住宿",
+    ratio: 0.18,
+    narrative: "住处落定，散场后不用赶末班车，快乐可以慢慢降落。"
+  },
+  {
+    id: "concert_weekend_lightstick",
+    wishItemId: "concert_weekend_pass",
+    name: "应援灯棒",
+    ratio: 0.12,
+    narrative: "灯亮起来，你也在人海里亮了一小下。"
+  },
+  {
+    id: "concert_weekend_merch",
+    wishItemId: "concert_weekend_pass",
+    name: "周边托特包",
+    ratio: 0.12,
+    narrative: "把那晚的心跳装回日常，周一也能摸到一点现场余温。"
+  },
+  {
+    id: "concert_weekend_voucher",
+    wishItemId: "concert_weekend_pass",
+    name: "餐饮备用金",
+    ratio: 0.1,
+    narrative: "快乐不能饿着肚子结算。先吃好，再大声唱。"
+  },
 
-  { id: "sleep_recovery_pillow", wishItemId: "sleep_recovery_kit", name: "智能承托枕", ratio: 0.22, narrative: "先把脖子接住。真正的自律，也包括认真睡觉。" },
-  { id: "sleep_recovery_blanket", wishItemId: "sleep_recovery_kit", name: "冷感重力毯", ratio: 0.22, narrative: "毯子盖上去，像给过载的大脑按下静音键。" },
-  { id: "sleep_recovery_mask", wishItemId: "sleep_recovery_kit", name: "遮光眼罩", ratio: 0.12, narrative: "把光线关掉一半，把世界也暂时调低音量。" },
-  { id: "sleep_recovery_lamp", wishItemId: "sleep_recovery_kit", name: "白噪音小灯", ratio: 0.14, narrative: "柔光和白噪音就位，今晚不和焦虑硬碰硬。" },
-  { id: "sleep_recovery_diffuser", wishItemId: "sleep_recovery_kit", name: "香氛扩香器", ratio: 0.14, narrative: "味道慢慢散开，房间开始像一个允许你松掉的地方。" },
-  { id: "sleep_recovery_tracker", wishItemId: "sleep_recovery_kit", name: "睡眠记录器", ratio: 0.16, narrative: "把休息也认真记录下来，因为你的恢复同样值得被看见。" },
+  {
+    id: "sleep_recovery_pillow",
+    wishItemId: "sleep_recovery_kit",
+    name: "智能承托枕",
+    ratio: 0.22,
+    narrative: "先把脖子接住。真正的自律，也包括认真睡觉。"
+  },
+  {
+    id: "sleep_recovery_blanket",
+    wishItemId: "sleep_recovery_kit",
+    name: "冷感重力毯",
+    ratio: 0.22,
+    narrative: "毯子盖上去，像给过载的大脑按下静音键。"
+  },
+  {
+    id: "sleep_recovery_mask",
+    wishItemId: "sleep_recovery_kit",
+    name: "遮光眼罩",
+    ratio: 0.12,
+    narrative: "把光线关掉一半，把世界也暂时调低音量。"
+  },
+  {
+    id: "sleep_recovery_lamp",
+    wishItemId: "sleep_recovery_kit",
+    name: "白噪音小灯",
+    ratio: 0.14,
+    narrative: "柔光和白噪音就位，今晚不和焦虑硬碰硬。"
+  },
+  {
+    id: "sleep_recovery_diffuser",
+    wishItemId: "sleep_recovery_kit",
+    name: "香氛扩香器",
+    ratio: 0.14,
+    narrative: "味道慢慢散开，房间开始像一个允许你松掉的地方。"
+  },
+  {
+    id: "sleep_recovery_tracker",
+    wishItemId: "sleep_recovery_kit",
+    name: "睡眠记录器",
+    ratio: 0.16,
+    narrative: "把休息也认真记录下来，因为你的恢复同样值得被看见。"
+  },
 
-  { id: "toycraft_plush", wishItemId: "toycraft_mood_box", name: "毛绒挂件", ratio: 0.18, narrative: "小挂件先到岗，替你把今天的委屈软化一点。" },
-  { id: "toycraft_board", wishItemId: "toycraft_mood_box", name: "拼豆手作板", ratio: 0.2, narrative: "一颗一颗拼上去，手忙起来，脑子就能暂时别加班。" },
-  { id: "toycraft_display", wishItemId: "toycraft_mood_box", name: "透明展示盒", ratio: 0.16, narrative: "展示盒点亮，说明你的小快乐也配有正式位置。" },
-  { id: "toycraft_stickers", wishItemId: "toycraft_mood_box", name: "贴纸包", ratio: 0.12, narrative: "贴纸不是幼稚，是给生活边角补一点可爱。" },
-  { id: "toycraft_standee", wishItemId: "toycraft_mood_box", name: "亚克力立牌", ratio: 0.18, narrative: "立牌站起来，像一个小小的情绪护卫，替你看住桌面。" },
-  { id: "toycraft_card", wishItemId: "toycraft_mood_box", name: "限定收藏卡", ratio: 0.16, narrative: "卡面收进来，今天终于不只收需求，也收一点喜欢。" }
+  {
+    id: "toycraft_plush",
+    wishItemId: "toycraft_mood_box",
+    name: "毛绒挂件",
+    ratio: 0.18,
+    narrative: "小挂件先到岗，替你把今天的委屈软化一点。"
+  },
+  {
+    id: "toycraft_board",
+    wishItemId: "toycraft_mood_box",
+    name: "拼豆手作板",
+    ratio: 0.2,
+    narrative: "一颗一颗拼上去，手忙起来，脑子就能暂时别加班。"
+  },
+  {
+    id: "toycraft_display",
+    wishItemId: "toycraft_mood_box",
+    name: "透明展示盒",
+    ratio: 0.16,
+    narrative: "展示盒点亮，说明你的小快乐也配有正式位置。"
+  },
+  {
+    id: "toycraft_stickers",
+    wishItemId: "toycraft_mood_box",
+    name: "贴纸包",
+    ratio: 0.12,
+    narrative: "贴纸不是幼稚，是给生活边角补一点可爱。"
+  },
+  {
+    id: "toycraft_standee",
+    wishItemId: "toycraft_mood_box",
+    name: "亚克力立牌",
+    ratio: 0.18,
+    narrative: "立牌站起来，像一个小小的情绪护卫，替你看住桌面。"
+  },
+  {
+    id: "toycraft_card",
+    wishItemId: "toycraft_mood_box",
+    name: "限定收藏卡",
+    ratio: 0.16,
+    narrative: "卡面收进来，今天终于不只收需求，也收一点喜欢。"
+  }
 ];
 
 export const petStages: PetStage[] = [
@@ -316,7 +723,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "一小团暖棕色卡皮巴拉缩在水边，头顶一片嫩叶，表情像已经原谅了全世界。",
     temperament: "不争不抢，先替你把情绪泡进温水里。",
     features: ["嫩叶", "温水", "闭眼"],
-    palette: { body: "#b88959", belly: "#f2d7a7", accent: "#6e8b5d", glow: "#c9e8b4", eye: "#332417", shadow: "#5c3e28" },
+    palette: {
+      body: "#b88959",
+      belly: "#f2d7a7",
+      accent: "#6e8b5d",
+      glow: "#c9e8b4",
+      eye: "#332417",
+      shadow: "#5c3e28"
+    },
     line: "先别急着赢，今天能不被带跑就已经很好了。"
   },
   {
@@ -328,7 +742,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "抱着荷叶在水面慢慢漂，旁边飘着小气泡，像把待办先放到了岸上。",
     temperament: "会把紧张感稀释成可以呼吸的节奏。",
     features: ["荷叶", "气泡", "慢漂"],
-    palette: { body: "#bd9161", belly: "#f5dbb1", accent: "#5b9471", glow: "#bde6d2", eye: "#382819", shadow: "#62442a" },
+    palette: {
+      body: "#bd9161",
+      belly: "#f5dbb1",
+      accent: "#5b9471",
+      glow: "#bde6d2",
+      eye: "#382819",
+      shadow: "#62442a"
+    },
     line: "我漂一下，你也漂一下，事情不会因为我们吸气而塌掉。"
   },
   {
@@ -340,7 +761,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "披着浅绿色小围巾，捧着一杯热茶，尾巴旁有一小摞被驯服的消息。",
     temperament: "很慢，但会稳稳地替你挡住催促。",
     features: ["热茶", "围巾", "消息堆"],
-    palette: { body: "#c29665", belly: "#f7dfb8", accent: "#719b64", glow: "#d9c07b", eye: "#352514", shadow: "#64452b" },
+    palette: {
+      body: "#c29665",
+      belly: "#f7dfb8",
+      accent: "#719b64",
+      glow: "#d9c07b",
+      eye: "#352514",
+      shadow: "#64452b"
+    },
     line: "先喝一口。对方急，不等于你必须乱。"
   },
   {
@@ -352,7 +780,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "坐在圆蒲团上，身边绕着几粒小木鱼光点，把会议噪音压成低频嗡嗡。",
     temperament: "佛系但不软弱，能把噪声降到可处理。",
     features: ["蒲团", "木鱼光", "降噪"],
-    palette: { body: "#b88354", belly: "#efd19d", accent: "#8d9d55", glow: "#efe0a1", eye: "#2f2115", shadow: "#593b25" },
+    palette: {
+      body: "#b88354",
+      belly: "#efd19d",
+      accent: "#8d9d55",
+      glow: "#efe0a1",
+      eye: "#2f2115",
+      shadow: "#593b25"
+    },
     line: "听见了，但不必全部接住。"
   },
   {
@@ -364,7 +799,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "穿着短短竹青外袍，背后有几片竹影，爪边立着一块写给自己的边界石。",
     temperament: "温和地说不，把拒绝说得像天气一样自然。",
     features: ["竹袍", "边界石", "微笑"],
-    palette: { body: "#a9774a", belly: "#f0d5a6", accent: "#527d56", glow: "#a8d68d", eye: "#322214", shadow: "#51351f" },
+    palette: {
+      body: "#a9774a",
+      belly: "#f0d5a6",
+      accent: "#527d56",
+      glow: "#a8d68d",
+      eye: "#322214",
+      shadow: "#51351f"
+    },
     line: "可以帮，但要有范围；可以快，但不能无限快。"
   },
   {
@@ -376,7 +818,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "半个身体泡在小温泉里，头上顶着热毛巾，蒸汽里藏着被熄火的怨气。",
     temperament: "把爆炸倒计时改成泡澡计时。",
     features: ["温泉", "热毛巾", "蒸汽"],
-    palette: { body: "#bd8653", belly: "#f4d8a5", accent: "#659c8b", glow: "#b7efe2", eye: "#362616", shadow: "#5b3a20" },
+    palette: {
+      body: "#bd8653",
+      belly: "#f4d8a5",
+      accent: "#659c8b",
+      glow: "#b7efe2",
+      eye: "#362616",
+      shadow: "#5b3a20"
+    },
     line: "热气上来了，火气就不用再上来了。"
   },
   {
@@ -388,7 +837,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "坐在小盆景旁，披着苔绿色披风，看需求风暴绕过去而不是撞上来。",
     temperament: "能看穿不合理，但不急着消耗自己证明。",
     features: ["盆景", "苔绿披风", "风环"],
-    palette: { body: "#a96f45", belly: "#efc987", accent: "#4b7454", glow: "#d8bf67", eye: "#2b1e13", shadow: "#4d2f1c" },
+    palette: {
+      body: "#a96f45",
+      belly: "#efc987",
+      accent: "#4b7454",
+      glow: "#d8bf67",
+      eye: "#2b1e13",
+      shadow: "#4d2f1c"
+    },
     line: "有些风只需要看着它过去，不需要站起来和它打架。"
   },
   {
@@ -400,7 +856,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "戴着小木珠，背后有一圈淡淡圆光，爪里握着一枚写着稍后处理的竹签。",
     temperament: "非常稳，稳到别人催你也催不动。",
     features: ["木珠", "圆光", "竹签"],
-    palette: { body: "#9a643e", belly: "#eec485", accent: "#647f4d", glow: "#f0dc95", eye: "#271a11", shadow: "#422818" },
+    palette: {
+      body: "#9a643e",
+      belly: "#eec485",
+      accent: "#647f4d",
+      glow: "#f0dc95",
+      eye: "#271a11",
+      shadow: "#422818"
+    },
     line: "稍后处理不是逃避，是把主导权拿回来。"
   },
   {
@@ -412,7 +875,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "坐在小莲座上，周围漂浮着金币和荷叶护盾，像一只温吞但很难撼动的守护灵。",
     temperament: "不卷，但会守住你真正想要的东西。",
     features: ["莲座", "荷叶盾", "金币"],
-    palette: { body: "#955f3a", belly: "#eebd7c", accent: "#587d68", glow: "#f2d979", eye: "#24170f", shadow: "#3b2216" },
+    palette: {
+      body: "#955f3a",
+      belly: "#eebd7c",
+      accent: "#587d68",
+      glow: "#f2d979",
+      eye: "#24170f",
+      shadow: "#3b2216"
+    },
     line: "我们不抢风头，我们守目标。"
   },
   {
@@ -424,7 +894,14 @@ const capybaraZenStages: PetStageDraft[] = [
     visual: "最终形态披着青金色小袍，身后是温泉圆光和竹影，神情安静但非常可靠。",
     temperament: "把怨气化成定力，替你在桌面边缘安营扎寨。",
     features: ["温泉圆光", "青金小袍", "竹影"],
-    palette: { body: "#835437", belly: "#e7bd80", accent: "#3f6d59", glow: "#f2d46b", eye: "#21140d", shadow: "#321e14" },
+    palette: {
+      body: "#835437",
+      belly: "#e7bd80",
+      accent: "#3f6d59",
+      glow: "#f2d46b",
+      eye: "#21140d",
+      shadow: "#321e14"
+    },
     line: "今天也不必赢过所有人，赢回自己就够了。"
   }
 ];
@@ -439,7 +916,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "一只黑白小猫摊成猫饼，爪垫露在外面，眼神写着再睡五分钟。",
     temperament: "可爱但拒绝营业，适合把焦虑摁成一滩。",
     features: ["猫饼", "爪垫", "半睁眼"],
-    palette: { body: "#34373b", belly: "#fff2df", accent: "#f28d87", glow: "#ffe3a0", eye: "#fff7dc", shadow: "#1f2226" },
+    palette: {
+      body: "#34373b",
+      belly: "#fff2df",
+      accent: "#f28d87",
+      glow: "#ffe3a0",
+      eye: "#fff7dc",
+      shadow: "#1f2226"
+    },
     line: "我先倒下了，你要不要也把肩膀放下来一点。"
   },
   {
@@ -451,7 +935,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "裹着小毛毯，只伸出耳朵和尾巴，旁边有一个没关掉的闹钟。",
     temperament: "会用无声抗议提醒你别过度透支。",
     features: ["毛毯", "闹钟", "尾巴"],
-    palette: { body: "#3d4146", belly: "#fff0d8", accent: "#e98579", glow: "#cfe9d6", eye: "#fff6d4", shadow: "#202327" },
+    palette: {
+      body: "#3d4146",
+      belly: "#fff0d8",
+      accent: "#e98579",
+      glow: "#cfe9d6",
+      eye: "#fff6d4",
+      shadow: "#202327"
+    },
     line: "闹钟响了，但我的灵魂没有同意。"
   },
   {
@@ -463,7 +954,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "趴在珊瑚色抱枕上，身边散着两张待办纸条，纸条已经被压扁。",
     temperament: "会把待办压住一会儿，让你先恢复血条。",
     features: ["抱枕", "待办纸", "软爪"],
-    palette: { body: "#30343a", belly: "#fff3e1", accent: "#ef8f7c", glow: "#ffd476", eye: "#fff8dc", shadow: "#181b20" },
+    palette: {
+      body: "#30343a",
+      belly: "#fff3e1",
+      accent: "#ef8f7c",
+      glow: "#ffd476",
+      eye: "#fff8dc",
+      shadow: "#181b20"
+    },
     line: "纸被我压住了，暂时不会追你。"
   },
   {
@@ -475,7 +973,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "坐进纸箱堡垒，只露出脑袋，箱子外贴着一只歪掉的爪印。",
     temperament: "能在精神过载时给你一个小小撤退区。",
     features: ["纸箱", "歪爪印", "堡垒"],
-    palette: { body: "#383c42", belly: "#fff2df", accent: "#d88b5c", glow: "#f6c36f", eye: "#fff7db", shadow: "#1c2026" },
+    palette: {
+      body: "#383c42",
+      belly: "#fff2df",
+      accent: "#d88b5c",
+      glow: "#f6c36f",
+      eye: "#fff7db",
+      shadow: "#1c2026"
+    },
     line: "不是逃，是战略性钻箱。"
   },
   {
@@ -487,7 +992,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "趴在键盘上，尾巴压住回车键，脸上写着今天先别提交人生。",
     temperament: "会阻止你在气头上发出危险回复。",
     features: ["键盘", "回车键", "尾巴"],
-    palette: { body: "#2e3238", belly: "#fff1dd", accent: "#ee7f7b", glow: "#a8ead6", eye: "#fff4cc", shadow: "#171a1f" },
+    palette: {
+      body: "#2e3238",
+      belly: "#fff1dd",
+      accent: "#ee7f7b",
+      glow: "#a8ead6",
+      eye: "#fff4cc",
+      shadow: "#171a1f"
+    },
     line: "这条消息先别发，我尾巴已经替你按住了。"
   },
   {
@@ -499,7 +1011,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "仰在小老板椅里，肚皮朝天，旁边摞着已经无害化的会议纪要。",
     temperament: "看似废，实际上在低功耗整理战场。",
     features: ["老板椅", "会议纪要", "肚皮"],
-    palette: { body: "#292e35", belly: "#fff3df", accent: "#db716e", glow: "#ffd27a", eye: "#fff8dc", shadow: "#14181d" },
+    palette: {
+      body: "#292e35",
+      belly: "#fff3df",
+      accent: "#db716e",
+      glow: "#ffd27a",
+      eye: "#fff8dc",
+      shadow: "#14181d"
+    },
     line: "我在瘫着，但我的边界感还醒着。"
   },
   {
@@ -511,7 +1030,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "戴着小歪冠趴在软王座上，爪边有一条写着不接急锅的绶带。",
     temperament: "开始有一点傲娇，但只对不合理需求傲娇。",
     features: ["歪冠", "软王座", "绶带"],
-    palette: { body: "#252a31", belly: "#fff4e4", accent: "#f29373", glow: "#f8d06d", eye: "#fff6d0", shadow: "#11151a" },
+    palette: {
+      body: "#252a31",
+      belly: "#fff4e4",
+      accent: "#f29373",
+      glow: "#f8d06d",
+      eye: "#fff6d0",
+      shadow: "#11151a"
+    },
     line: "本王宣布：急锅不自动继承。"
   },
   {
@@ -523,7 +1049,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "陷在红色小沙发里，周围浮着软软的反弹结界，把无效催促弹成小气泡。",
     temperament: "懒得吵，但很会弹开消耗。",
     features: ["沙发", "软结界", "气泡"],
-    palette: { body: "#20252c", belly: "#fff1dd", accent: "#de6f74", glow: "#a2efe3", eye: "#fff6d4", shadow: "#0f1217" },
+    palette: {
+      body: "#20252c",
+      belly: "#fff1dd",
+      accent: "#de6f74",
+      glow: "#a2efe3",
+      eye: "#fff6d4",
+      shadow: "#0f1217"
+    },
     line: "我不解释了，结界会自己解释。"
   },
   {
@@ -535,7 +1068,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "披着奶油披肩，在小靠椅上闭眼午睡，爪边有一盏柔光台灯。",
     temperament: "疲惫但体面，能帮你把休息说得理直气壮。",
     features: ["披肩", "靠椅", "柔光灯"],
-    palette: { body: "#1f242b", belly: "#fff0dd", accent: "#d8616f", glow: "#f6ca65", eye: "#fff8df", shadow: "#0c1015" },
+    palette: {
+      body: "#1f242b",
+      belly: "#fff0dd",
+      accent: "#d8616f",
+      glow: "#f6ca65",
+      eye: "#fff8df",
+      shadow: "#0c1015"
+    },
     line: "休息不是奖励，是维护系统稳定。"
   },
   {
@@ -547,7 +1087,14 @@ const lazyCatStages: PetStageDraft[] = [
     visual: "最终形态坐在豪华软椅上，怀里抱着小鱼抱枕，眼神温柔但坚决不加班。",
     temperament: "用可爱和摆烂同时保护你，必要时会替你冷处理。",
     features: ["豪华软椅", "小鱼抱枕", "拒绝加班"],
-    palette: { body: "#181d24", belly: "#fff3e2", accent: "#e26970", glow: "#ffd16e", eye: "#fff7d6", shadow: "#090c10" },
+    palette: {
+      body: "#181d24",
+      belly: "#fff3e2",
+      accent: "#e26970",
+      glow: "#ffd16e",
+      eye: "#fff7d6",
+      shadow: "#090c10"
+    },
     line: "本大人批准你今天少内耗一点。"
   }
 ];
@@ -562,7 +1109,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "一只浅棕小狗趴在圆垫上，耳朵垂下来，像刚把世界音量调低。",
     temperament: "温顺可靠，先陪你把心率降下来。",
     features: ["圆垫", "垂耳", "慢呼吸"],
-    palette: { body: "#c68f56", belly: "#f7dfbd", accent: "#58718a", glow: "#e7c27a", eye: "#352316", shadow: "#684123" },
+    palette: {
+      body: "#c68f56",
+      belly: "#f7dfbd",
+      accent: "#58718a",
+      glow: "#e7c27a",
+      eye: "#352316",
+      shadow: "#684123"
+    },
     line: "我在，先趴一会儿，别马上冲出去。"
   },
   {
@@ -574,7 +1128,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "抱着蓝色小球睡觉，尾巴挡住一串通知气泡。",
     temperament: "不擅长激烈反击，但非常擅长挡噪音。",
     features: ["蓝球", "通知气泡", "尾巴盾"],
-    palette: { body: "#c98f55", belly: "#f5ddb8", accent: "#517897", glow: "#b7d6df", eye: "#372414", shadow: "#6b4324" },
+    palette: {
+      body: "#c98f55",
+      belly: "#f5ddb8",
+      accent: "#517897",
+      glow: "#b7d6df",
+      eye: "#372414",
+      shadow: "#6b4324"
+    },
     line: "通知我先挡着，你别每一条都扑过去。"
   },
   {
@@ -586,7 +1147,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "裹着蓝灰色小毯子，只露出鼻尖和两只耳朵，旁边有一杯温水。",
     temperament: "陪伴感很足，行动力很低，但低得让人安心。",
     features: ["小毯子", "温水", "鼻尖"],
-    palette: { body: "#bd8150", belly: "#f3d8ad", accent: "#667c91", glow: "#c9d8b7", eye: "#322011", shadow: "#5f391f" },
+    palette: {
+      body: "#bd8150",
+      belly: "#f3d8ad",
+      accent: "#667c91",
+      glow: "#c9d8b7",
+      eye: "#322011",
+      shadow: "#5f391f"
+    },
     line: "低功耗模式不是废，是续航。"
   },
   {
@@ -598,7 +1166,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "拖着一个绿色抱枕慢慢巡逻，脚边有几个被标记为稍后的任务。",
     temperament: "慢慢检查边界，发现越界就轻轻汪一声。",
     features: ["抱枕", "稍后任务", "慢巡逻"],
-    palette: { body: "#b9784b", belly: "#efd2a2", accent: "#5f7e63", glow: "#e7c36d", eye: "#302013", shadow: "#58331d" },
+    palette: {
+      body: "#b9784b",
+      belly: "#efd2a2",
+      accent: "#5f7e63",
+      glow: "#e7c36d",
+      eye: "#302013",
+      shadow: "#58331d"
+    },
     line: "我走得慢，但不代表别人能越界。"
   },
   {
@@ -610,7 +1185,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "穿着宽松蓝色卫衣坐在懒人沙发里，爪边有一张缓冲清单。",
     temperament: "懂得把突然袭来的任务先放进缓冲区。",
     features: ["卫衣", "懒人沙发", "缓冲清单"],
-    palette: { body: "#b87548", belly: "#f1d3a5", accent: "#4d6f8d", glow: "#d7c17a", eye: "#2c1c10", shadow: "#50301b" },
+    palette: {
+      body: "#b87548",
+      belly: "#f1d3a5",
+      accent: "#4d6f8d",
+      glow: "#d7c17a",
+      eye: "#2c1c10",
+      shadow: "#50301b"
+    },
     line: "先放缓冲区，别让它直接撞进你脑子里。"
   },
   {
@@ -622,7 +1204,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "抱着马克杯坐在办公椅脚边，眼镜歪歪的，看起来很困但很认真。",
     temperament: "老实、忠诚，会认真陪你熬过但不鼓励你硬熬。",
     features: ["马克杯", "眼镜", "办公椅"],
-    palette: { body: "#aa6d44", belly: "#edc995", accent: "#536b7c", glow: "#c8e1c4", eye: "#2a1a0e", shadow: "#482a18" },
+    palette: {
+      body: "#aa6d44",
+      belly: "#edc995",
+      accent: "#536b7c",
+      glow: "#c8e1c4",
+      eye: "#2a1a0e",
+      shadow: "#482a18"
+    },
     line: "陪你可以，硬扛不行。"
   },
   {
@@ -634,7 +1223,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "背着小公文包但走得很慢，包上挂着一个写着只背自己的锅的小牌。",
     temperament: "责任感很强，但开始学会只背自己的部分。",
     features: ["公文包", "小牌", "慢步"],
-    palette: { body: "#a86742", belly: "#eac58f", accent: "#476f68", glow: "#e0bd69", eye: "#29190d", shadow: "#432616" },
+    palette: {
+      body: "#a86742",
+      belly: "#eac58f",
+      accent: "#476f68",
+      glow: "#e0bd69",
+      eye: "#29190d",
+      shadow: "#432616"
+    },
     line: "包可以背，别人的锅不可以自动装进去。"
   },
   {
@@ -646,7 +1242,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "坐在暖色台灯旁，披着格纹小毯，眼神像深夜还愿意听你说完。",
     temperament: "温柔但坚定，会提醒你深夜别做重大决定。",
     features: ["暖灯", "格纹毯", "守夜"],
-    palette: { body: "#98613f", belly: "#e6bd86", accent: "#6b7151", glow: "#f0c76b", eye: "#25170c", shadow: "#3b2113" },
+    palette: {
+      body: "#98613f",
+      belly: "#e6bd86",
+      accent: "#6b7151",
+      glow: "#f0c76b",
+      eye: "#25170c",
+      shadow: "#3b2113"
+    },
     line: "夜里先别下结论，明天的你会感谢现在的暂停。"
   },
   {
@@ -658,7 +1261,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "坐在小摇椅上，耳朵已经有点白，怀里抱着一本边界手册。",
     temperament: "经历过很多工位风浪，所以不再被急字吓到。",
     features: ["摇椅", "白耳", "边界手册"],
-    palette: { body: "#89563a", belly: "#dfb37c", accent: "#5b6750", glow: "#efc067", eye: "#21140b", shadow: "#321d11" },
+    palette: {
+      body: "#89563a",
+      belly: "#dfb37c",
+      accent: "#5b6750",
+      glow: "#efc067",
+      eye: "#21140b",
+      shadow: "#321d11"
+    },
     line: "真正重要的事，通常经得起你先睡一觉。"
   },
   {
@@ -670,7 +1280,14 @@ const lazyDogStages: PetStageDraft[] = [
     visual: "最终形态坐在木质办公桌旁，戴着小圆眼镜，背后有暖灯与盾形光环。",
     temperament: "不催你变强，只陪你变稳。",
     features: ["小圆眼镜", "暖灯", "盾形光环"],
-    palette: { body: "#744932", belly: "#d9aa72", accent: "#48625f", glow: "#e8b85f", eye: "#1d1209", shadow: "#2a180e" },
+    palette: {
+      body: "#744932",
+      belly: "#d9aa72",
+      accent: "#48625f",
+      glow: "#e8b85f",
+      eye: "#1d1209",
+      shadow: "#2a180e"
+    },
     line: "我会慢慢守着你，不让工位把你变成另一个人。"
   }
 ];
@@ -685,7 +1302,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "黑白斑纹小牛蹲在桌角，眉毛皱得很认真，鼻口粉粉的，像刚听完一句离谱需求。",
     temperament: "老实但不傻，先替你把委屈含住，再慢慢嚼碎。",
     features: ["黑白斑", "皱眉", "粉鼻口"],
-    palette: { body: "#f7f2e8", belly: "#ffd5bc", accent: "#242424", glow: "#d7e7a6", eye: "#171717", shadow: "#34312c" },
+    palette: {
+      body: "#f7f2e8",
+      belly: "#ffd5bc",
+      accent: "#242424",
+      glow: "#d7e7a6",
+      eye: "#171717",
+      shadow: "#34312c"
+    },
     line: "哞。老实不是好欺负，我只是先把这口气咽成反刍素材。"
   },
   {
@@ -697,7 +1321,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "小牛叼着奶茶吸管，眼神斜斜盯住需求方，黑耳朵一抖一抖。",
     temperament: "表面在喝奶茶，实际在记下每一次临时变更。",
     features: ["奶茶", "吸管", "斜眼"],
-    palette: { body: "#f8f1e5", belly: "#ffd1b4", accent: "#202020", glow: "#f0d66b", eye: "#151515", shadow: "#302d28" },
+    palette: {
+      body: "#f8f1e5",
+      belly: "#ffd1b4",
+      accent: "#202020",
+      glow: "#f0d66b",
+      eye: "#151515",
+      shadow: "#302d28"
+    },
     line: "我先喝一口，免得把刚才那句话直接顶回去。"
   },
   {
@@ -709,7 +1340,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "眉毛压得更低，额头冒出两只短角，蹄子边散着几张被嚼皱的待办便签。",
     temperament: "开始有脾气，但脾气会先变成行动清单。",
     features: ["短角", "凶眉", "待办便签"],
-    palette: { body: "#f5efe4", belly: "#ffc9aa", accent: "#1f1f1f", glow: "#b8df8d", eye: "#111111", shadow: "#2b2926" },
+    palette: {
+      body: "#f5efe4",
+      belly: "#ffc9aa",
+      accent: "#1f1f1f",
+      glow: "#b8df8d",
+      eye: "#111111",
+      shadow: "#2b2926"
+    },
     line: "可以做，但要写清楚边界。我的角已经开始记仇了。"
   },
   {
@@ -721,7 +1359,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "胸前系上黑色小领结，站姿乖巧，眉眼却写着我全都听见了。",
     temperament: "礼貌、克制、但不会再自动背锅。",
     features: ["黑领结", "端正站姿", "克制眼神"],
-    palette: { body: "#fbf4e8", belly: "#ffc7a7", accent: "#191919", glow: "#efe2a0", eye: "#111111", shadow: "#292522" },
+    palette: {
+      body: "#fbf4e8",
+      belly: "#ffc7a7",
+      accent: "#191919",
+      glow: "#efe2a0",
+      eye: "#111111",
+      shadow: "#292522"
+    },
     line: "收到。我会配合，但这锅请按流程分配，不要默认挂我角上。"
   },
   {
@@ -733,7 +1378,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "穿上黑色小西装，白衬衫和领结齐全，胸口别着一枚小花，像参考图里那只强撑体面的牛。",
     temperament: "体面到有点好笑，但体面下面是很硬的边界感。",
     features: ["黑西装", "小花", "职业皱眉"],
-    palette: { body: "#f8f2e7", belly: "#ffc8aa", accent: "#151515", glow: "#f4d16e", eye: "#101010", shadow: "#26221f" },
+    palette: {
+      body: "#f8f2e7",
+      belly: "#ffc8aa",
+      accent: "#151515",
+      glow: "#f4d16e",
+      eye: "#101010",
+      shadow: "#26221f"
+    },
     line: "我穿西装不是为了忍，是为了让反击看起来很正式。"
   },
   {
@@ -745,7 +1397,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "西装胸口多了工牌和小印章，身边漂着几枚验收勾选框，眉峰像两道门禁。",
     temperament: "开始审需求、审口头承诺、审谁在装没说过。",
     features: ["工牌", "印章", "验收框"],
-    palette: { body: "#f6efe3", belly: "#ffc19f", accent: "#171717", glow: "#9fd7b0", eye: "#0f0f0f", shadow: "#24211f" },
+    palette: {
+      body: "#f6efe3",
+      belly: "#ffc19f",
+      accent: "#171717",
+      glow: "#9fd7b0",
+      eye: "#0f0f0f",
+      shadow: "#24211f"
+    },
     line: "口头说的也算数。牛牛已经把它盖章进记忆里了。"
   },
   {
@@ -757,7 +1416,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "戴上小墨镜，西装更挺，手边有一杯奶茶和一叠需求变更单。",
     temperament: "不再只执行，开始反向管理混乱。",
     features: ["墨镜", "奶茶", "变更单"],
-    palette: { body: "#f3ece1", belly: "#ffba98", accent: "#111111", glow: "#e9d575", eye: "#0b0b0b", shadow: "#201d1a" },
+    palette: {
+      body: "#f3ece1",
+      belly: "#ffba98",
+      accent: "#111111",
+      glow: "#e9d575",
+      eye: "#0b0b0b",
+      shadow: "#201d1a"
+    },
     line: "我不是老板，但我现在要开始管理老板的想象力。"
   },
   {
@@ -769,7 +1435,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "双角变亮，周围旋着被顶飞的废话气泡和 KPI 碎片，眼神凶得很正义。",
     temperament: "遇到空话会直接顶散，给你留出能呼吸的空间。",
     features: ["发光牛角", "废话气泡", "KPI 碎片"],
-    palette: { body: "#f0e9de", belly: "#ffaf8a", accent: "#0f0f0f", glow: "#8bd9c4", eye: "#080808", shadow: "#1c1a18" },
+    palette: {
+      body: "#f0e9de",
+      belly: "#ffaf8a",
+      accent: "#0f0f0f",
+      glow: "#8bd9c4",
+      eye: "#080808",
+      shadow: "#1c1a18"
+    },
     line: "这句没信息量，我先顶走。下一句请讲人话。"
   },
   {
@@ -781,7 +1454,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "黑白礼服完整成型，胸前小花发光，背后是一圈奶茶色护盾光环。",
     temperament: "又体面又不好惹，能把愤怒压成清晰条款。",
     features: ["礼服", "小花光", "奶茶护盾"],
-    palette: { body: "#eee7db", belly: "#ffa983", accent: "#0d0d0d", glow: "#f0c96a", eye: "#060606", shadow: "#171513" },
+    palette: {
+      body: "#eee7db",
+      belly: "#ffa983",
+      accent: "#0d0d0d",
+      glow: "#f0c96a",
+      eye: "#060606",
+      shadow: "#171513"
+    },
     line: "体面不是退让，是让每一句边界都站得更稳。"
   },
   {
@@ -793,7 +1473,14 @@ const honestCowStages: PetStageDraft[] = [
     visual: "最终形态像一只穿黑礼服的牛仙，凶眉、粉鼻、黑白斑纹和金色工牌光环同时在线。",
     temperament: "忠厚、护主、会反刍怨气，也会把你从过度忍耐里顶出来。",
     features: ["牛仙光环", "黑礼服", "金色工牌"],
-    palette: { body: "#ebe4d8", belly: "#ffa27c", accent: "#080808", glow: "#f2d36c", eye: "#030303", shadow: "#11100f" },
+    palette: {
+      body: "#ebe4d8",
+      belly: "#ffa27c",
+      accent: "#080808",
+      glow: "#f2d36c",
+      eye: "#030303",
+      shadow: "#11100f"
+    },
     line: "老实可以，巴交可以，但被欺负不可以。今天由牛牛替你顶住。"
   }
 ];
@@ -839,7 +1526,8 @@ export const mallItems: MallItem[] = [
     category: "real",
     kind: "physical",
     wishable: true,
-    description: "按 17 系列新外观重做的顶配手机心愿。许愿后拆成一体式机身、屏幕、电池、横向相机平台、芯片和 1TB 存储逐步点亮。",
+    description:
+      "按 17 系列新外观重做的顶配手机心愿。许愿后拆成一体式机身、屏幕、电池、横向相机平台、芯片和 1TB 存储逐步点亮。",
     effect: "把忍耐攒成一次真正的换代感，提醒自己值得拥有更清晰、更轻快的日常。",
     icon: "📱"
   },
@@ -1283,11 +1971,56 @@ export const moodCopy: Record<Mood, { label: string; short: string; comfort: str
 };
 
 export const petTouchProfiles = {
-  head: { label: "摸头", mood: "顺毛", heat: 8, nourish: 1, affection: 3, light: 1, bloodPressure: -1, logTitle: "软团被顺毛" },
-  face: { label: "戳脸", mood: "嫌弃", heat: 10, nourish: 1, affection: 1, light: 0, bloodPressure: 1, logTitle: "软团脸颊告警" },
-  belly: { label: "揉肚", mood: "放松", heat: 8, nourish: 1, affection: 2, light: 1, bloodPressure: -2, logTitle: "软团被揉顺" },
-  horn: { label: "捏角", mood: "充能", heat: 12, nourish: 2, affection: 0, light: 0, bloodPressure: 2, logTitle: "软团角尖放电" },
-  tail: { label: "拽尾", mood: "炸毛", heat: 14, nourish: 3, affection: -2, light: 0, bloodPressure: 3, logTitle: "软团尾巴警报" }
+  head: {
+    label: "摸头",
+    mood: "顺毛",
+    heat: 8,
+    nourish: 1,
+    affection: 3,
+    light: 1,
+    bloodPressure: -1,
+    logTitle: "软团被顺毛"
+  },
+  face: {
+    label: "戳脸",
+    mood: "嫌弃",
+    heat: 10,
+    nourish: 1,
+    affection: 1,
+    light: 0,
+    bloodPressure: 1,
+    logTitle: "软团脸颊告警"
+  },
+  belly: {
+    label: "揉肚",
+    mood: "放松",
+    heat: 8,
+    nourish: 1,
+    affection: 2,
+    light: 1,
+    bloodPressure: -2,
+    logTitle: "软团被揉顺"
+  },
+  horn: {
+    label: "捏角",
+    mood: "充能",
+    heat: 12,
+    nourish: 2,
+    affection: 0,
+    light: 0,
+    bloodPressure: 2,
+    logTitle: "软团角尖放电"
+  },
+  tail: {
+    label: "拽尾",
+    mood: "炸毛",
+    heat: 14,
+    nourish: 3,
+    affection: -2,
+    light: 0,
+    bloodPressure: 3,
+    logTitle: "软团尾巴警报"
+  }
 } as const;
 
 export const dailyRageMilestones = [
@@ -1308,9 +2041,24 @@ export const workEvents: WorkEvent[] = [
     prompt: "领导说今晚临时开会，主题是“下次会议开什么会”。软团盯着日历，爪子已经放在关机键上。",
     tone: "边界感考试",
     choices: [
-      { id: "refuse", label: "严词拒绝", detail: "把时间边界说清楚，明天同步结论。", effect: { paw: 12, rage: 4, bloodPressure: -4 } },
-      { id: "network", label: "假装网络不好", detail: "头像卡住，但爪币没有卡住。", effect: { paw: 8, mana: -4, affection: 2 } },
-      { id: "accept", label: "忍气吞声加班", detail: "人到会场，魂在下班路上。", effect: { paw: -8, rage: 12, bloodPressure: 8, satiety: -4 } }
+      {
+        id: "refuse",
+        label: "严词拒绝",
+        detail: "把时间边界说清楚，明天同步结论。",
+        effect: { paw: 12, rage: 4, bloodPressure: -4 }
+      },
+      {
+        id: "network",
+        label: "假装网络不好",
+        detail: "头像卡住，但爪币没有卡住。",
+        effect: { paw: 8, mana: -4, affection: 2 }
+      },
+      {
+        id: "accept",
+        label: "忍气吞声加班",
+        detail: "人到会场，魂在下班路上。",
+        effect: { paw: -8, rage: 12, bloodPressure: 8, satiety: -4 }
+      }
     ]
   },
   {
@@ -1319,8 +2067,18 @@ export const workEvents: WorkEvent[] = [
     prompt: "同事说“这个锅你先背一下，之后请你喝奶茶”。软团已经把聊天框截图命名为证据一。",
     tone: "锅具鉴定",
     choices: [
-      { id: "receipt", label: "保存聊天记录", detail: "先留证据，再礼貌同步责任边界。", effect: { paw: 10, rage: 3, bloodPressure: -2 } },
-      { id: "clarify", label: "群里确认分工", detail: "让锅回到该去的灶台。", effect: { paw: 8, rage: 5, affection: 2 } },
+      {
+        id: "receipt",
+        label: "保存聊天记录",
+        detail: "先留证据，再礼貌同步责任边界。",
+        effect: { paw: 10, rage: 3, bloodPressure: -2 }
+      },
+      {
+        id: "clarify",
+        label: "群里确认分工",
+        detail: "让锅回到该去的灶台。",
+        effect: { paw: 8, rage: 5, affection: 2 }
+      },
       { id: "carry", label: "接锅", detail: "锅很沉，软团也很担心。", effect: { paw: -6, rage: 14, bloodPressure: 10 } }
     ]
   },
@@ -1330,9 +2088,19 @@ export const workEvents: WorkEvent[] = [
     prompt: "老板说“今年先苦一苦，明年你就是核心骨干”。软团问：骨干能不能写进合同。",
     tone: "大饼烘焙",
     choices: [
-      { id: "contract", label: "问能否写进合同", detail: "把抽象激励翻译成具体条款。", effect: { paw: 14, rage: 2, bloodPressure: -5 } },
+      {
+        id: "contract",
+        label: "问能否写进合同",
+        detail: "把抽象激励翻译成具体条款。",
+        effect: { paw: 14, rage: 2, bloodPressure: -5 }
+      },
       { id: "screenshot", label: "截图收藏大饼", detail: "今日菜单：云端烙饼。", effect: { paw: 7, rage: 4 } },
-      { id: "believe", label: "当场感动", detail: "软团默默把降压药推近一点。", effect: { paw: -5, rage: 9, bloodPressure: 7 } }
+      {
+        id: "believe",
+        label: "当场感动",
+        detail: "软团默默把降压药推近一点。",
+        effect: { paw: -5, rage: 9, bloodPressure: 7 }
+      }
     ]
   },
   {
@@ -1341,9 +2109,19 @@ export const workEvents: WorkEvent[] = [
     prompt: "茶水间没人，咖啡机还热着。软团的小工牌显示：合理补能不算逃跑。",
     tone: "补能窗口",
     choices: [
-      { id: "micro-break", label: "摸鱼五分钟", detail: "短暂回血，继续做人。", effect: { paw: 8, mana: 8, bloodPressure: -2 } },
+      {
+        id: "micro-break",
+        label: "摸鱼五分钟",
+        detail: "短暂回血，继续做人。",
+        effect: { paw: 8, mana: 8, bloodPressure: -2 }
+      },
       { id: "patrol", label: "假装路过三次", detail: "路线规划非常专业。", effect: { paw: 10, affection: 1 } },
-      { id: "roll", label: "回工位继续卷", detail: "咖啡机热，血压也热。", effect: { paw: -4, rage: 7, bloodPressure: 5 } }
+      {
+        id: "roll",
+        label: "回工位继续卷",
+        detail: "咖啡机热，血压也热。",
+        effect: { paw: -4, rage: 7, bloodPressure: 5 }
+      }
     ]
   },
   {
@@ -1352,7 +2130,12 @@ export const workEvents: WorkEvent[] = [
     prompt: "会议已经开了四十分钟，没人知道要解决什么。软团把纪要标题写成《我们为什么在这里》。",
     tone: "会议逃生",
     choices: [
-      { id: "ask-result", label: "追问结论", detail: "把漂浮的话拽回地面。", effect: { paw: 11, rage: 3, bloodPressure: -3 } },
+      {
+        id: "ask-result",
+        label: "追问结论",
+        detail: "把漂浮的话拽回地面。",
+        effect: { paw: 11, rage: 3, bloodPressure: -3 }
+      },
       { id: "cart", label: "整理购物车", detail: "会议没结果，购物车有。", effect: { paw: 7, light: 3 } },
       { id: "notes", label: "认真做纪要", detail: "很敬业，也很耗电。", effect: { paw: -3, rage: 8, mana: -8 } }
     ]
@@ -1363,9 +2146,19 @@ export const workEvents: WorkEvent[] = [
     prompt: "KPI 又变了，这次叫“动态目标共创”。软团试图打开字典，字典选择了下班。",
     tone: "指标算命",
     choices: [
-      { id: "scope", label: "问清考核口径", detail: "先定义清楚，别让玄学扣工资。", effect: { paw: 13, rage: 4, bloodPressure: -3 } },
+      {
+        id: "scope",
+        label: "问清考核口径",
+        detail: "先定义清楚，别让玄学扣工资。",
+        effect: { paw: 13, rage: 4, bloodPressure: -3 }
+      },
       { id: "sheet", label: "建玄学目标表", detail: "用表格封印随机变化。", effect: { paw: 8, light: 4 } },
-      { id: "self-blame", label: "立刻自我反思", detail: "不是你的错，不要先审判自己。", effect: { paw: -7, rage: 12, bloodPressure: 8 } }
+      {
+        id: "self-blame",
+        label: "立刻自我反思",
+        detail: "不是你的错，不要先审判自己。",
+        effect: { paw: -7, rage: 12, bloodPressure: 8 }
+      }
     ]
   },
   {
@@ -1374,9 +2167,19 @@ export const workEvents: WorkEvent[] = [
     prompt: "客户下班前说“其实我们想要的是另一版”。软团把需求文档抱紧，像抱着一块漂流木。",
     tone: "需求漂移",
     choices: [
-      { id: "change-list", label: "列变更清单", detail: "把临时想法变成可估算工作量。", effect: { paw: 12, rage: 5, bloodPressure: -2 } },
+      {
+        id: "change-list",
+        label: "列变更清单",
+        detail: "把临时想法变成可估算工作量。",
+        effect: { paw: 12, rage: 5, bloodPressure: -2 }
+      },
       { id: "minimum", label: "只交最小版本", detail: "先让船靠岸，再谈豪华装修。", effect: { paw: 9, mana: -4 } },
-      { id: "redo", label: "今晚全重做", detail: "软团的血压条开始闪。", effect: { paw: -10, rage: 15, bloodPressure: 12, satiety: -6 } }
+      {
+        id: "redo",
+        label: "今晚全重做",
+        detail: "软团的血压条开始闪。",
+        effect: { paw: -10, rage: 15, bloodPressure: 12, satiety: -6 }
+      }
     ]
   },
   {
@@ -1385,9 +2188,24 @@ export const workEvents: WorkEvent[] = [
     prompt: "领导说你最近辛苦了，然后转身又塞来两个需求。软团怀疑这是一种免费燃料。",
     tone: "表扬折现",
     choices: [
-      { id: "resource", label: "顺势要资源", detail: "既然认可辛苦，那就补人补时间。", effect: { paw: 13, rage: 3, bloodPressure: -4 } },
-      { id: "thanks-boundary", label: "感谢并排期", detail: "礼貌收下，不立刻加塞。", effect: { paw: 9, affection: 2 } },
-      { id: "free-work", label: "继续白干", detail: "表扬很轻，工作很重。", effect: { paw: -6, rage: 10, bloodPressure: 7 } }
+      {
+        id: "resource",
+        label: "顺势要资源",
+        detail: "既然认可辛苦，那就补人补时间。",
+        effect: { paw: 13, rage: 3, bloodPressure: -4 }
+      },
+      {
+        id: "thanks-boundary",
+        label: "感谢并排期",
+        detail: "礼貌收下，不立刻加塞。",
+        effect: { paw: 9, affection: 2 }
+      },
+      {
+        id: "free-work",
+        label: "继续白干",
+        detail: "表扬很轻，工作很重。",
+        effect: { paw: -6, rage: 10, bloodPressure: 7 }
+      }
     ]
   }
 ];

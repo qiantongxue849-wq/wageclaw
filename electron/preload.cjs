@@ -27,5 +27,10 @@ contextBridge.exposeInMainWorld("wageclawDesktop", {
     const listener = (_, payload) => callback(payload);
     ipcRenderer.on("wageclaw:pet-command", listener);
     return () => ipcRenderer.removeListener("wageclaw:pet-command", listener);
+  },
+  onMainVisibility: (callback) => {
+    const listener = (_, payload) => callback(payload);
+    ipcRenderer.on("wageclaw:main-visibility", listener);
+    return () => ipcRenderer.removeListener("wageclaw:main-visibility", listener);
   }
 });

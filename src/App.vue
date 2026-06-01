@@ -125,12 +125,36 @@ const wc = reactive(useWageClaw());
 const ledgerDialogOpen = ref(false);
 const ledgerMode = ref<"wallet" | "paw">("wallet");
 const realizedDialogOpen = ref(false);
+const appIconUrl = new URL("../electron/assets/app-icon.png", import.meta.url).href;
+const ONBOARDING_WISHES_PER_PAGE = 4;
+const onboardingWishPage = ref(0);
+const onboardingWishTotalPages = computed(() =>
+  Math.max(1, Math.ceil(wc.wishShopItems.length / ONBOARDING_WISHES_PER_PAGE))
+);
+const onboardingWishCurrentPage = computed(() =>
+  Math.min(onboardingWishPage.value, onboardingWishTotalPages.value - 1)
+);
+const onboardingWishPageItems = computed(() => {
+  const start = onboardingWishCurrentPage.value * ONBOARDING_WISHES_PER_PAGE;
+  return wc.wishShopItems.slice(start, start + ONBOARDING_WISHES_PER_PAGE);
+});
+
+function changeOnboardingWishPage(delta: number) {
+  onboardingWishPage.value = Math.min(
+    onboardingWishTotalPages.value - 1,
+    Math.max(0, onboardingWishCurrentPage.value + delta)
+  );
+}
+
+function focusNumberField(event: Event) {
+  const host = event.currentTarget as HTMLElement | null;
+  const input = host instanceof HTMLInputElement ? host : host?.querySelector<HTMLInputElement>('input[type="number"]');
+  input?.focus({ preventScroll: true });
+}
 
 function openTimeFieldPicker(event: Event) {
   const host = event.currentTarget as HTMLElement | null;
-  const input = host instanceof HTMLInputElement
-    ? host
-    : host?.querySelector<HTMLInputElement>('input[type="time"]');
+  const input = host instanceof HTMLInputElement ? host : host?.querySelector<HTMLInputElement>('input[type="time"]');
   if (!input) return;
   input.focus({ preventScroll: true });
   try {
@@ -456,7 +480,9 @@ const petStatusBadges = computed(() => {
   const mood = wc.state.pet.affection >= 60 ? "无忧无虑" : wc.state.pet.touchMood;
   return [calm, wc.petAffinity.label, mood];
 });
-const petMotionAction = computed(() => (wc.petReaction === "play" || wc.petReaction === "sleep" ? wc.petReaction : "idle"));
+const petMotionAction = computed(() =>
+  wc.petReaction === "play" || wc.petReaction === "sleep" ? wc.petReaction : "idle"
+);
 const homePetSupplyPicker = ref<"food" | "medicine" | null>(null);
 const homePetFoodItems = computed(() =>
   wc.inventoryItems.filter((entry) => Boolean(entry.item.petBoost) && entry.item.category === "food")
@@ -464,9 +490,13 @@ const homePetFoodItems = computed(() =>
 const homePetMedicineItems = computed(() =>
   wc.inventoryItems.filter((entry) => Boolean(entry.item.petBoost) && entry.item.category === "medicine")
 );
-const homePetSupplyEntries = computed(() => (homePetSupplyPicker.value === "medicine" ? homePetMedicineItems.value : homePetFoodItems.value));
+const homePetSupplyEntries = computed(() =>
+  homePetSupplyPicker.value === "medicine" ? homePetMedicineItems.value : homePetFoodItems.value
+);
 const homePetSupplyTitle = computed(() => (homePetSupplyPicker.value === "medicine" ? "背包药品" : "背包食物"));
-const homePetSupplyEmptyText = computed(() => (homePetSupplyPicker.value === "medicine" ? "背包里暂时没有药品。" : "背包里暂时没有食物。"));
+const homePetSupplyEmptyText = computed(() =>
+  homePetSupplyPicker.value === "medicine" ? "背包里暂时没有药品。" : "背包里暂时没有食物。"
+);
 
 function toggleHomePetSupplyPicker(kind: "food" | "medicine") {
   homePetSupplyPicker.value = homePetSupplyPicker.value === kind ? null : kind;
@@ -496,37 +526,44 @@ const petAttributeRows = computed(() => wc.petAttributes);
 const nextPetStageDistanceLabel = computed(() => (wc.nextPetStage ? `距 ${wc.nextPetStage.name}` : "已达顶阶"));
 const activeWorkEventChoices = computed(() => wc.activeWorkEvent?.choices || []);
 
-const inventoryTotal = computed(() => wc.inventoryItems.reduce((total, entry) => total + entry.quantity, 0) + wc.earnedGoods.length);
+const inventoryTotal = computed(
+  () => wc.inventoryItems.reduce((total, entry) => total + entry.quantity, 0) + wc.earnedGoods.length
+);
 const transactionLedgerEmptyRowCount = computed(() => Math.max(0, wc.PAGE_SIZE - wc.pagedTransactions.items.length));
 const pawLedgerEmptyRowCount = computed(() => Math.max(0, wc.PAGE_SIZE - wc.pagedPawLedger.items.length));
 const inventoryCategoryCount = computed(() => wc.inventoryItems.length);
 const shopPhysicalCount = computed(() => wc.mallItems.filter((item) => item.kind === "physical").length);
 const shopSupplyCount = computed(() => wc.mallItems.filter((item) => item.kind !== "physical").length);
-const activeMallFilterLabel = computed(() => mallFilters.find((filter) => filter.key === wc.state.mallFilter)?.label || "全部");
+const activeMallFilterLabel = computed(
+  () => mallFilters.find((filter) => filter.key === wc.state.mallFilter)?.label || "全部"
+);
 const wishShopEmptySlotCount = computed(() => Math.max(0, wc.MALL_PAGE_SIZE - wc.pagedWishShopItems.items.length));
 const supplyShopEmptySlotCount = computed(() => Math.max(0, wc.MALL_PAGE_SIZE - wc.pagedSupplyShopItems.items.length));
 const inventoryEmptySlotCount = computed(() => Math.max(0, wc.MALL_PAGE_SIZE - wc.pagedInventoryItems.items.length));
 const supplyFilters = computed(() => mallFilters.filter((filter) => filter.key !== "real"));
-const supplyHubTabs = computed(() => [
-  {
-    key: "wishShop",
-    label: "心愿商城",
-    hint: "工资余额兑换实体礼物",
-    count: `${shopPhysicalCount.value} 件`
-  },
-  {
-    key: "supplyShop",
-    label: "供销社",
-    hint: "爪币购买桌宠日常",
-    count: `${shopSupplyCount.value} 件`
-  },
-  {
-    key: "inventory",
-    label: "背包",
-    hint: "桌宠物品与最近使用",
-    count: `${inventoryTotal.value} 件`
-  }
-] as const);
+const supplyHubTabs = computed(
+  () =>
+    [
+      {
+        key: "wishShop",
+        label: "心愿商城",
+        hint: "工资余额兑换实体礼物",
+        count: `${shopPhysicalCount.value} 件`
+      },
+      {
+        key: "supplyShop",
+        label: "供销社",
+        hint: "爪币购买桌宠日常",
+        count: `${shopSupplyCount.value} 件`
+      },
+      {
+        key: "inventory",
+        label: "背包",
+        hint: "桌宠物品与最近使用",
+        count: `${inventoryTotal.value} 件`
+      }
+    ] as const
+);
 const dailyRagePercent = computed(() => Math.min(100, Math.round((wc.state.dailyRage.value / 500) * 100)));
 const monthlyProgressPercent = computed(() => Math.min(100, Math.round(wc.salaryCycleProgress.percent * 100)));
 const navIconMap = {
@@ -592,9 +629,11 @@ function closeLedgerDialog() {
 
 <template>
   <div class="app-root" :class="rootClass" :data-theme="wc.state.theme" :data-pet-style="wc.state.petStyle">
-    <div class="surface-grid" aria-hidden="true"></div>
+    <div class="surface-grid" aria-hidden="true" />
 
-    <section v-if="wc.notification" class="toast" role="status">{{ wc.notification }}</section>
+    <section v-if="wc.notification" class="toast" role="status">
+      {{ wc.notification }}
+    </section>
 
     <section v-if="wc.blackoutActive" class="blackout-layer" @click="wc.blackoutActive = false">
       <div>
@@ -610,8 +649,10 @@ function closeLedgerDialog() {
         @mousedown="wc.startPetDrag"
         @dblclick="wc.handleFloatPetDoubleClick"
       >
-        <div class="pet-bubble" v-if="wc.summonedBubble">{{ wc.summonedBubble }}</div>
-        <div class="pet-dialog" v-if="wc.petDialog" v-html="wc.petDialog"></div>
+        <div v-if="wc.summonedBubble" class="pet-bubble">
+          {{ wc.summonedBubble }}
+        </div>
+        <div v-if="wc.petDialog" class="pet-dialog" v-html="wc.petDialog" />
         <div
           v-if="wc.petModePicker"
           class="pet-mode-picker"
@@ -624,43 +665,63 @@ function closeLedgerDialog() {
         >
           <strong>选择互动模式</strong>
           <div>
-              <button type="button" @click="wc.selectPetInteractionMode('normal')">陪伴模式</button>
+            <button type="button" @click="wc.selectPetInteractionMode('normal')">陪伴模式</button>
             <button type="button" @click="wc.selectPetInteractionMode('rage')">怨气收集</button>
           </div>
         </div>
         <span v-if="wc.petReaction === 'hammer'" class="pet-hammer-visual" aria-hidden="true">
-          <span class="pet-hammer-handle"></span>
-          <span class="pet-hammer-head"></span>
-          <span class="pet-hammer-band"></span>
-          <span class="pet-hammer-charm"></span>
-          <span class="pet-hammer-trail pet-hammer-trail-a"></span>
-          <span class="pet-hammer-trail pet-hammer-trail-b"></span>
+          <span class="pet-hammer-handle" />
+          <span class="pet-hammer-head" />
+          <span class="pet-hammer-band" />
+          <span class="pet-hammer-charm" />
+          <span class="pet-hammer-trail pet-hammer-trail-a" />
+          <span class="pet-hammer-trail pet-hammer-trail-b" />
         </span>
         <span v-if="wc.petReaction === 'hammer'" class="pet-impact-burst" aria-hidden="true">
-          <span class="pet-impact-ring"></span>
-          <span class="pet-impact-chip pet-impact-chip-a"></span>
-          <span class="pet-impact-chip pet-impact-chip-b"></span>
-          <span class="pet-impact-chip pet-impact-chip-c"></span>
+          <span class="pet-impact-ring" />
+          <span class="pet-impact-chip pet-impact-chip-a" />
+          <span class="pet-impact-chip pet-impact-chip-b" />
+          <span class="pet-impact-chip pet-impact-chip-c" />
         </span>
         <PetSprite :stage="wc.currentPetStage" mode="compact" :action="petMotionAction" :motion-key="wc.petMotionKey" />
       </div>
     </template>
 
     <div v-if="wc.goldRush" class="gold-rush" aria-hidden="true">
-      <span v-for="n in 12" :key="n" class="gold-coin" :style="{ animationDelay: `${(n - 1) * 0.06}s`, left: `${40 + Math.random() * 20}%` }">🪙</span>
+      <span
+        v-for="n in 12"
+        :key="n"
+        class="gold-coin"
+        :style="{ animationDelay: `${(n - 1) * 0.06}s`, left: `${40 + Math.random() * 20}%` }"
+        >🪙</span
+      >
     </div>
 
     <section v-if="wc.viewMode === 'pet'" class="summoned-pet embedded">
-      <div class="pet-bubble" v-if="wc.summonedBubble">{{ wc.summonedBubble }}</div>
-      <button type="button" class="pet-avatar-button" @click="wc.handlePetTouch('head')" @dblclick="wc.openScreenFromPet('pet')">
-        <PetSprite :stage="wc.currentPetStage" :mode="wc.viewMode === 'pet' ? 'hero' : 'compact'" :action="petMotionAction" :motion-key="wc.petMotionKey" />
+      <div v-if="wc.summonedBubble" class="pet-bubble">
+        {{ wc.summonedBubble }}
+      </div>
+      <button
+        type="button"
+        class="pet-avatar-button"
+        @click="wc.handlePetTouch('head')"
+        @dblclick="wc.openScreenFromPet('pet')"
+      >
+        <PetSprite
+          :stage="wc.currentPetStage"
+          :mode="wc.viewMode === 'pet' ? 'hero' : 'compact'"
+          :action="petMotionAction"
+          :motion-key="wc.petMotionKey"
+        />
       </button>
       <div class="pet-identity">
         <strong>{{ wc.currentPetStage.name }} Lv.{{ wc.currentPetStage.level }}</strong>
         <small>{{ wc.currentPetStage.title }}</small>
         <em>{{ wc.state.pet.touchMood }} · {{ wc.formatPawCoins(wc.state.pawBalance) }}</em>
       </div>
-      <p v-if="wc.viewMode === 'pet'" class="pet-desktop-line">{{ wc.currentPetStage.line }}</p>
+      <p v-if="wc.viewMode === 'pet'" class="pet-desktop-line">
+        {{ wc.currentPetStage.line }}
+      </p>
       <div v-if="wc.viewMode === 'pet'" class="pet-core-actions">
         <button type="button" @click="wc.openScreenFromPet('converter')">控制台</button>
         <button type="button" @click="wc.openScreenFromPet('mall')">补给</button>
@@ -681,10 +742,23 @@ function closeLedgerDialog() {
       <div class="desktop-shell">
         <div class="title-bar">
           <div class="title-tools">
-            <button class="window-tool pet-tool" title="桌宠" @click="wc.setActiveScreen('pet')"></button>
-            <button class="title-btn" @click="wc.minimizeMainWindow()" title="最小化"><svg width="10" height="10" viewBox="0 0 10 10"><rect y="4.5" width="10" height="1" fill="currentColor"/></svg></button>
-            <button class="title-btn" @click="wc.maximizeMainWindow()" title="最大化"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
-            <button class="title-btn title-btn-close" @click="wc.closeMainWindow()" title="关闭"><svg width="10" height="10" viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1.4"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1.4"/></svg></button>
+            <button class="window-tool pet-tool" title="桌宠" @click="wc.setActiveScreen('pet')" />
+            <button class="title-btn" title="最小化" @click="wc.minimizeMainWindow()">
+              <svg width="10" height="10" viewBox="0 0 10 10">
+                <rect y="4.5" width="10" height="1" fill="currentColor" />
+              </svg>
+            </button>
+            <button class="title-btn" title="最大化" @click="wc.maximizeMainWindow()">
+              <svg width="10" height="10" viewBox="0 0 10 10">
+                <rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.2" />
+              </svg>
+            </button>
+            <button class="title-btn title-btn-close" title="关闭" @click="wc.closeMainWindow()">
+              <svg width="10" height="10" viewBox="0 0 10 10">
+                <line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1.4" />
+                <line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1.4" />
+              </svg>
+            </button>
           </div>
         </div>
         <section v-if="!wc.state.onboardingDone" class="modal-layer onboarding-layer" aria-modal="true" role="dialog">
@@ -696,19 +770,27 @@ function closeLedgerDialog() {
             </header>
             <div class="onboarding-grid">
               <section class="onboarding-form form-grid settings-form-grid">
-                <label>月薪<input v-model.number="wc.state.salary" type="number" min="1" placeholder="例如 12000" /></label>
-                <label class="time-field" @pointerdown="openTimeFieldPicker">上班时间<input v-model="wc.state.startTime" type="time" /></label>
-                <label class="time-field" @pointerdown="openTimeFieldPicker">下班时间<input v-model="wc.state.endTime" type="time" /></label>
-                <label>发薪日<input v-model.number="wc.state.payday" type="number" min="1" max="31" /></label>
+                <label class="number-field" @pointerdown.stop="focusNumberField"
+                  >月薪<input v-model.number="wc.state.salary" type="number" min="1" placeholder="例如 12000"
+                /></label>
+                <label class="time-field" @pointerdown.stop="openTimeFieldPicker"
+                  >上班时间<input v-model="wc.state.startTime" type="time"
+                /></label>
+                <label class="time-field" @pointerdown.stop="openTimeFieldPicker"
+                  >下班时间<input v-model="wc.state.endTime" type="time"
+                /></label>
+                <label class="number-field" @pointerdown.stop="focusNumberField"
+                  >发薪日<input v-model.number="wc.state.payday" type="number" min="1" max="31"
+                /></label>
               </section>
               <section class="onboarding-wishes" aria-label="选择心愿">
                 <header>
                   <strong>选择一个心愿</strong>
-                  <span>{{ wc.activeWishItem ? wc.formatMoney(wc.activeWishItem.price, 0) : '还没选择' }}</span>
+                  <span>{{ wc.activeWishItem ? wc.formatMoney(wc.activeWishItem.price, 0) : "还没选择" }}</span>
                 </header>
                 <div class="onboarding-wish-grid">
                   <button
-                    v-for="item in wc.wishShopItems"
+                    v-for="item in onboardingWishPageItems"
                     :key="`onboarding-wish-${item.id}`"
                     type="button"
                     :class="{ active: wc.state.activeWishId === item.id }"
@@ -719,6 +801,25 @@ function closeLedgerDialog() {
                     <small>{{ wc.formatMoney(item.price, 0) }}</small>
                   </button>
                 </div>
+                <div class="onboarding-wish-pager" aria-label="心愿分页">
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    :disabled="onboardingWishCurrentPage === 0"
+                    @click="changeOnboardingWishPage(-1)"
+                  >
+                    上一页
+                  </button>
+                  <span>{{ onboardingWishCurrentPage + 1 }} / {{ onboardingWishTotalPages }}</span>
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    :disabled="onboardingWishCurrentPage >= onboardingWishTotalPages - 1"
+                    @click="changeOnboardingWishPage(1)"
+                  >
+                    下一页
+                  </button>
+                </div>
               </section>
             </div>
             <footer>
@@ -726,18 +827,21 @@ function closeLedgerDialog() {
               <p v-else-if="wc.state.salary <= 0">请填写月薪。</p>
               <p v-else-if="!wc.activeWishItem">请选择一个心愿。</p>
               <p v-else>准备好了，今天的进度会从空账本开始。</p>
-              <button type="button" class="primary-button" :disabled="!wc.isProfileReady" @click="wc.completeOnboarding">开始使用</button>
+              <button
+                type="button"
+                class="primary-button"
+                :disabled="!wc.isProfileReady"
+                @click="wc.completeOnboarding"
+              >
+                开始使用
+              </button>
             </footer>
           </div>
         </section>
         <aside class="sidebar">
           <div class="brand-block">
             <span class="brand-mark" aria-hidden="true">
-              <i class="paw-pad"></i>
-              <i class="paw-toe toe-a"></i>
-              <i class="paw-toe toe-b"></i>
-              <i class="paw-toe toe-c"></i>
-              <i class="paw-toe toe-d"></i>
+              <img :src="appIconUrl" alt="" draggable="false" />
             </span>
             <div>
               <strong>忍了吧</strong>
@@ -749,7 +853,7 @@ function closeLedgerDialog() {
             <section class="desk-note" aria-label="今日工位状态">
               <span>今日情绪气压</span>
               <strong>{{ wc.moodCopy[wc.state.mood].label }}</strong>
-              <i><b :style="{ width: `${dailyRagePercent}%` }"></b></i>
+              <i><b :style="{ width: `${dailyRagePercent}%` }" /></i>
               <small>怨气 {{ Math.round(wc.state.dailyRage.value) }} / 500</small>
             </section>
 
@@ -761,7 +865,7 @@ function closeLedgerDialog() {
                 :class="{ active: wc.activeScreen === item.key }"
                 @click="wc.setActiveScreen(item.key)"
               >
-                <i class="nav-icon" :class="`nav-${navIconMap[item.key]}`" aria-hidden="true"></i>
+                <i class="nav-icon" :class="`nav-${navIconMap[item.key]}`" aria-hidden="true" />
                 <span>{{ item.label }}</span>
                 <small>{{ item.hint }}</small>
               </button>
@@ -781,11 +885,11 @@ function closeLedgerDialog() {
         <main class="workspace">
           <header class="topbar">
             <div class="topbar-title">
-              <h1>{{ wc.activeScreen === 'converter' ? `晚上好，${wc.state.nickname}` : activeTitle }}</h1>
-              <p v-if="wc.activeScreen === 'mall'">
-                工资买心愿，爪币养桌宠，背包只放补给。
+              <h1>{{ wc.activeScreen === "converter" ? `晚上好，${wc.state.nickname}` : activeTitle }}</h1>
+              <p v-if="wc.activeScreen === 'mall'">工资买心愿，爪币养桌宠，背包只放补给。</p>
+              <p v-else>
+                {{ screenMoodLine }}
               </p>
-              <p v-else>{{ screenMoodLine }}</p>
             </div>
             <div class="topbar-art" aria-hidden="true">
               <img :src="topbarArt" alt="" draggable="false" />
@@ -819,13 +923,13 @@ function closeLedgerDialog() {
                   </div>
                   <div class="salary-overview-title">
                     <span class="salary-overview-label">
-                      <i class="overview-icon calendar-icon" aria-hidden="true"></i>
+                      <i class="overview-icon calendar-icon" aria-hidden="true" />
                       工资余额
                     </span>
                     <h2>{{ wc.formatBalance(wc.walletCoins, 2) }}</h2>
                   </div>
                   <div class="salary-overview-chip">
-                    <i class="overview-icon coin-icon" aria-hidden="true"></i>
+                    <i class="overview-icon coin-icon" aria-hidden="true" />
                     <div>
                       <span>爪币余额</span>
                       <strong>{{ wc.formatPawCoins(wc.state.pawBalance) }}</strong>
@@ -837,7 +941,7 @@ function closeLedgerDialog() {
                   <header>
                     <div>
                       <span>
-                        <i class="overview-icon calendar-icon" aria-hidden="true"></i>
+                        <i class="overview-icon calendar-icon" aria-hidden="true" />
                         本轮发工资进度
                         <em>?</em>
                       </span>
@@ -846,33 +950,36 @@ function closeLedgerDialog() {
                     <strong>{{ monthlyProgressPercent }}<small>%</small></strong>
                   </header>
                   <div class="salary-overview-meter">
-                    <i><b :style="{ width: `${monthlyProgressPercent}%` }"></b></i>
+                    <i><b :style="{ width: `${monthlyProgressPercent}%` }" /></i>
                     <div class="salary-overview-scale">
                       <span>0%</span>
                       <span>50%</span>
                       <span>100%</span>
                     </div>
                   </div>
-                  <p>{{ wc.formatMoney(wc.salaryCycleProgress.accumulated, 2) }} / {{ wc.formatMoney(wc.state.salary, 2) }}</p>
+                  <p>
+                    {{ wc.formatMoney(wc.salaryCycleProgress.accumulated, 2) }} /
+                    {{ wc.formatMoney(wc.state.salary, 2) }}
+                  </p>
                 </section>
 
                 <footer class="salary-overview-stats">
                   <div class="salary-overview-stat">
-                    <i class="overview-icon calendar-icon" aria-hidden="true"></i>
+                    <i class="overview-icon calendar-icon" aria-hidden="true" />
                     <div>
                       <span>今日已领</span>
                       <strong>{{ wc.formatBalance(wc.todayClaimedSalary) }}</strong>
                     </div>
                   </div>
                   <div class="salary-overview-stat">
-                    <i class="overview-icon coin-icon" aria-hidden="true"></i>
+                    <i class="overview-icon coin-icon" aria-hidden="true" />
                     <div>
                       <span>今日爪币</span>
                       <strong>{{ wc.formatPawCoins(wc.pawTodayEarned) }}</strong>
                     </div>
                   </div>
                   <button type="button" class="salary-overview-claim" @click="wc.claimDailyWallet">
-                    <i class="gift-icon" aria-hidden="true"><b></b><em></em></i>
+                    <i class="gift-icon" aria-hidden="true"><b /><em /></i>
                     领取
                   </button>
                 </footer>
@@ -890,8 +997,13 @@ function closeLedgerDialog() {
 
                 <div class="home-pet-status-body">
                   <section class="home-pet-portrait" :class="wc.petReaction" aria-label="当前桌宠形象">
-                    <div class="home-pet-portrait-glow" aria-hidden="true"></div>
-                    <PetSprite :stage="wc.currentPetStage" mode="hero" :action="petMotionAction" :motion-key="wc.petMotionKey" />
+                    <div class="home-pet-portrait-glow" aria-hidden="true" />
+                    <PetSprite
+                      :stage="wc.currentPetStage"
+                      mode="hero"
+                      :action="petMotionAction"
+                      :motion-key="wc.petMotionKey"
+                    />
                     <small>{{ wc.currentPetStage.title }}</small>
                     <div class="home-pet-status-orbit" aria-label="桌宠状态">
                       <span v-for="badge in petStatusBadges" :key="`home-pet-badge-${badge}`">{{ badge }}</span>
@@ -907,7 +1019,7 @@ function closeLedgerDialog() {
                     >
                       <span class="pet-attribute-icon">{{ row.icon }}</span>
                       <strong>{{ row.label }}</strong>
-                      <i><b :style="{ width: `${row.percent}%` }"></b></i>
+                      <i><b :style="{ width: `${row.percent}%` }" /></i>
                       <em>{{ row.unit ? `${row.value}${row.unit}` : `${row.value}/${row.max}` }}</em>
                     </div>
                   </section>
@@ -945,7 +1057,7 @@ function closeLedgerDialog() {
                 <section v-if="homePetSupplyPicker" class="home-pet-supply-popover" aria-live="polite">
                   <header>
                     <strong>{{ homePetSupplyTitle }}</strong>
-                    <button type="button" aria-label="关闭背包小框" @click="homePetSupplyPicker = null"></button>
+                    <button type="button" aria-label="关闭背包小框" @click="homePetSupplyPicker = null" />
                   </header>
                   <div v-if="homePetSupplyEntries.length" class="home-pet-supply-list">
                     <button
@@ -979,10 +1091,12 @@ function closeLedgerDialog() {
                     <span class="eyebrow">实体心愿拆分台</span>
                     <h3>{{ wc.state.wish }}</h3>
                   </div>
-                  <strong>{{ wc.wishCollected ? '已入背包' : `${wc.formatMoney(wc.wishRemaining)} 待点亮` }}</strong>
+                  <strong>{{ wc.wishCollected ? "已入背包" : `${wc.formatMoney(wc.wishRemaining)} 待点亮` }}</strong>
                 </header>
                 <div class="segmented wish-workbench-tabs">
-                  <button type="button" :class="{ active: wc.accountTab === 'split' }" @click="wc.accountTab = 'split'">当前拆分</button>
+                  <button type="button" :class="{ active: wc.accountTab === 'split' }" @click="wc.accountTab = 'split'">
+                    当前拆分
+                  </button>
                   <button type="button" @click="realizedDialogOpen = true">
                     已实现 <em>{{ wc.earnedGoods.length }}</em>
                   </button>
@@ -992,15 +1106,26 @@ function closeLedgerDialog() {
                   :style="{ '--wish-progress': `${Math.round(wc.wishProgress * 100)}%` }"
                   aria-label="实体心愿点亮进度"
                 >
-                  <i :style="{ width: `${wc.wishProgress * 100}%` }" aria-hidden="true"></i>
+                  <i :style="{ width: `${wc.wishProgress * 100}%` }" aria-hidden="true" />
                   <span class="bar-label">{{ Math.round(wc.wishProgress * 100) }}%</span>
                 </div>
                 <div class="wish-workbench-body">
-                  <div class="macbook-split asset-macbook" :class="{ complete: wc.wishReady }" :aria-label="`${wc.state.wish} 零件点亮图`" role="group">
-                    <img v-if="wc.wishReady" :src="activeWishVisual.full" class="macbook-full-render" alt="" draggable="false" />
+                  <div
+                    class="macbook-split asset-macbook"
+                    :class="{ complete: wc.wishReady }"
+                    :aria-label="`${wc.state.wish} 零件点亮图`"
+                    role="group"
+                  >
+                    <img
+                      v-if="wc.wishReady"
+                      :src="activeWishVisual.full"
+                      class="macbook-full-render"
+                      alt=""
+                      draggable="false"
+                    />
                     <button
-                      v-else
                       v-for="part in wishParts"
+                      v-else
                       :key="`object-${part.id}`"
                       type="button"
                       class="wish-part-hotspot"
@@ -1015,12 +1140,22 @@ function closeLedgerDialog() {
                       @blur="hideWishPartTooltip(part.id)"
                       @click="!part.unlocked && !wc.wishCollected && wc.buyPart(part.id)"
                     >
-                      <img :src="part.image" :class="['mac-art-part', { on: part.unlocked }]" alt="" draggable="false" />
+                      <img
+                        :src="part.image"
+                        :class="['mac-art-part', { on: part.unlocked }]"
+                        alt=""
+                        draggable="false"
+                      />
                     </button>
-                    <em>{{ wc.wishReady ? 'READY TO ASSEMBLE' : '2D EXPLODED VIEW' }}</em>
+                    <em>{{ wc.wishReady ? "READY TO ASSEMBLE" : "2D EXPLODED VIEW" }}</em>
                   </div>
-                  <button v-if="wc.wishReady" type="button" class="primary-button full wish-assemble-button" @click="wc.claimWishReward">
-                    {{ wc.wishCollected ? '重播拼装鼓励' : '开始零件拼装' }}
+                  <button
+                    v-if="wc.wishReady"
+                    type="button"
+                    class="primary-button full wish-assemble-button"
+                    @click="wc.claimWishReward"
+                  >
+                    {{ wc.wishCollected ? "重播拼装鼓励" : "开始零件拼装" }}
                   </button>
                 </div>
               </article>
@@ -1051,7 +1186,9 @@ function closeLedgerDialog() {
                   </article>
                   <article>
                     <span>净额</span>
-                    <strong :class="wc.monthlyStats.net >= 0 ? 'plus' : 'minus'">{{ wc.formatMoney(wc.monthlyStats.net) }}</strong>
+                    <strong :class="wc.monthlyStats.net >= 0 ? 'plus' : 'minus'">{{
+                      wc.formatMoney(wc.monthlyStats.net)
+                    }}</strong>
                   </article>
                 </div>
               </article>
@@ -1070,9 +1207,14 @@ function closeLedgerDialog() {
               <header class="panel-header">
                 <div>
                   <span class="eyebrow">账本</span>
-                  <h3>{{ ledgerMode === 'wallet' ? '工资账本' : '爪币账本' }}</h3>
+                  <h3>{{ ledgerMode === "wallet" ? "工资账本" : "爪币账本" }}</h3>
                 </div>
-                <span>{{ ledgerMode === 'wallet' ? wc.pagedTransactions.totalItems : wc.pagedPawLedger.totalItems }} 笔</span>
+                <span
+                  >{{
+                    ledgerMode === "wallet" ? wc.pagedTransactions.totalItems : wc.pagedPawLedger.totalItems
+                  }}
+                  笔</span
+                >
                 <button type="button" class="icon-button" @click="closeLedgerDialog">×</button>
               </header>
               <div class="segmented ledger-type-tabs">
@@ -1105,12 +1247,16 @@ function closeLedgerDialog() {
                 </article>
                 <article>
                   <span>爪币净额</span>
-                  <strong :class="wc.monthlyPawStats.net >= 0 ? 'plus' : 'minus'">{{ formatPawLedgerAmount(wc.monthlyPawStats.net) }}</strong>
+                  <strong :class="wc.monthlyPawStats.net >= 0 ? 'plus' : 'minus'">{{
+                    formatPawLedgerAmount(wc.monthlyPawStats.net)
+                  }}</strong>
                 </article>
               </div>
               <div v-if="ledgerMode === 'wallet'" class="list-stack ledger-modal-list">
                 <article v-for="item in wc.pagedTransactions.items" :key="item.id" class="list-item">
-                  <div class="badge">{{ wc.transactionCategories[item.category].icon }}</div>
+                  <div class="badge">
+                    {{ wc.transactionCategories[item.category].icon }}
+                  </div>
                   <div>
                     <strong>{{ item.title }}</strong>
                     <small>{{ item.note }} · {{ item.time }}</small>
@@ -1122,12 +1268,13 @@ function closeLedgerDialog() {
                   :key="`transaction-ledger-empty-${wc.pagedTransactions.current}-${wc.state.transactionFilter}-${slot}`"
                   class="list-item ledger-placeholder-row"
                   aria-hidden="true"
-                >
-                </article>
+                />
               </div>
               <div v-else class="list-stack ledger-modal-list paw-ledger-list">
                 <article v-for="item in wc.pagedPawLedger.items" :key="item.id" class="list-item">
-                  <div class="badge paw-badge">{{ pawBucketLabels[item.bucket] }}</div>
+                  <div class="badge paw-badge">
+                    {{ pawBucketLabels[item.bucket] }}
+                  </div>
                   <div>
                     <strong>{{ item.title }}</strong>
                     <small>{{ item.note }} · {{ item.time }}</small>
@@ -1139,15 +1286,24 @@ function closeLedgerDialog() {
                   :key="`paw-ledger-empty-${wc.pagedPawLedger.current}-${slot}`"
                   class="list-item ledger-placeholder-row"
                   aria-hidden="true"
-                >
-                </article>
+                />
               </div>
               <footer class="pager">
-                <button v-if="ledgerMode === 'wallet'" type="button" @click="wc.setPage('transactions', -1)">上一页</button>
+                <button v-if="ledgerMode === 'wallet'" type="button" @click="wc.setPage('transactions', -1)">
+                  上一页
+                </button>
                 <button v-else type="button" @click="wc.setPage('pawLedger', -1)">上一页</button>
-                <span v-if="ledgerMode === 'wallet'">{{ wc.pagedTransactions.current }} / {{ wc.pagedTransactions.totalPages }} · {{ pageLabels.transactions }}</span>
-                <span v-else>{{ wc.pagedPawLedger.current }} / {{ wc.pagedPawLedger.totalPages }} · {{ pageLabels.pawLedger }}</span>
-                <button v-if="ledgerMode === 'wallet'" type="button" @click="wc.setPage('transactions', 1)">下一页</button>
+                <span v-if="ledgerMode === 'wallet'"
+                  >{{ wc.pagedTransactions.current }} / {{ wc.pagedTransactions.totalPages }} ·
+                  {{ pageLabels.transactions }}</span
+                >
+                <span v-else
+                  >{{ wc.pagedPawLedger.current }} / {{ wc.pagedPawLedger.totalPages }} ·
+                  {{ pageLabels.pawLedger }}</span
+                >
+                <button v-if="ledgerMode === 'wallet'" type="button" @click="wc.setPage('transactions', 1)">
+                  下一页
+                </button>
                 <button v-else type="button" @click="wc.setPage('pawLedger', 1)">下一页</button>
               </footer>
             </div>
@@ -1170,7 +1326,7 @@ function closeLedgerDialog() {
               </div>
               <div class="supply-hub-resources" aria-label="补给仓钱包">
                 <div class="supply-wallet-card">
-                  <i class="wallet-emblem" aria-hidden="true"></i>
+                  <i class="wallet-emblem" aria-hidden="true" />
                   <div class="wallet-ledger">
                     <div class="wallet-row wallet-row-wage">
                       <span>工资余额</span>
@@ -1213,20 +1369,26 @@ function closeLedgerDialog() {
                       <span class="wish-shop-meta">{{ item.tag }}</span>
                       <p>{{ item.description }}</p>
                       <div class="wish-shop-progress" :class="{ active: wc.state.activeWishId === item.id }">
-                        <i :style="{ width: `${wc.state.activeWishId === item.id ? wc.wishProgress * 100 : 0}%` }"></i>
+                        <i :style="{ width: `${wc.state.activeWishId === item.id ? wc.wishProgress * 100 : 0}%` }" />
                       </div>
                     </div>
                     <footer class="wish-shop-foot">
                       <div class="wish-shop-state">
-                        <span>{{ wc.state.activeWishId === item.id ? `${Math.round(wc.wishProgress * 100)}% 点亮中` : '可设为实体心愿' }}</span>
+                        <span>{{
+                          wc.state.activeWishId === item.id
+                            ? `${Math.round(wc.wishProgress * 100)}% 点亮中`
+                            : "可设为实体心愿"
+                        }}</span>
                         <em class="wish-shop-price">{{ wc.formatMoney(item.price, 0) }}</em>
                       </div>
                       <button
                         type="button"
                         class="primary-button"
-                        @click="wc.state.activeWishId === item.id ? wc.setActiveScreen('converter') : wc.setWishItem(item)"
+                        @click="
+                          wc.state.activeWishId === item.id ? wc.setActiveScreen('converter') : wc.setWishItem(item)
+                        "
                       >
-                        {{ wc.state.activeWishId === item.id ? '查看拆分' : '设为心愿' }}
+                        {{ wc.state.activeWishId === item.id ? "查看拆分" : "设为心愿" }}
                       </button>
                     </footer>
                     <div :id="`wish-shop-detail-${item.id}`" class="wish-shop-detail-popover" role="tooltip">
@@ -1241,8 +1403,7 @@ function closeLedgerDialog() {
                     :key="`wish-shop-empty-${wc.pagedWishShopItems.current}-${slot}`"
                     class="wish-shop-card wish-shop-empty-card"
                     aria-hidden="true"
-                  >
-                  </article>
+                  />
                 </div>
               </div>
               <footer class="supply-module-footer">
@@ -1266,7 +1427,10 @@ function closeLedgerDialog() {
                     v-for="filter in supplyFilters"
                     :key="filter.key"
                     type="button"
-                    :class="{ active: wc.state.mallFilter === filter.key || (filter.key === 'all' && wc.state.mallFilter === 'real') }"
+                    :class="{
+                      active:
+                        wc.state.mallFilter === filter.key || (filter.key === 'all' && wc.state.mallFilter === 'real')
+                    }"
                     @click="wc.setMallFilter(filter.key)"
                   >
                     {{ filter.label }}
@@ -1296,8 +1460,7 @@ function closeLedgerDialog() {
                   :key="`supply-shop-empty-${wc.pagedSupplyShopItems.current}-${wc.state.mallFilter}-${slot}`"
                   class="supply-shop-card supply-shop-empty-card"
                   aria-hidden="true"
-                >
-                </article>
+                />
               </div>
               <footer class="supply-module-footer">
                 <span>{{ activeMallFilterLabel }} · {{ wc.pagedSupplyShopItems.totalItems }} 件供销社商品</span>
@@ -1319,7 +1482,11 @@ function closeLedgerDialog() {
               </header>
               <div class="inventory-workbench">
                 <div class="inventory-slot-grid" :class="{ empty: wc.pagedInventoryItems.totalItems === 0 }">
-                  <article v-for="entry in wc.pagedInventoryItems.items" :key="entry.item.id" class="inventory-slot-card">
+                  <article
+                    v-for="entry in wc.pagedInventoryItems.items"
+                    :key="entry.item.id"
+                    class="inventory-slot-card"
+                  >
                     <div class="inventory-slot-icon">
                       <img :src="getSupplyVisual(entry.item.id)" :alt="entry.item.name" draggable="false" />
                       <em>x{{ entry.quantity }}</em>
@@ -1333,8 +1500,7 @@ function closeLedgerDialog() {
                     :key="`empty-inventory-${wc.pagedInventoryItems.current}-${slot}`"
                     class="inventory-slot-card inventory-slot-empty"
                     aria-hidden="true"
-                  >
-                  </article>
+                  />
                 </div>
               </div>
               <footer class="supply-module-footer">
@@ -1346,11 +1512,14 @@ function closeLedgerDialog() {
                 </div>
               </footer>
             </section>
-
           </section>
 
           <section v-show="wc.activeScreen === 'pet'" class="screen-grid pet-screen-redesign">
-            <article class="home-pet-status-card pet-page-status-card" :style="wc.petStageStyle()" aria-label="桌宠属性">
+            <article
+              class="home-pet-status-card pet-page-status-card"
+              :style="wc.petStageStyle()"
+              aria-label="桌宠属性"
+            >
               <header class="home-pet-status-head">
                 <div>
                   <span>桌宠属性</span>
@@ -1363,8 +1532,13 @@ function closeLedgerDialog() {
 
               <div class="home-pet-status-body">
                 <section class="home-pet-portrait" :class="wc.petReaction" aria-label="当前桌宠形象">
-                  <div class="home-pet-portrait-glow" aria-hidden="true"></div>
-                  <PetSprite :stage="wc.currentPetStage" mode="hero" :action="petMotionAction" :motion-key="wc.petMotionKey" />
+                  <div class="home-pet-portrait-glow" aria-hidden="true" />
+                  <PetSprite
+                    :stage="wc.currentPetStage"
+                    mode="hero"
+                    :action="petMotionAction"
+                    :motion-key="wc.petMotionKey"
+                  />
                   <small>{{ wc.currentPetStage.title }}</small>
                   <div class="home-pet-status-orbit" aria-label="桌宠状态">
                     <span v-for="badge in petStatusBadges" :key="`pet-page-badge-${badge}`">{{ badge }}</span>
@@ -1380,7 +1554,7 @@ function closeLedgerDialog() {
                   >
                     <span class="pet-attribute-icon">{{ row.icon }}</span>
                     <strong>{{ row.label }}</strong>
-                    <i><b :style="{ width: `${row.percent}%` }"></b></i>
+                    <i><b :style="{ width: `${row.percent}%` }" /></i>
                     <em>{{ row.unit ? `${row.value}${row.unit}` : `${row.value}/${row.max}` }}</em>
                   </div>
                 </section>
@@ -1418,7 +1592,7 @@ function closeLedgerDialog() {
               <section v-if="homePetSupplyPicker" class="home-pet-supply-popover" aria-live="polite">
                 <header>
                   <strong>{{ homePetSupplyTitle }}</strong>
-                  <button type="button" aria-label="关闭背包小框" @click="homePetSupplyPicker = null"></button>
+                  <button type="button" aria-label="关闭背包小框" @click="homePetSupplyPicker = null" />
                 </header>
                 <div v-if="homePetSupplyEntries.length" class="home-pet-supply-list">
                   <button
@@ -1458,10 +1632,10 @@ function closeLedgerDialog() {
                     v-model="wc.rantText"
                     rows="5"
                     placeholder="把今天最烦的一句话丢进炉子里，软团会帮你收好。"
-                  ></textarea>
+                  />
                   <div class="refine-meter">
                     <span>炉温</span>
-                    <i><b :style="{ width: `${Math.min(100, 34 + wc.state.dailyRage.value / 10)}%` }"></b></i>
+                    <i><b :style="{ width: `${Math.min(100, 34 + wc.state.dailyRage.value / 10)}%` }" /></i>
                     <strong>{{ wc.state.pet.rage >= 500 ? "满溢" : "可炼化" }}</strong>
                   </div>
                   <div class="action-row pet-refine-actions">
@@ -1470,7 +1644,6 @@ function closeLedgerDialog() {
                   </div>
                 </div>
               </article>
-
             </section>
           </section>
 
@@ -1497,12 +1670,17 @@ function closeLedgerDialog() {
                     <span
                       v-for="stage in wc.petStages"
                       :key="`pet-progress-line-${stage.id}`"
-                      :class="{ active: wc.state.pet.growth >= stage.threshold, current: wc.currentPetStage.id === stage.id }"
-                    ></span>
+                      :class="{
+                        active: wc.state.pet.growth >= stage.threshold,
+                        current: wc.currentPetStage.id === stage.id
+                      }"
+                    />
                   </div>
                 </div>
                 <div class="button-stack pet-hero-actions">
-                  <button type="button" class="primary-button" @click="wc.setPetSummoned()">{{ wc.state.pet.summoned ? "收回软团" : "召唤软团" }}</button>
+                  <button type="button" class="primary-button" @click="wc.setPetSummoned()">
+                    {{ wc.state.pet.summoned ? "收回软团" : "召唤软团" }}
+                  </button>
                   <button type="button" class="secondary-button" @click="wc.cultivatePet">怨气修炼</button>
                 </div>
                 <section class="pet-style-panel" aria-label="桌宠切换">
@@ -1527,12 +1705,16 @@ function closeLedgerDialog() {
               </div>
               <div class="pet-aura" :style="wc.petStageStyle()" aria-hidden="true">
                 <div class="evolution-vessel">
-                  <i><b :style="{ height: `${wc.petProgress * 100}%` }"></b></i>
+                  <i><b :style="{ height: `${wc.petProgress * 100}%` }" /></i>
                   <PetSprite :stage="wc.currentPetStage" mode="mini" />
                 </div>
-                <div class="pet-tooltips" v-if="wc.state.pet.summoned">
-                  <span class="pet-tip" :style="{ color: wc.petSatietyLabel.color }">{{ wc.petSatietyLabel.label }}</span>
-                  <span class="pet-tip" :style="{ color: wc.petPressureLabel.color }">{{ wc.petPressureLabel.label }}</span>
+                <div v-if="wc.state.pet.summoned" class="pet-tooltips">
+                  <span class="pet-tip" :style="{ color: wc.petSatietyLabel.color }">{{
+                    wc.petSatietyLabel.label
+                  }}</span>
+                  <span class="pet-tip" :style="{ color: wc.petPressureLabel.color }">{{
+                    wc.petPressureLabel.label
+                  }}</span>
                 </div>
                 <span>{{ wc.currentPetStage.title }}</span>
               </div>
@@ -1542,43 +1724,54 @@ function closeLedgerDialog() {
               <article class="pet-vital-card vital-paw">
                 <span>爪币小金库</span>
                 <strong>{{ wc.formatPawCoins(wc.state.pawBalance) }}</strong>
-                <i><b :style="{ width: `${Math.round(wc.pawAttendanceProgress * 100)}%` }"></b></i>
+                <i><b :style="{ width: `${Math.round(wc.pawAttendanceProgress * 100)}%` }" /></i>
               </article>
               <article class="pet-vital-card vital-rage">
                 <span>怨气储能</span>
                 <strong>{{ wc.formatRage(wc.state.pet.rage) }}</strong>
-                <i><b :style="{ width: `${Math.min(100, wc.state.pet.rage / 5)}%` }"></b></i>
+                <i><b :style="{ width: `${Math.min(100, wc.state.pet.rage / 5)}%` }" /></i>
               </article>
               <article class="pet-vital-card">
                 <span>气质</span>
                 <strong>{{ wc.petAffinity.label }}</strong>
-                <i><b :style="{ width: `${Math.min(100, wc.state.pet.light)}%` }"></b></i>
+                <i><b :style="{ width: `${Math.min(100, wc.state.pet.light)}%` }" /></i>
               </article>
               <article class="pet-vital-card">
                 <span>法力池</span>
                 <strong>{{ Math.round(wc.state.pet.mana) }} / {{ wc.petManaMax }}</strong>
-                <i><b :style="{ width: `${Math.min(100, (wc.state.pet.mana / wc.petManaMax) * 100)}%` }"></b></i>
+                <i><b :style="{ width: `${Math.min(100, (wc.state.pet.mana / wc.petManaMax) * 100)}%` }" /></i>
               </article>
               <article class="pet-vital-card">
                 <span>战绩</span>
                 <strong>{{ wc.state.pet.battleWins }} 胜 / {{ wc.state.pet.battleLosses }} 负</strong>
-                <i><b :style="{ width: `${Math.min(100, (wc.state.pet.battleWins / Math.max(1, wc.state.pet.battleWins + wc.state.pet.battleLosses)) * 100)}%` }"></b></i>
+                <i
+                  ><b
+                    :style="{
+                      width: `${Math.min(100, (wc.state.pet.battleWins / Math.max(1, wc.state.pet.battleWins + wc.state.pet.battleLosses)) * 100)}%`
+                    }"
+                /></i>
               </article>
               <article class="pet-vital-card warning" :style="{ '--vital-color': wc.petSatietyLabel.color }">
                 <span>饱食</span>
                 <strong>{{ wc.petSatietyLabel.label }}</strong>
-                <i><b :style="{ width: `${Math.round(wc.state.pet.satiety)}%`, background: wc.petSatietyLabel.color }"></b></i>
+                <i
+                  ><b :style="{ width: `${Math.round(wc.state.pet.satiety)}%`, background: wc.petSatietyLabel.color }"
+                /></i>
               </article>
               <article class="pet-vital-card warning" :style="{ '--vital-color': wc.petPressureLabel.color }">
                 <span>血压</span>
                 <strong>{{ wc.petPressureLabel.label }} · {{ Math.round(wc.state.pet.bloodPressure) }}mmHg</strong>
-                <i><b :style="{ width: `${wc.petBloodPressurePercent}%`, background: wc.petPressureLabel.color }"></b></i>
+                <i><b :style="{ width: `${wc.petBloodPressurePercent}%`, background: wc.petPressureLabel.color }" /></i>
               </article>
             </section>
 
             <div class="segmented wide-tabs">
-              <button type="button" :class="{ active: wc.petTab === 'status' }" @click="wc.petTab = 'status'">总览</button>
-              <button type="button" :class="{ active: wc.petTab === 'refine' }" @click="wc.petTab = 'refine'">炼化</button>
+              <button type="button" :class="{ active: wc.petTab === 'status' }" @click="wc.petTab = 'status'">
+                总览
+              </button>
+              <button type="button" :class="{ active: wc.petTab === 'refine' }" @click="wc.petTab = 'refine'">
+                炼化
+              </button>
               <button type="button" :class="{ active: wc.petTab === 'feed' }" @click="wc.petTab = 'feed'">投喂</button>
               <button type="button" :class="{ active: wc.petTab === 'log' }" @click="wc.petTab = 'log'">记录</button>
             </div>
@@ -1604,13 +1797,35 @@ function closeLedgerDialog() {
                   </div>
                 </div>
                 <div class="wish-progress pet-stage-progress">
-                  <i :style="{ width: `${wc.petProgress * 100}%` }"></i>
+                  <i :style="{ width: `${wc.petProgress * 100}%` }" />
                   <span class="bar-label">{{ Math.round(wc.petProgress * 100) }}%</span>
                 </div>
                 <div class="stat-bars pet-stat-bars">
-                  <label><span>心情</span><i><b :style="{ width: `${wc.state.pet.affection}%` }"></b><span class="bar-label">{{ wc.state.pet.affection }}%</span></i></label>
-                  <label><span>饱食</span><i><b :style="{ width: `${wc.state.pet.satiety}%`, background: wc.petSatietyLabel.color }"></b><span class="bar-label">{{ Math.round(wc.state.pet.satiety) }}%</span></i></label>
-                  <label><span>血压</span><i><b :style="{ width: `${wc.petBloodPressurePercent}%`, background: wc.petPressureLabel.color }"></b><span class="bar-label">{{ Math.round(wc.state.pet.bloodPressure) }}mmHg</span></i></label>
+                  <label
+                    ><span>心情</span
+                    ><i
+                      ><b :style="{ width: `${wc.state.pet.affection}%` }" /><span class="bar-label"
+                        >{{ wc.state.pet.affection }}%</span
+                      ></i
+                    ></label
+                  >
+                  <label
+                    ><span>饱食</span
+                    ><i
+                      ><b :style="{ width: `${wc.state.pet.satiety}%`, background: wc.petSatietyLabel.color }" /><span
+                        class="bar-label"
+                        >{{ Math.round(wc.state.pet.satiety) }}%</span
+                      ></i
+                    ></label
+                  >
+                  <label
+                    ><span>血压</span
+                    ><i
+                      ><b
+                        :style="{ width: `${wc.petBloodPressurePercent}%`, background: wc.petPressureLabel.color }"
+                      /><span class="bar-label">{{ Math.round(wc.state.pet.bloodPressure) }}mmHg</span></i
+                    ></label
+                  >
                 </div>
               </article>
               <article class="panel-block pet-touch-card">
@@ -1624,13 +1839,21 @@ function closeLedgerDialog() {
                 <div class="touch-heat-meter">
                   <span>触摸热度</span>
                   <strong>{{ wc.state.pet.touchHeat }}</strong>
-                  <i><b :style="{ width: `${Math.min(100, wc.state.pet.touchHeat)}%` }"></b></i>
+                  <i><b :style="{ width: `${Math.min(100, wc.state.pet.touchHeat)}%` }" /></i>
                 </div>
                 <div class="touch-grid pet-touch-grid">
                   <button v-for="[key, touch] in touchEntries" :key="key" type="button" @click="wc.handlePetTouch(key)">
                     <span class="touch-glyph">{{ touch.label.charAt(0) }}</span>
                     <strong>{{ touch.label }}</strong>
-                    <small>{{ touch.mood }} · 热度 +{{ touch.heat }}{{ touch.bloodPressure ? ` · 血压 ${touch.bloodPressure > 0 ? "+" : ""}${touch.bloodPressure}mmHg` : "" }} · 爪币 +{{ touch.nourish }}</small>
+                    <small
+                      >{{ touch.mood }} · 热度 +{{ touch.heat
+                      }}{{
+                        touch.bloodPressure
+                          ? ` · 血压 ${touch.bloodPressure > 0 ? "+" : ""}${touch.bloodPressure}mmHg`
+                          : ""
+                      }}
+                      · 爪币 +{{ touch.nourish }}</small
+                    >
                   </button>
                 </div>
                 <div class="action-row pet-command-row">
@@ -1645,7 +1868,7 @@ function closeLedgerDialog() {
                     <span class="eyebrow">爪币系统</span>
                     <h3>桌宠出勤与打工事件</h3>
                   </div>
-                  <span>{{ wc.activeWorkEvent?.tone || '出勤中' }}</span>
+                  <span>{{ wc.activeWorkEvent?.tone || "出勤中" }}</span>
                 </header>
                 <div class="paw-ledger-grid">
                   <div>
@@ -1697,7 +1920,10 @@ function closeLedgerDialog() {
                 <article
                   v-for="stage in wc.petStages"
                   :key="stage.id"
-                  :class="{ current: wc.currentPetStage.id === stage.id, locked: wc.state.pet.growth < stage.threshold }"
+                  :class="{
+                    current: wc.currentPetStage.id === stage.id,
+                    locked: wc.state.pet.growth < stage.threshold
+                  }"
                 >
                   <PetSprite :stage="stage" mode="mini" />
                   <strong>Lv.{{ stage.level }} {{ stage.name }}</strong>
@@ -1712,7 +1938,11 @@ function closeLedgerDialog() {
                 <h3>糟心事炼化炉</h3>
                 <span>今日怨气 {{ Math.round(wc.state.dailyRage.value) }}</span>
               </header>
-              <textarea v-model="wc.rantText" rows="8" placeholder="例：老板把临时起意说成我的成长机会，还问我为什么不够主动。"></textarea>
+              <textarea
+                v-model="wc.rantText"
+                rows="8"
+                placeholder="例：老板把临时起意说成我的成长机会，还问我为什么不够主动。"
+              />
               <div class="action-row">
                 <button type="button" class="primary-button" @click="wc.refineRageFromRant">炼化为怨气</button>
               </div>
@@ -1769,26 +1999,48 @@ function closeLedgerDialog() {
               <div>
                 <span class="eyebrow">基础设置</span>
                 <h2>{{ wc.state.nickname }}</h2>
-                <p>{{ wc.themeLabels[wc.state.theme] }} · {{ wc.petStyleLabels[wc.state.petStyle] }} · {{ wc.modeLabels[wc.state.countMode] }} · {{ wc.state.startTime }} - {{ wc.state.endTime }}</p>
+                <p>
+                  {{ wc.themeLabels[wc.state.theme] }} · {{ wc.petStyleLabels[wc.state.petStyle] }} ·
+                  {{ wc.modeLabels[wc.state.countMode] }} · {{ wc.state.startTime }} - {{ wc.state.endTime }}
+                </p>
               </div>
             </article>
             <div class="segmented wide-tabs">
-              <button type="button" :class="{ active: wc.settingsTab === 'profile' }" @click="wc.settingsTab = 'profile'">资料</button>
-              <button type="button" :class="{ active: wc.settingsTab === 'appearance' }" @click="wc.settingsTab = 'appearance'">外观</button>
-              <button type="button" :class="{ active: wc.settingsTab === 'data' }" @click="wc.settingsTab = 'data'">数据</button>
+              <button
+                type="button"
+                :class="{ active: wc.settingsTab === 'profile' }"
+                @click="wc.settingsTab = 'profile'"
+              >
+                资料
+              </button>
+              <button
+                type="button"
+                :class="{ active: wc.settingsTab === 'appearance' }"
+                @click="wc.settingsTab = 'appearance'"
+              >
+                外观
+              </button>
+              <button type="button" :class="{ active: wc.settingsTab === 'data' }" @click="wc.settingsTab = 'data'">
+                数据
+              </button>
             </div>
             <article v-show="wc.settingsTab === 'profile'" class="panel-block profile-layout-panel">
               <div class="profile-settings-column form-grid settings-form-grid settings-profile-grid">
                 <label>称呼<input v-model="wc.state.nickname" type="text" /></label>
                 <label>月薪<input v-model.number="wc.state.salary" type="number" min="1" /></label>
-                <label>倒计时口径
+                <label
+                  >倒计时口径
                   <select v-model="wc.state.countMode">
                     <option v-for="[key, label] in modeEntries" :key="key" :value="key">{{ label }}</option>
                   </select>
                 </label>
                 <label>今日被折磨分钟<input v-model.number="wc.state.rageMinutes" type="number" min="0" /></label>
-                <label class="time-field" @pointerdown="openTimeFieldPicker">上班时间<input v-model="wc.state.startTime" type="time" /></label>
-                <label class="time-field" @pointerdown="openTimeFieldPicker">下班时间<input v-model="wc.state.endTime" type="time" /></label>
+                <label class="time-field" @pointerdown="openTimeFieldPicker"
+                  >上班时间<input v-model="wc.state.startTime" type="time"
+                /></label>
+                <label class="time-field" @pointerdown="openTimeFieldPicker"
+                  >下班时间<input v-model="wc.state.endTime" type="time"
+                /></label>
                 <label>发薪日<input v-model.number="wc.state.payday" type="number" min="1" max="31" /></label>
                 <button
                   type="button"
@@ -1799,10 +2051,10 @@ function closeLedgerDialog() {
                 >
                   <span>
                     <strong>薪资隐私</strong>
-                    <small>{{ wc.state.privacyMode ? '已隐藏具体数额' : '公开显示' }}</small>
+                    <small>{{ wc.state.privacyMode ? "已隐藏具体数额" : "公开显示" }}</small>
                   </span>
                   <span class="switch-track" :class="{ on: wc.state.privacyMode }">
-                    <span class="switch-knob"></span>
+                    <span class="switch-knob" />
                   </span>
                 </button>
               </div>
@@ -1813,23 +2065,30 @@ function closeLedgerDialog() {
                   <small>{{ profileAvatar.status }}</small>
                 </header>
                 <div class="profile-avatar-frame">
-                  <img class="profile-avatar-image" :src="profileAvatar.image" :alt="profileAvatar.title" draggable="false" />
+                  <img
+                    class="profile-avatar-image"
+                    :src="profileAvatar.image"
+                    :alt="profileAvatar.title"
+                    draggable="false"
+                  />
                 </div>
                 <p>{{ profileAvatar.detail }}</p>
                 <div class="profile-avatar-meta">
                   <span>{{ wc.themeLabels[wc.state.theme] }}</span>
                   <span>{{ wc.modeLabels[wc.state.countMode] }}</span>
-                  <span>{{ wc.state.privacyMode ? '隐私已开' : '金额可见' }}</span>
+                  <span>{{ wc.state.privacyMode ? "隐私已开" : "金额可见" }}</span>
                 </div>
               </aside>
             </article>
             <article v-show="wc.settingsTab === 'appearance'" class="panel-block form-grid">
-              <label>主题
+              <label
+                >主题
                 <select v-model="wc.state.theme">
                   <option v-for="[key, label] in themeEntries" :key="key" :value="key">{{ label }}</option>
                 </select>
               </label>
-              <label>桌宠系列
+              <label
+                >桌宠系列
                 <select v-model="wc.state.petStyle">
                   <option v-for="[key, label] in petStyleEntries" :key="key" :value="key">{{ label }}</option>
                 </select>
@@ -1884,7 +2143,7 @@ function closeLedgerDialog() {
 
     <section v-if="wc.assembly.visible" class="modal-layer wish-assembly-layer">
       <div class="wish-assembly-modal">
-        <div class="assembly-glow" aria-hidden="true"></div>
+        <div class="assembly-glow" aria-hidden="true" />
         <div class="macbook-split asset-macbook assembly complete" aria-hidden="true">
           <img :src="activeWishVisual.full" class="macbook-full-render" alt="" draggable="false" />
           <em>ASSEMBLED</em>
@@ -1898,18 +2157,28 @@ function closeLedgerDialog() {
       </div>
     </section>
 
-    <section v-if="realizedDialogOpen" class="modal-layer realized-modal-layer" @click.self="realizedDialogOpen = false">
+    <section
+      v-if="realizedDialogOpen"
+      class="modal-layer realized-modal-layer"
+      @click.self="realizedDialogOpen = false"
+    >
       <div class="realized-modal">
         <header class="panel-header realized-modal-header">
           <div>
             <span class="eyebrow">已实现心愿</span>
             <h3>成就陈列</h3>
           </div>
-          <button type="button" class="icon-button" aria-label="关闭已实现心愿弹窗" @click="realizedDialogOpen = false">×</button>
+          <button type="button" class="icon-button" aria-label="关闭已实现心愿弹窗" @click="realizedDialogOpen = false">
+            ×
+          </button>
         </header>
         <div class="realized-gallery realized-modal-list" :class="{ empty: !wc.earnedGoods.length }">
           <template v-if="wc.earnedGoods.length">
-            <article v-for="good in wc.earnedGoods" :key="`converter-realized-${good.id}`" class="realized-card realized-modal-card">
+            <article
+              v-for="good in wc.earnedGoods"
+              :key="`converter-realized-${good.id}`"
+              class="realized-card realized-modal-card"
+            >
               <div class="realized-visual asset-macbook complete" aria-hidden="true">
                 <img :src="getWishVisual(good.itemId).full" class="macbook-full-render" alt="" draggable="false" />
               </div>
@@ -1917,7 +2186,13 @@ function closeLedgerDialog() {
                 <strong>{{ good.icon }} {{ good.name }}</strong>
                 <small>{{ good.source }} · {{ good.time }} · {{ wc.formatMoney(good.amount) }}</small>
                 <p>这件礼物已经从心愿系统毕业，删除后会把对应金额退回工资余额。</p>
-                <button type="button" class="danger-button realized-delete-button" @click="wc.deleteEarnedGood(good.id)">删除并退款</button>
+                <button
+                  type="button"
+                  class="danger-button realized-delete-button"
+                  @click="wc.deleteEarnedGood(good.id)"
+                >
+                  删除并退款
+                </button>
               </div>
             </article>
           </template>
@@ -1942,9 +2217,18 @@ function closeLedgerDialog() {
           <button type="button" class="icon-button" @click="wc.duel.visible = false">×</button>
         </header>
         <div class="duel-bars">
-          <label><span>你</span><i><b :style="{ width: `${wc.duel.playerHp}%` }"></b></i><em>{{ wc.duel.playerHp }}/100</em></label>
-          <label><span>老板怨念体</span><i><b :style="{ width: `${wc.duel.enemyHp}%` }"></b></i><em>{{ wc.duel.enemyHp }}/100</em></label>
-          <label><span>爆发</span><i><b :style="{ width: `${wc.duel.energy}%` }"></b></i><em>{{ wc.duel.energy }}/100</em></label>
+          <label
+            ><span>你</span><i><b :style="{ width: `${wc.duel.playerHp}%` }" /></i
+            ><em>{{ wc.duel.playerHp }}/100</em></label
+          >
+          <label
+            ><span>老板怨念体</span><i><b :style="{ width: `${wc.duel.enemyHp}%` }" /></i
+            ><em>{{ wc.duel.enemyHp }}/100</em></label
+          >
+          <label
+            ><span>爆发</span><i><b :style="{ width: `${wc.duel.energy}%` }" /></i
+            ><em>{{ wc.duel.energy }}/100</em></label
+          >
         </div>
         <div class="duel-stage">
           <div class="fighter player">你</div>
@@ -1953,7 +2237,9 @@ function closeLedgerDialog() {
             <p>{{ wc.duel.status }}</p>
             <em>连击 x{{ wc.duel.combo }}</em>
           </div>
-          <div class="fighter enemy"><PetSprite :stage="wc.currentPetStage" mode="mini" /></div>
+          <div class="fighter enemy">
+            <PetSprite :stage="wc.currentPetStage" mode="mini" />
+          </div>
         </div>
         <div class="skill-grid">
           <button type="button" @click="wc.performDuelSkill('punch')">J 普通拳</button>
@@ -1987,9 +2273,11 @@ function closeLedgerDialog() {
               white: wc.gomoku.board[Math.floor(index / wc.gomoku.size)][index % wc.gomoku.size] === 2
             }"
             @click="wc.handleGomokuMove(Math.floor(index / wc.gomoku.size), index % wc.gomoku.size)"
-          ></button>
+          />
         </div>
-        <p class="game-result">{{ wc.gomoku.result || (wc.gomoku.playerTurn ? "轮到你落子。" : "软团思考中。") }}</p>
+        <p class="game-result">
+          {{ wc.gomoku.result || (wc.gomoku.playerTurn ? "轮到你落子。" : "软团思考中。") }}
+        </p>
         <button type="button" class="primary-button full" @click="wc.startGomoku">重新开始</button>
       </div>
     </section>
@@ -2002,11 +2290,17 @@ function closeLedgerDialog() {
           <button type="button" class="icon-button" @click="wc.stopRunner()">×</button>
         </header>
         <div class="runner-stage" :class="wc.runner.pose">
-          <div class="runner-track"></div>
-          <div class="runner-player"><PetSprite :stage="wc.currentPetStage" mode="mini" /></div>
-          <div class="runner-obstacle">{{ wc.runner.obstacle }}</div>
+          <div class="runner-track" />
+          <div class="runner-player">
+            <PetSprite :stage="wc.currentPetStage" mode="mini" />
+          </div>
+          <div class="runner-obstacle">
+            {{ wc.runner.obstacle }}
+          </div>
         </div>
-        <p class="game-result">{{ wc.runner.result || "空格/↑ 跳跃，↓ 下蹲，躲避老板的怨念攻击。" }}</p>
+        <p class="game-result">
+          {{ wc.runner.result || "空格/↑ 跳跃，↓ 下蹲，躲避老板的怨念攻击。" }}
+        </p>
         <footer class="action-row">
           <button type="button" class="primary-button" @click="wc.runnerAction('jump')">跳跃</button>
           <button type="button" class="secondary-button" @click="wc.runnerAction('duck')">下蹲</button>

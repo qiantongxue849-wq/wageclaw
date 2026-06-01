@@ -1,0 +1,12 @@
+# Default owner for everything in the repo
+*       @YOUR_USERNAME
+
+# Electron-specific files
+electron/       @YOUR_USERNAME
+*.cjs           @YOUR_USERNAME
+
+# Frontend source
+src/            @YOUR_USERNAME
+
+# CI/CD and GitHub config
+.github/        @YOUR_USERNAME

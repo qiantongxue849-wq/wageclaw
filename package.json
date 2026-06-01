@@ -11,20 +11,37 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.{ts,vue,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,vue,css}\"",
     "dist:mac": "npm run build && electron-builder -- --mac",
     "dist:mac:dmg:localfix": "npm run build && electron-builder --mac dmg",
-    "dist:win": "npm run build && electron-builder --win"
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "vue": "^3.5.22"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
     "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/test-utils": "^2.4.10",
     "electron": "^41.2.1",
     "electron-builder": "^26.8.1",
+    "eslint": "^10.4.1",
+    "eslint-plugin-vue": "^10.9.1",
+    "globals": "^17.6.0",
+    "happy-dom": "^20.9.0",
+    "prettier": "^3.8.3",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.60.0",
     "vite": "^7.1.12",
+    "vitest": "^4.1.7",
     "vue-tsc": "^3.1.1"
   },
   "build": {
@@ -34,6 +51,7 @@
       "buildResources": "electron/assets",
       "output": "release"
     },
+    "afterPack": "electron/after-pack.cjs",
     "files": [
       "electron/**/*",
       "dist/**/*",
@@ -50,11 +68,14 @@
       "target": [
         "nsis"
       ],
-      "icon": "electron/assets/app-icon.ico"
+      "icon": "electron/assets/app-icon.ico",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "electron/assets/app-icon.ico",
+      "uninstallerIcon": "electron/assets/app-icon.ico"
     }
   },
   "repository": {
@@ -62,6 +83,6 @@
     "url": "https://gitee.com/qiantongxue/wageclaw.git"
   },
   "keywords": [],
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs"
 }

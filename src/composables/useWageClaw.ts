@@ -35,10 +35,18 @@ import type {
   WorkEventEffect
 } from "@/types";
 
-const STORAGE_KEY = "wageclaw-state-v3";
+export const STORAGE_KEY = "wageclaw-state-v3";
+const STATE_SAVE_THROTTLE_MS = 4000;
 const PAGE_SIZE = 10;
 const MALL_PAGE_SIZE = 9;
-const legacyIphone16PartIds = ["iphone_frame", "iphone_screen", "iphone_battery", "iphone_camera", "iphone_chip", "iphone_storage"];
+const legacyIphone16PartIds = [
+  "iphone_frame",
+  "iphone_screen",
+  "iphone_battery",
+  "iphone_camera",
+  "iphone_chip",
+  "iphone_storage"
+];
 const DAILY_PAW_ATTENDANCE_CAP = 120;
 const DAILY_PAW_INTERACTION_CAP = 48;
 const DAILY_PAW_EVENT_CAP = 140;
@@ -68,7 +76,17 @@ const BLOOD_PRESSURE_MAX = 180;
 const RELAX_BLOOD_PRESSURE_FLOOR = 96;
 const MEDICINE_BLOOD_PRESSURE_FLOOR = 90;
 
-type PageKey = "transactions" | "pawLedger" | "mall" | "wishShop" | "supplyShop" | "inventory" | "usage" | "petSupply" | "petLog" | "community";
+type PageKey =
+  | "transactions"
+  | "pawLedger"
+  | "mall"
+  | "wishShop"
+  | "supplyShop"
+  | "inventory"
+  | "usage"
+  | "petSupply"
+  | "petLog"
+  | "community";
 type MallTab = "wishShop" | "supplyShop" | "inventory";
 type TouchKey = keyof typeof petTouchProfiles;
 type QuickCareAction = "feed" | "play" | "sleep";
@@ -87,7 +105,10 @@ type PetDelta = {
 };
 
 const rawViewMode = new URLSearchParams(window.location.search).get("view");
-const viewMode = (rawViewMode === "pet" ? "pet" : rawViewMode === "float" ? "float" : "main") as "main" | "pet" | "float";
+const viewMode = (rawViewMode === "pet" ? "pet" : rawViewMode === "float" ? "float" : "main") as
+  | "main"
+  | "pet"
+  | "float";
 const availableScreens = new Set<ScreenKey>(["converter", "mall", "pet", "settings"]);
 
 function getLocalDateKey(date = new Date()) {
@@ -103,7 +124,7 @@ function getCurrentMonthKey(date = new Date()) {
   return `${year}-${month}`;
 }
 
-function createDefaultState(): WageClawState {
+export function createDefaultState(): WageClawState {
   return {
     nickname: "工位逃兵",
     onboardingDone: false,
@@ -168,7 +189,7 @@ function createDefaultState(): WageClawState {
   };
 }
 
-function createFirstRunState(): WageClawState {
+export function createFirstRunState(): WageClawState {
   const state = createDefaultState();
   state.transactions = [];
   state.pawLedger = [];
@@ -177,7 +198,7 @@ function createFirstRunState(): WageClawState {
   return state;
 }
 
-function sanitizeState(input: unknown): WageClawState {
+export function sanitizeState(input: unknown): WageClawState {
   const base = createDefaultState();
   if (!input || typeof input !== "object") return createFirstRunState();
   const stored = input as Partial<WageClawState>;
@@ -197,7 +218,9 @@ function sanitizeState(input: unknown): WageClawState {
     dailyPaw,
     monthlyPaw: normalizeMonthlyPawLedger(stored.monthlyPaw, monthlyPawFallback),
     inventory: { ...base.inventory, ...(stored.inventory || {}) },
-    unlockedParts: Array.isArray(stored.unlockedParts) ? stored.unlockedParts.filter((id) => parts.some((part) => part.id === id)) : base.unlockedParts,
+    unlockedParts: Array.isArray(stored.unlockedParts)
+      ? stored.unlockedParts.filter((id) => parts.some((part) => part.id === id))
+      : base.unlockedParts,
     earnedGoods: Array.isArray(stored.earnedGoods) ? stored.earnedGoods.map(normalizeEarnedGood) : base.earnedGoods,
     transactions: Array.isArray(stored.transactions) ? stored.transactions.map(normalizeTransaction) : [],
     pawLedger: Array.isArray(stored.pawLedger) ? stored.pawLedger.map(normalizePawLedgerItem) : [],
@@ -206,22 +229,32 @@ function sanitizeState(input: unknown): WageClawState {
   };
   const legacySatiety = Number(legacyHunger);
   const storedSatiety = Number(storedPetWithoutLegacy.satiety);
-  merged.pet.satiety = clamp(Number.isFinite(legacySatiety) ? legacySatiety : Number.isFinite(storedSatiety) ? storedSatiety : base.pet.satiety, 0, 100);
+  merged.pet.satiety = clamp(
+    Number.isFinite(legacySatiety) ? legacySatiety : Number.isFinite(storedSatiety) ? storedSatiety : base.pet.satiety,
+    0,
+    100
+  );
   merged.pet.affection = clamp(Number(merged.pet.affection) || 0, 0, 100);
   merged.pet.bloodPressure = normalizeBloodPressure(merged.pet.bloodPressure, base.pet.bloodPressure);
   merged.pet.rage = Math.max(0, Number(merged.pet.rage) || 0);
   merged.pet.growth = Math.max(0, Number(merged.pet.growth ?? merged.pet.rage) || 0);
   merged.pet.manaBonus = clamp(Number(merged.pet.manaBonus) || 0, 0, PET_MANA_BONUS_MAX);
-  if (merged.activeWishId === "iphone17_pro_max_1tb" && merged.unlockedParts.some((id) => legacyIphone16PartIds.includes(id))) {
+  if (
+    merged.activeWishId === "iphone17_pro_max_1tb" &&
+    merged.unlockedParts.some((id) => legacyIphone16PartIds.includes(id))
+  ) {
     merged.activeWishId = "iphone16_pro_max_1tb";
   }
   const storedWishName = typeof stored.wish === "string" ? stored.wish.trim() : "";
-  const wishedItem = mallItems.find((item) => item.id === merged.activeWishId && item.kind === "physical")
-    || (storedWishName ? mallItems.find((item) => item.kind === "physical" && item.name === storedWishName) : undefined);
+  const wishedItem =
+    mallItems.find((item) => item.id === merged.activeWishId && item.kind === "physical") ||
+    (storedWishName ? mallItems.find((item) => item.kind === "physical" && item.name === storedWishName) : undefined);
   merged.activeWishId = wishedItem?.id || "";
   merged.wish = wishedItem?.name || "";
   merged.price = wishedItem?.price || 0;
-  merged.unlockedParts = merged.unlockedParts.filter((id) => parts.some((part) => part.id === id && part.wishItemId === merged.activeWishId));
+  merged.unlockedParts = merged.unlockedParts.filter((id) =>
+    parts.some((part) => part.id === id && part.wishItemId === merged.activeWishId)
+  );
   merged.salary = Math.max(0, Number(merged.salary) || 0);
   merged.price = Math.max(0, Number(merged.price) || 0);
   merged.rageMinutes = Math.max(0, Number(merged.rageMinutes) || 0);
@@ -229,34 +262,43 @@ function sanitizeState(input: unknown): WageClawState {
   merged.rageBalance = Math.max(0, Number(merged.rageBalance) || 0);
   merged.pawBalance = Math.max(0, Number(stored.pawBalance ?? stored.rageBalance ?? merged.pawBalance) || 0);
   if (!Array.isArray(stored.pawLedger)) {
-    merged.pawLedger = merged.pawBalance > 0
-      ? [{
-          id: crypto.randomUUID(),
-          title: "当前爪币余额",
-          amount: merged.pawBalance,
-          note: "从旧版本小金库迁入",
-          time: "刚刚",
-          bucket: "event",
-          date: getLocalDateKey()
-        }]
-      : [];
+    merged.pawLedger =
+      merged.pawBalance > 0
+        ? [
+            {
+              id: crypto.randomUUID(),
+              title: "当前爪币余额",
+              amount: merged.pawBalance,
+              note: "从旧版本小金库迁入",
+              time: "刚刚",
+              bucket: "event",
+              date: getLocalDateKey()
+            }
+          ]
+        : [];
   }
-  const hasLegacyDefaultWorkTime = stored.startTime === LEGACY_DEFAULT_START_TIME && stored.endTime === LEGACY_DEFAULT_END_TIME;
-  merged.startTime = hasLegacyDefaultWorkTime ? DEFAULT_START_TIME : normalizeClockTime(merged.startTime, base.startTime);
+  const hasLegacyDefaultWorkTime =
+    stored.startTime === LEGACY_DEFAULT_START_TIME && stored.endTime === LEGACY_DEFAULT_END_TIME;
+  merged.startTime = hasLegacyDefaultWorkTime
+    ? DEFAULT_START_TIME
+    : normalizeClockTime(merged.startTime, base.startTime);
   merged.endTime = hasLegacyDefaultWorkTime ? DEFAULT_END_TIME : normalizeClockTime(merged.endTime, base.endTime);
   merged.payday = Math.min(31, Math.max(1, Number(merged.payday) || DEFAULT_PAYDAY));
   if (Number(stored.payday) === LEGACY_DEFAULT_PAYDAY) {
     merged.payday = DEFAULT_PAYDAY;
   }
   merged.theme = (Object.keys(themeLabels).includes(merged.theme) ? merged.theme : "forest") as WageClawState["theme"];
-  merged.petStyle = (Object.keys(petStageSeries).includes(merged.petStyle) ? merged.petStyle : "rageBlob") as WageClawState["petStyle"];
+  merged.petStyle = (
+    Object.keys(petStageSeries).includes(merged.petStyle) ? merged.petStyle : "rageBlob"
+  ) as WageClawState["petStyle"];
   merged.countMode = (Object.keys(modeLabels).includes(merged.countMode) ? merged.countMode : "natural") as CountMode;
   merged.mood = (Object.keys(moodCopy).includes(merged.mood) ? merged.mood : "rage") as Mood;
   merged.pet.interactionMode = merged.pet.interactionMode === "rage" ? "rage" : "normal";
   merged.privacyMode = Boolean(merged.privacyMode);
-  merged.onboardingDone = typeof stored.onboardingDone === "boolean"
-    ? stored.onboardingDone
-    : Boolean(merged.salary > 0 && merged.startTime && merged.endTime && merged.activeWishId);
+  merged.onboardingDone =
+    typeof stored.onboardingDone === "boolean"
+      ? stored.onboardingDone
+      : Boolean(merged.salary > 0 && merged.startTime && merged.endTime && merged.activeWishId);
   if (!merged.dailyRage.triggered) merged.dailyRage.triggered = [];
   if (!workEvents.some((event) => event.id === merged.activeWorkEventId)) {
     merged.activeWorkEventId = merged.onboardingDone ? workEvents[0]?.id || "" : "";
@@ -277,9 +319,8 @@ function normalizeTransaction(item: Partial<Transaction>): Transaction {
 }
 
 function normalizePawLedgerItem(item: Partial<PawLedgerItem>): PawLedgerItem {
-  const bucket = item.bucket && ["attendance", "interaction", "event", "supply"].includes(item.bucket)
-    ? item.bucket
-    : "event";
+  const bucket =
+    item.bucket && ["attendance", "interaction", "event", "supply"].includes(item.bucket) ? item.bucket : "event";
   return {
     id: item.id || crypto.randomUUID(),
     title: item.title || "爪币变动",
@@ -305,7 +346,7 @@ function normalizeEarnedGood(item: Partial<EarnedGood>): EarnedGood {
   };
 }
 
-function loadState() {
+export function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return sanitizeState(raw ? JSON.parse(raw) : null);
@@ -463,13 +504,18 @@ function normalizeDailyPawLedger(input: Partial<DailyPawLedger> | undefined, fal
     attendanceEarned: Math.max(0, Number(input?.attendanceEarned) || 0),
     interactionEarned: Math.max(0, Number(input?.interactionEarned) || 0),
     eventEarned: Number(input?.eventEarned) || 0,
-    handledEvents: Array.isArray(input?.handledEvents) ? input.handledEvents.filter((id) => workEvents.some((event) => event.id === id)) : [],
+    handledEvents: Array.isArray(input?.handledEvents)
+      ? input.handledEvents.filter((id) => workEvents.some((event) => event.id === id))
+      : [],
     lastAttendanceAt: Number(input?.lastAttendanceAt) || fallback.lastAttendanceAt,
     nextEventAt: Number(input?.nextEventAt) || fallback.nextEventAt
   };
 }
 
-function normalizeMonthlyPawLedger(input: Partial<MonthlyPawLedger> | undefined, fallback: MonthlyPawLedger): MonthlyPawLedger {
+function normalizeMonthlyPawLedger(
+  input: Partial<MonthlyPawLedger> | undefined,
+  fallback: MonthlyPawLedger
+): MonthlyPawLedger {
   return {
     month: input?.month || fallback.month,
     earned: Math.max(0, Number(input?.earned ?? fallback.earned) || 0)
@@ -525,8 +571,8 @@ export function useWageClaw() {
     line: "你不是在奖励加班，你是在把忍耐换回选择权。"
   });
   const petDialog = ref("");
-  let petDragOffset = { x: 0, y: 0 };
-  let petDragStart = { x: 0, y: 0, screenX: 0, screenY: 0 };
+  const petDragOffset = { x: 0, y: 0 };
+  const petDragStart = { x: 0, y: 0, screenX: 0, screenY: 0 };
   let petShake = {
     lastX: 0,
     lastY: 0,
@@ -556,6 +602,8 @@ export function useWageClaw() {
   let petReactionTimer: number | undefined;
   let petReactionToken = 0;
   let syncingFromStorage = false;
+  let saveTimer: number | undefined;
+  let lastSaveAt = 0;
   let bridgeCleanup: Array<() => void> = [];
 
   const duel = reactive({
@@ -598,12 +646,16 @@ export function useWageClaw() {
     if (!state.lastClaimTime) return false;
     const stored = new Date(Number(state.lastClaimTime));
     const today = now.value;
-    return stored.getFullYear() === today.getFullYear() &&
+    return (
+      stored.getFullYear() === today.getFullYear() &&
       stored.getMonth() === today.getMonth() &&
-      stored.getDate() === today.getDate();
+      stored.getDate() === today.getDate()
+    );
   });
   const workdaysInMonth = computed(() => getWorkdaysInMonth(now.value.getFullYear(), now.value.getMonth()));
-  const shiftSeconds = computed(() => Math.max(1, (timeToMinutes(state.endTime) - timeToMinutes(state.startTime)) * 60));
+  const shiftSeconds = computed(() =>
+    Math.max(1, (timeToMinutes(state.endTime) - timeToMinutes(state.startTime)) * 60)
+  );
   const dailySalary = computed(() => Math.round(state.salary / Math.max(1, workdaysInMonth.value)));
   const secondSalary = computed(() => state.salary / Math.max(1, workdaysInMonth.value * shiftSeconds.value));
   const claimableToday = computed(() => {
@@ -616,9 +668,11 @@ export function useWageClaw() {
     if (state.lastClaimTime) {
       const lastClaim = new Date(Number(state.lastClaimTime));
       const today = new Date(current);
-      if (lastClaim.getFullYear() === today.getFullYear() &&
-          lastClaim.getMonth() === today.getMonth() &&
-          lastClaim.getDate() === today.getDate()) {
+      if (
+        lastClaim.getFullYear() === today.getFullYear() &&
+        lastClaim.getMonth() === today.getMonth() &&
+        lastClaim.getDate() === today.getDate()
+      ) {
         const lastClaimDaySeconds = lastClaim.getHours() * 3600 + lastClaim.getMinutes() * 60 + lastClaim.getSeconds();
         sinceSeconds = Math.max(startSeconds, clamp(lastClaimDaySeconds, startSeconds, endSeconds));
       }
@@ -657,19 +711,33 @@ export function useWageClaw() {
   });
   const isProfileReady = computed(() => state.salary > 0 && hasValidWorkTime.value && Boolean(activeWishItem.value));
   const activeParts = computed(() => parts.filter((part) => part.wishItemId === activeWishItem.value?.id));
-  const unlockedCount = computed(() => activeParts.value.filter((part) => state.unlockedParts.includes(part.id)).length);
-  const wishSpent = computed(() => activeParts.value.reduce((total, part) => (state.unlockedParts.includes(part.id) ? total + getPartPrice(part.id) : total), 0));
+  const unlockedCount = computed(
+    () => activeParts.value.filter((part) => state.unlockedParts.includes(part.id)).length
+  );
+  const wishSpent = computed(() =>
+    activeParts.value.reduce(
+      (total, part) => (state.unlockedParts.includes(part.id) ? total + getPartPrice(part.id) : total),
+      0
+    )
+  );
   const wishRemaining = computed(() => Math.max(0, state.price - wishSpent.value));
-  const wishProgress = computed(() => activeParts.value.length ? unlockedCount.value / activeParts.value.length : 0);
+  const wishProgress = computed(() => (activeParts.value.length ? unlockedCount.value / activeParts.value.length : 0));
   const wishReady = computed(() => wishProgress.value >= 1);
   const wishCollected = computed(() => state.earnedGoods.some((item) => item.itemId === state.activeWishId));
   const daysNeeded = computed(() => Math.max(0, Math.ceil(wishRemaining.value / Math.max(1, dailySalary.value))));
   const activePetStages = computed(() => petStageSeries[state.petStyle] || petStageSeries.rageBlob);
   const currentPetStage = computed(() => {
-    return [...activePetStages.value].reverse().find((stage) => state.pet.growth >= stage.threshold) || activePetStages.value[0];
+    return (
+      [...activePetStages.value].reverse().find((stage) => state.pet.growth >= stage.threshold) ||
+      activePetStages.value[0]
+    );
   });
-  const nextPetStage = computed(() => activePetStages.value.find((stage) => stage.threshold > state.pet.growth) || null);
-  const petGrowthGoal = computed(() => Math.round(nextPetStage.value?.threshold || Math.max(currentPetStage.value.threshold, state.pet.growth, 1)));
+  const nextPetStage = computed(
+    () => activePetStages.value.find((stage) => stage.threshold > state.pet.growth) || null
+  );
+  const petGrowthGoal = computed(() =>
+    Math.round(nextPetStage.value?.threshold || Math.max(currentPetStage.value.threshold, state.pet.growth, 1))
+  );
   const petProgress = computed(() => {
     const next = nextPetStage.value;
     if (!next) return 1;
@@ -823,7 +891,9 @@ export function useWageClaw() {
     return { income, expense, net: income - expense, count: current.length };
   });
   const filteredTransactions = computed(() => {
-    return state.transactionFilter === "all" ? state.transactions : state.transactions.filter((item) => item.category === state.transactionFilter);
+    return state.transactionFilter === "all"
+      ? state.transactions
+      : state.transactions.filter((item) => item.category === state.transactionFilter);
   });
   const pagedTransactions = computed(() => pageItems(filteredTransactions.value, pages.transactions));
   const pagedPawLedger = computed(() => pageItems(pawLedgerItems.value, pages.pawLedger));
@@ -833,10 +903,14 @@ export function useWageClaw() {
     if (state.mallFilter === "all" || state.mallFilter === "real") return supplyShopItems.value;
     return supplyShopItems.value.filter((item) => item.category === state.mallFilter);
   });
-  const filteredMallItems = computed(() => state.mallFilter === "all" ? mallItems : mallItems.filter((item) => item.category === state.mallFilter));
+  const filteredMallItems = computed(() =>
+    state.mallFilter === "all" ? mallItems : mallItems.filter((item) => item.category === state.mallFilter)
+  );
   const pagedMallItems = computed(() => pageItems(filteredMallItems.value, pages.mall));
   const pagedWishShopItems = computed(() => pageItems(wishShopItems.value, pages.wishShop, MALL_PAGE_SIZE));
-  const pagedSupplyShopItems = computed(() => pageItems(filteredSupplyShopItems.value, pages.supplyShop, MALL_PAGE_SIZE));
+  const pagedSupplyShopItems = computed(() =>
+    pageItems(filteredSupplyShopItems.value, pages.supplyShop, MALL_PAGE_SIZE)
+  );
   const inventoryItems = computed(() => {
     return Object.entries(state.inventory)
       .map(([id, quantity]) => ({ item: mallItems.find((candidate) => candidate.id === id), quantity }))
@@ -860,14 +934,28 @@ export function useWageClaw() {
   });
   const appStartedAt = Date.now();
 
-  watch(
-    state,
-    () => {
-      if (syncingFromStorage) return;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    },
-    { deep: true }
-  );
+  function saveStateNow() {
+    if (syncingFromStorage) return;
+    if (saveTimer) {
+      window.clearTimeout(saveTimer);
+      saveTimer = undefined;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    lastSaveAt = Date.now();
+  }
+
+  function scheduleStateSave() {
+    if (syncingFromStorage) return;
+    const elapsed = Date.now() - lastSaveAt;
+    if (elapsed >= STATE_SAVE_THROTTLE_MS) {
+      saveStateNow();
+      return;
+    }
+    if (saveTimer) return;
+    saveTimer = window.setTimeout(saveStateNow, STATE_SAVE_THROTTLE_MS - elapsed);
+  }
+
+  watch(state, scheduleStateSave, { deep: true });
 
   function syncStateFromStorage() {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -882,8 +970,10 @@ export function useWageClaw() {
 
   onMounted(() => {
     window.addEventListener("storage", syncStateFromStorage);
+    window.addEventListener("beforeunload", saveStateNow);
     if (viewMode === "float") {
-      document.documentElement.style.cssText = "margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;";
+      document.documentElement.style.cssText =
+        "margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;";
       document.body.style.cssText = "margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;";
       const app = document.getElementById("app");
       if (app) app.style.cssText = "width:100%;height:100%;background:transparent;overflow:hidden;";
@@ -912,7 +1002,9 @@ export function useWageClaw() {
   });
 
   onUnmounted(() => {
+    saveStateNow();
     if (tickTimer) window.clearInterval(tickTimer);
+    if (saveTimer) window.clearTimeout(saveTimer);
     if (notifyTimer) window.clearTimeout(notifyTimer);
     if (blackoutTimer) window.clearTimeout(blackoutTimer);
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
@@ -923,6 +1015,7 @@ export function useWageClaw() {
     window.removeEventListener("keydown", handleGlobalKeydown);
     window.removeEventListener("keyup", handleGlobalKeyup);
     window.removeEventListener("storage", syncStateFromStorage);
+    window.removeEventListener("beforeunload", saveStateNow);
     window.removeEventListener("mousemove", handleFloatHitTest);
     window.removeEventListener("mouseleave", handleFloatMouseLeave);
     bridgeCleanup.forEach((cleanup) => cleanup());
@@ -1164,9 +1257,8 @@ export function useWageClaw() {
       const current = clampBloodPressure(state.pet.bloodPressure);
       const next = clampBloodPressure(current + bloodPressure);
       const floor = delta.bloodPressureFloor;
-      state.pet.bloodPressure = bloodPressure < 0 && typeof floor === "number"
-        ? Math.max(next, Math.min(current, floor))
-        : next;
+      state.pet.bloodPressure =
+        bloodPressure < 0 && typeof floor === "number" ? Math.max(next, Math.min(current, floor)) : next;
     }
     if (touchHeat) state.pet.touchHeat = clamp(state.pet.touchHeat + touchHeat, 0, 100);
   }
@@ -1178,7 +1270,9 @@ export function useWageClaw() {
       formatStatDelta("法力", delta.mana),
       formatStatDelta("饱食", delta.satiety),
       delta.bloodPressure ? formatBloodPressureDelta(delta.bloodPressure) : ""
-    ].filter(Boolean).join("，");
+    ]
+      .filter(Boolean)
+      .join("，");
   }
 
   function addTransaction(title: string, amount: number, note = "", category: TransactionCategory = "expense") {
@@ -1276,7 +1370,9 @@ export function useWageClaw() {
     state.lastClaimTime = String(now.value.getTime());
     addTransaction("领取今日薪资额度", amount, `${state.startTime} - ${state.endTime}`, "income");
     goldRush.value = true;
-    setTimeout(() => { goldRush.value = false; }, 1200);
+    setTimeout(() => {
+      goldRush.value = false;
+    }, 1200);
     notify(`已领取 ${formatMoney(amount)}。`);
   }
 
@@ -1330,7 +1426,13 @@ export function useWageClaw() {
     }
     const currency = getMallItemCurrency(item);
     if (getResourceBalance(currency) < item.price) {
-      notify(currency === "paw" ? "爪币不够，让软团多出勤一会儿，或帮它处理一个打工事件。" : currency === "rage" ? "怨气不够，先炼一段糟心事。" : "账户余额不够，先领额度或继续攒。");
+      notify(
+        currency === "paw"
+          ? "爪币不够，让软团多出勤一会儿，或帮它处理一个打工事件。"
+          : currency === "rage"
+            ? "怨气不够，先炼一段糟心事。"
+            : "账户余额不够，先领额度或继续攒。"
+      );
       return;
     }
     if (currency === "paw") {
@@ -1344,7 +1446,12 @@ export function useWageClaw() {
       return;
     }
     if (currency === "wallet") {
-      addTransaction(`购买 ${item.name}`, -item.price, item.petBoost ? "滋养软团" : "情绪补给", item.petBoost ? "pet" : "mall");
+      addTransaction(
+        `购买 ${item.name}`,
+        -item.price,
+        item.petBoost ? "滋养软团" : "情绪补给",
+        item.petBoost ? "pet" : "mall"
+      );
     }
     state.inventory[item.id] = (state.inventory[item.id] || 0) + 1;
     notify(`${item.name} 已放入背包。`);
@@ -1410,9 +1517,12 @@ export function useWageClaw() {
       manaCap: boost.manaCap,
       mana: boost.mana,
       bloodPressure: rageBoost > 0 ? 0 : pressure,
-      bloodPressureFloor: pressure < 0
-        ? item.category === "medicine" ? MEDICINE_BLOOD_PRESSURE_FLOOR : RELAX_BLOOD_PRESSURE_FLOOR
-        : undefined
+      bloodPressureFloor:
+        pressure < 0
+          ? item.category === "medicine"
+            ? MEDICINE_BLOOD_PRESSURE_FLOOR
+            : RELAX_BLOOD_PRESSURE_FLOOR
+          : undefined
     });
     const evolved = beforeStage !== currentPetStage.value.id;
     state.pet.lastLine = evolved
@@ -1443,7 +1553,10 @@ export function useWageClaw() {
       }
     });
     const growthLine = growth !== gained ? `，成长 +${growth}` : "";
-    addPetLog(source, `新增 ${formatRage(gained)}${growthLine}${pressure ? `，${formatBloodPressureDelta(pressure)}` : ""}。`);
+    addPetLog(
+      source,
+      `新增 ${formatRage(gained)}${growthLine}${pressure ? `，${formatBloodPressureDelta(pressure)}` : ""}。`
+    );
     return gained;
   }
 
@@ -1456,9 +1569,10 @@ export function useWageClaw() {
       state.pet.cultivation = 0;
       state.pet.touchHeat = 0;
       state.pet.bloodPressure = settleDailyBloodPressure(state.pet.bloodPressure);
-      state.pet.lastLine = yesterdayRage > 0
-        ? `昨天的 ${formatRage(yesterdayRage)} 已沉淀，今天重新从一小团怨气开始养。`
-        : "新工作日开始，软团把怨气炉清空，等你投喂今天的糟心事。";
+      state.pet.lastLine =
+        yesterdayRage > 0
+          ? `昨天的 ${formatRage(yesterdayRage)} 已沉淀，今天重新从一小团怨气开始养。`
+          : "新工作日开始，软团把怨气炉清空，等你投喂今天的糟心事。";
       addPetLog("每日怨气重置", state.pet.lastLine);
     }
     if (!Array.isArray(state.dailyRage.triggered)) state.dailyRage.triggered = [];
@@ -1510,7 +1624,12 @@ export function useWageClaw() {
     else ledger.eventEarned = value;
   }
 
-  function addPawCoins(amount: number, source = "爪币变动", bucket: "attendance" | "interaction" | "event" = "event", silent = false) {
+  function addPawCoins(
+    amount: number,
+    source = "爪币变动",
+    bucket: "attendance" | "interaction" | "event" = "event",
+    silent = false
+  ) {
     const ledger = ensureDailyPawLedger();
     const delta = Number(amount) || 0;
     if (!delta) return 0;
@@ -1683,17 +1802,24 @@ export function useWageClaw() {
         touchHeat: heatDelta
       });
       state.pet.touchMood = tier === "tired" ? "玩累了" : "开心打滚";
-      state.pet.lastLine = tier === "tired"
-        ? "软团还是扑了一下小光点，但明显已经玩累了，得缓一缓。"
-        : "软团追着桌面小光点绕了一圈，回来时尾巴都快摇成残影了。";
-      addPetLog("陪玩放电", `${formatPetDeltaSummary({ affection: affectionDelta, bloodPressure: pressureDelta, mana: -manaCost }) || "状态稳定"}，热度 +${heatDelta}。`);
+      state.pet.lastLine =
+        tier === "tired"
+          ? "软团还是扑了一下小光点，但明显已经玩累了，得缓一缓。"
+          : "软团追着桌面小光点绕了一圈，回来时尾巴都快摇成残影了。";
+      addPetLog(
+        "陪玩放电",
+        `${formatPetDeltaSummary({ affection: affectionDelta, bloodPressure: pressureDelta, mana: -manaCost }) || "状态稳定"}，热度 +${heatDelta}。`
+      );
       notify(tier === "tired" ? "软团玩累了，这次没有继续涨心情。" : "软团玩累了一点，但心情明显变好了。");
       showPetBubble(state.pet.lastLine);
       playPetReaction("play", 1300);
       return;
     }
 
-    const shouldRecover = state.pet.mana < petManaMax.value * 0.9 || state.pet.bloodPressure > BLOOD_PRESSURE_IDEAL || state.pet.touchHeat > 30;
+    const shouldRecover =
+      state.pet.mana < petManaMax.value * 0.9 ||
+      state.pet.bloodPressure > BLOOD_PRESSURE_IDEAL ||
+      state.pet.touchHeat > 30;
     const manaRecover = shouldRecover ? Math.round(petManaMax.value * 0.3) : 0;
     const pressureDelta = shouldRecover ? -8 : 0;
     const heatDelta = shouldRecover ? -35 : -8;
@@ -1707,9 +1833,12 @@ export function useWageClaw() {
     state.pet.lastLine = shouldRecover
       ? "软团打了个小盹，能量慢慢回来了，呼吸也平稳了一些。"
       : "软团已经挺精神了，只是闭眼趴了一小会儿。";
-    addPetLog("小睡恢复", shouldRecover
-      ? `${formatPetDeltaSummary({ mana: manaRecover, bloodPressure: pressureDelta })}，热度 ${heatDelta}。`
-      : `状态已经稳定，只降低一点互动热度。`);
+    addPetLog(
+      "小睡恢复",
+      shouldRecover
+        ? `${formatPetDeltaSummary({ mana: manaRecover, bloodPressure: pressureDelta })}，热度 ${heatDelta}。`
+        : `状态已经稳定，只降低一点互动热度。`
+    );
     notify(shouldRecover ? "软团睡醒后精神了一点。" : "软团现在不困，短暂趴了一会儿。");
     showPetBubble(state.pet.lastLine);
     playPetReaction("sleep", 2800);
@@ -1752,8 +1881,9 @@ export function useWageClaw() {
     state.pet.interactionMode = mode;
     desktopPetClickCount = 0;
     if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
-    const line = mode === "rage"
-      ? "已切到怨气收集模式。下次点击会变成小锤敲击，随机收集怨气和血压，同时照常赚爪币。"
+    const line =
+      mode === "rage"
+        ? "已切到怨气收集模式。下次点击会变成小锤敲击，随机收集怨气和血压，同时照常赚爪币。"
         : "已切回陪伴模式。点击只赚爪币，双击播报，三击打开后台。";
     state.pet.lastLine = line;
     addPetLog("桌宠互动模式", line);
@@ -1778,10 +1908,13 @@ export function useWageClaw() {
     });
     state.pet.touchMood = tier === "tired" ? "需要休息" : profile.mood;
     const pawGain = addPawCoins(profile.nourish, profile.logTitle, "interaction", true);
-    const heatLine = tier === "warm"
-      ? "，互动有点频繁，收益减半"
-      : tier === "tired" ? "，软团已经玩累了，先让它休息一下" : "";
-    const effectLine = formatPetDeltaSummary({ affection: affectionDelta, light: lightDelta, bloodPressure: pressureDelta });
+    const heatLine =
+      tier === "warm" ? "，互动有点频繁，收益减半" : tier === "tired" ? "，软团已经玩累了，先让它休息一下" : "";
+    const effectLine = formatPetDeltaSummary({
+      affection: affectionDelta,
+      light: lightDelta,
+      bloodPressure: pressureDelta
+    });
     const line = `${profile.label}成功，软团进入「${state.pet.touchMood}」状态${effectLine ? `，${effectLine}` : ""}${heatLine}${pawGain ? `，顺手赚到 ${formatPawCoins(pawGain)}` : ""}。`;
     state.pet.lastLine = line;
     showPetBubble(line);
@@ -2080,11 +2213,27 @@ export function useWageClaw() {
       ? `下班雷达：已经下班，今天已扛 <b>${workedLabel}</b>，新需求明天再排队`
       : `下班雷达：距离下班还有 <b>${cd.offWorkText}</b>，今天已扛 <b>${workedLabel}</b>`;
 
-    addTimeBroadcast(`上班到现在已经白嫖 <b class="gold">${formatBalance(earned, 2)}</b>，每一分钟都在回收选择权`, 4, "pop");
-    addTimeBroadcast(`摸鱼账户今日已进账 <b>${formatPawCoins(pawTodayEarned.value)}</b>，余额 ${formatPawCoins(state.pawBalance)}`, 3);
-    addTimeBroadcast(`离最近的${cd.nextHoliday.name}还有 <b>${cd.nextHoliday.natural}</b> 个自然日，通常能放 ${cd.nextHoliday.daysOff} 天`, 3);
-    addTimeBroadcast(`发薪日是 ${cd.paydayLabel}，本周期工资进度 <b>${Math.round(salaryCycleProgress.value.percent * 100)}%</b>`, 2);
-    addTimeBroadcast(`心愿「${safeWish}」完成 <b>${wishPercent}%</b>，还差 ${formatBalance(wishRemaining.value, 0)}，今天这段班正在变成它`, 3);
+    addTimeBroadcast(
+      `上班到现在已经白嫖 <b class="gold">${formatBalance(earned, 2)}</b>，每一分钟都在回收选择权`,
+      4,
+      "pop"
+    );
+    addTimeBroadcast(
+      `摸鱼账户今日已进账 <b>${formatPawCoins(pawTodayEarned.value)}</b>，余额 ${formatPawCoins(state.pawBalance)}`,
+      3
+    );
+    addTimeBroadcast(
+      `离最近的${cd.nextHoliday.name}还有 <b>${cd.nextHoliday.natural}</b> 个自然日，通常能放 ${cd.nextHoliday.daysOff} 天`,
+      3
+    );
+    addTimeBroadcast(
+      `发薪日是 ${cd.paydayLabel}，本周期工资进度 <b>${Math.round(salaryCycleProgress.value.percent * 100)}%</b>`,
+      2
+    );
+    addTimeBroadcast(
+      `心愿「${safeWish}」完成 <b>${wishPercent}%</b>，还差 ${formatBalance(wishRemaining.value, 0)}，今天这段班正在变成它`,
+      3
+    );
     addTimeBroadcast(
       workRatio > 0.82 && !cd.isOffWork
         ? `今天已经走完 <b>${Math.round(workRatio * 100)}%</b>，现在开始少接新坑`
@@ -2109,8 +2258,15 @@ export function useWageClaw() {
       "pop"
     );
 
-    addUnrelatedBroadcast(`到账播报：本班已炼成 <b class="gold">${formatBalance(earned, 2)}</b>，每一分钟都在回收选择权`, 4, "pop");
-    addUnrelatedBroadcast(`心愿雷达：「${safeWish}」完成 <b>${wishPercent}%</b>，还差 ${formatBalance(wishRemaining.value, 0)}`, 4);
+    addUnrelatedBroadcast(
+      `到账播报：本班已炼成 <b class="gold">${formatBalance(earned, 2)}</b>，每一分钟都在回收选择权`,
+      4,
+      "pop"
+    );
+    addUnrelatedBroadcast(
+      `心愿雷达：「${safeWish}」完成 <b>${wishPercent}%</b>，还差 ${formatBalance(wishRemaining.value, 0)}`,
+      4
+    );
     addUnrelatedBroadcast(
       nextPart
         ? `拼装建议：下一块先盯 <b>${escapeHtml(nextPart.name)}</b>，别让心愿只停在购物车里`
@@ -2118,17 +2274,23 @@ export function useWageClaw() {
       3,
       "pop"
     );
-    addUnrelatedBroadcast(`发薪日播报：${cd.paydayLabel}，本周期进度 <b>${Math.round(salaryCycleProgress.value.percent * 100)}%</b>`, 2);
+    addUnrelatedBroadcast(
+      `发薪日播报：${cd.paydayLabel}，本周期进度 <b>${Math.round(salaryCycleProgress.value.percent * 100)}%</b>`,
+      2
+    );
     addUnrelatedBroadcast(buildHolidayLine(cd.nextHoliday), 2);
-    addUnrelatedBroadcast(`摸鱼爪账：今天已赚 <b>${formatPawCoins(pawTodayEarned.value)}</b>，本月净赚 ${formatPawCoins(monthlyPawStats.value.net)}`, 3);
+    addUnrelatedBroadcast(
+      `摸鱼爪账：今天已赚 <b>${formatPawCoins(pawTodayEarned.value)}</b>，本月净赚 ${formatPawCoins(monthlyPawStats.value.net)}`,
+      3
+    );
     addUnrelatedBroadcast(
       `摸鱼指令：${randomPick([
-            "去接一杯水，回来再处理这个世界",
-            "肩膀放下来十秒，别让工位偷走你的脖子",
-            "先眨眼三次，屏幕不会因为你喘口气就跑路",
-            "把最烦的一件事写成一句话，先把它从脑子里拿出来",
-            "今天允许低功耗运行，不必每秒都满血"
-          ])}`,
+        "去接一杯水，回来再处理这个世界",
+        "肩膀放下来十秒，别让工位偷走你的脖子",
+        "先眨眼三次，屏幕不会因为你喘口气就跑路",
+        "把最烦的一件事写成一句话，先把它从脑子里拿出来",
+        "今天允许低功耗运行，不必每秒都满血"
+      ])}`,
       3,
       "squish"
     );
@@ -2144,19 +2306,32 @@ export function useWageClaw() {
     }
     if (petSupplyItems.value.length > 0) {
       const supply = randomPick(petSupplyItems.value);
-      addUnrelatedBroadcast(`背包播报：还有 <b>${escapeHtml(supply.item.name)} x${supply.quantity}</b>，需要回血时别舍不得用`, 2);
+      addUnrelatedBroadcast(
+        `背包播报：还有 <b>${escapeHtml(supply.item.name)} x${supply.quantity}</b>，需要回血时别舍不得用`,
+        2
+      );
     }
 
     let picked: { kind: string; line: string; weight: number; reaction?: string };
     const pickBroadcast = (items: Array<{ kind: string; line: string; weight: number; reaction?: string }>) => {
       const recentKinds = petDialogHistory.map(getBroadcastKind);
-      const freshChannelCandidates = items.filter((item) => !petDialogHistory.includes(item.line) && !recentKinds.includes(item.kind));
+      const freshChannelCandidates = items.filter(
+        (item) => !petDialogHistory.includes(item.line) && !recentKinds.includes(item.kind)
+      );
       const freshLineCandidates = items.filter((item) => !petDialogHistory.includes(item.line));
-      const usable = freshChannelCandidates.length > 0 ? freshChannelCandidates : freshLineCandidates.length > 0 ? freshLineCandidates : items;
-      const weightedPool = usable.reduce<Array<{ kind: string; line: string; weight: number; reaction?: string }>>((pool, item) => {
-        for (let i = 0; i < item.weight; i += 1) pool.push(item);
-        return pool;
-      }, []);
+      const usable =
+        freshChannelCandidates.length > 0
+          ? freshChannelCandidates
+          : freshLineCandidates.length > 0
+            ? freshLineCandidates
+            : items;
+      const weightedPool = usable.reduce<Array<{ kind: string; line: string; weight: number; reaction?: string }>>(
+        (pool, item) => {
+          for (let i = 0; i < item.weight; i += 1) pool.push(item);
+          return pool;
+        },
+        []
+      );
       return randomPick(weightedPool.length > 0 ? weightedPool : usable);
     };
     if (Math.random() < 0.9 || unrelatedBroadcasts.length === 0) {
@@ -2174,17 +2349,22 @@ export function useWageClaw() {
       petDialog.value = "";
     }, 8000);
     return;
-
   }
 
   async function triggerBlackoutSkill(options: { automatic?: boolean } = {}) {
     blackoutActive.value = true;
     if (blackoutTimer) window.clearTimeout(blackoutTimer);
-    blackoutTimer = window.setTimeout(() => {
-      blackoutActive.value = false;
-    }, options.automatic ? 4200 : 3200);
+    blackoutTimer = window.setTimeout(
+      () => {
+        blackoutActive.value = false;
+      },
+      options.automatic ? 4200 : 3200
+    );
     if (window.wageclawDesktop?.triggerBlackout) {
-      await window.wageclawDesktop.triggerBlackout({ duration: options.automatic ? 4200 : 3200, automatic: Boolean(options.automatic) });
+      await window.wageclawDesktop.triggerBlackout({
+        duration: options.automatic ? 4200 : 3200,
+        automatic: Boolean(options.automatic)
+      });
     }
   }
 
@@ -2403,7 +2583,10 @@ export function useWageClaw() {
     if (win) state.pet.battleWins += 1;
     else state.pet.battleLosses += 1;
     state.pet.battleBestCombo = Math.max(state.pet.battleBestCombo, duel.combo);
-    addPetLog(win ? "工位对战胜利" : "工位对战失利", `连击 ${duel.combo}，当前战绩 ${state.pet.battleWins} 胜 / ${state.pet.battleLosses} 负。`);
+    addPetLog(
+      win ? "工位对战胜利" : "工位对战失利",
+      `连击 ${duel.combo}，当前战绩 ${state.pet.battleWins} 胜 / ${state.pet.battleLosses} 负。`
+    );
   }
 
   function previewOnlineBattle() {
@@ -2523,9 +2706,12 @@ export function useWageClaw() {
     if (!runner.active) startRunner();
     runner.pose = action;
     runner.score += action === "jump" ? 8 : 5;
-    window.setTimeout(() => {
-      if (runner.active) runner.pose = "run";
-    }, action === "jump" ? 460 : 320);
+    window.setTimeout(
+      () => {
+        if (runner.active) runner.pose = "run";
+      },
+      action === "jump" ? 460 : 320
+    );
   }
 
   function stopRunner(close = true) {
@@ -2704,8 +2890,8 @@ export function useWageClaw() {
     setActiveScreen,
     openScreenFromPet,
     closeMainWindow,
-     minimizeMainWindow,
-     maximizeMainWindow,
+    minimizeMainWindow,
+    maximizeMainWindow,
     petStageStyle,
     setTransactionFilter,
     setMallFilter,

@@ -1,8 +1,15 @@
 :root {
   color-scheme: light dark;
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-    "Microsoft YaHei", sans-serif;
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
   background: transparent;
   color: #17201d;
   font-synthesis: none;
@@ -193,9 +200,16 @@ select {
   border-radius: var(--shell-radius);
   opacity: 0.36;
   background-image:
-    linear-gradient(110deg, transparent 0 46%, color-mix(in srgb, var(--accent-2), transparent 88%) 46% 47%, transparent 47% 100%),
+    linear-gradient(
+      110deg,
+      transparent 0 46%,
+      color-mix(in srgb, var(--accent-2), transparent 88%) 46% 47%,
+      transparent 47% 100%
+    ),
     linear-gradient(var(--line) 1px, transparent 1px);
-  background-size: 280px 280px, 32px 32px;
+  background-size:
+    280px 280px,
+    32px 32px;
   mask-image: linear-gradient(180deg, black, transparent 82%);
 }
 
@@ -214,17 +228,14 @@ select {
   --bad: #b34b40;
   --glow: rgba(197, 111, 66, 0.24);
   --shadow: 0 16px 34px rgba(66, 47, 28, 0.1);
-  --shell-bg:
-    linear-gradient(120deg, rgba(255, 253, 247, 0.96), rgba(246, 238, 224, 0.94)),
-    var(--panel-strong);
+  --shell-bg: linear-gradient(120deg, rgba(255, 253, 247, 0.96), rgba(246, 238, 224, 0.94)), var(--panel-strong);
   --title-main-bg: color-mix(in srgb, var(--panel-strong), var(--surface) 20%);
   --title-bridge-bg: var(--title-main-bg);
   --title-drag-color: rgba(255, 244, 220, 0.72);
   --title-tool-color: color-mix(in srgb, var(--text), transparent 28%);
   --title-tool-hover-bg: color-mix(in srgb, var(--surface), white 18%);
   --sidebar-bg:
-    linear-gradient(180deg, rgba(118, 154, 133, 0.14), transparent 34%),
-    linear-gradient(145deg, #0d3b34, #06231f 72%);
+    linear-gradient(180deg, rgba(118, 154, 133, 0.14), transparent 34%), linear-gradient(145deg, #0d3b34, #06231f 72%);
   --sidebar-bg-size: auto;
   --sidebar-title-bg: var(--sidebar-bg);
   --sidebar-title-bg-size: var(--sidebar-bg-size);
@@ -275,9 +286,7 @@ select {
       var(--title-main-bg) var(--sidebar-width) 100%
     ),
     var(--sidebar-title-bg);
-  background-size:
-    100%,
-    var(--sidebar-title-bg-size);
+  background-size: 100%, var(--sidebar-title-bg-size);
 }
 
 .title-drag {
@@ -307,7 +316,10 @@ select {
   border-radius: 6px;
   color: var(--title-tool-color);
   background: transparent;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .title-tools .window-tool:hover {
@@ -383,7 +395,10 @@ select {
   color: var(--title-tool-color);
   background: transparent;
   opacity: 1;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .title-btn:hover {
@@ -442,8 +457,7 @@ select {
   --shadow: 0 22px 54px rgba(0, 0, 0, 0.38);
   --shell-bg:
     linear-gradient(90deg, rgba(91, 231, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(rgba(255, 109, 168, 0.06) 1px, transparent 1px),
-    #171b2f;
+    linear-gradient(rgba(255, 109, 168, 0.06) 1px, transparent 1px), #171b2f;
   --title-main-bg: #181d31;
   --title-bridge-bg: var(--title-main-bg);
   --title-drag-color: rgba(248, 245, 255, 0.72);
@@ -452,8 +466,7 @@ select {
   --shell-bg-size: 24px 24px, 24px 24px, auto;
   --sidebar-bg:
     linear-gradient(90deg, rgba(91, 231, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(rgba(255, 109, 168, 0.1) 1px, transparent 1px),
-    linear-gradient(155deg, #171a36, #0b0f21 76%);
+    linear-gradient(rgba(255, 109, 168, 0.1) 1px, transparent 1px), linear-gradient(155deg, #171a36, #0b0f21 76%);
   --sidebar-bg-size: 18px 18px, 18px 18px, auto;
   --shell-outline: rgba(91, 231, 255, 0.24);
   --shell-shadow-color: transparent;
@@ -515,8 +528,7 @@ select {
   --title-tool-hover-bg: rgba(251, 247, 238, 0.72);
   --shell-bg-size: 18px 18px, auto;
   --sidebar-bg:
-    linear-gradient(180deg, rgba(179, 69, 57, 0.15), transparent 34%),
-    linear-gradient(155deg, #263632, #151614 78%);
+    linear-gradient(180deg, rgba(179, 69, 57, 0.15), transparent 34%), linear-gradient(155deg, #263632, #151614 78%);
   --shell-outline: rgba(31, 63, 58, 0.12);
   --shell-shadow-color: transparent;
   border-color: rgba(31, 63, 58, 0.28);
@@ -565,8 +577,7 @@ select {
 
 .sidebar {
   --sidebar-bg:
-    linear-gradient(180deg, rgba(118, 154, 133, 0.14), transparent 34%),
-    linear-gradient(145deg, #0d3b34, #06231f 72%);
+    linear-gradient(180deg, rgba(118, 154, 133, 0.14), transparent 34%), linear-gradient(145deg, #0d3b34, #06231f 72%);
   --sidebar-bg-size: auto;
   position: relative;
   top: 0;
@@ -616,8 +627,7 @@ select {
 .app-root[data-theme="arcade"] .sidebar {
   --sidebar-bg:
     linear-gradient(90deg, rgba(91, 231, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(rgba(255, 109, 168, 0.1) 1px, transparent 1px),
-    linear-gradient(155deg, #171a36, #0b0f21 76%);
+    linear-gradient(rgba(255, 109, 168, 0.1) 1px, transparent 1px), linear-gradient(155deg, #171a36, #0b0f21 76%);
   --sidebar-bg-size: 18px 18px, 18px 18px, auto;
 }
 
@@ -629,8 +639,7 @@ select {
 
 .app-root[data-theme="ink"] .sidebar {
   --sidebar-bg:
-    linear-gradient(180deg, rgba(179, 69, 57, 0.15), transparent 34%),
-    linear-gradient(155deg, #263632, #151614 78%);
+    linear-gradient(180deg, rgba(179, 69, 57, 0.15), transparent 34%), linear-gradient(155deg, #263632, #151614 78%);
 }
 
 .app-root[data-theme="citrus"] .sidebar {
@@ -748,24 +757,22 @@ select {
 .brand-mark {
   position: relative;
   display: block;
+  overflow: hidden;
   width: 42px;
   height: 42px;
   flex: 0 0 42px;
-  border-radius: 16px 16px 16px 7px;
-  color: #fff;
-  background:
-    radial-gradient(circle at 30% 22%, rgba(255, 245, 204, 0.32), transparent 24%),
-    linear-gradient(150deg, #f1ca83, #c67f43 54%, #684528);
+  border-radius: 12px;
+  background: #fff;
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42),
     0 14px 26px var(--glow);
 }
 
-.brand-mark i {
-  position: absolute;
+.brand-mark img {
   display: block;
-  background: #fff4dc;
-  box-shadow: inset 0 -2px 3px rgba(99, 64, 31, 0.24);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .paw-pad {
@@ -969,7 +976,9 @@ select {
   width: 12px;
   height: 2px;
   background: rgba(255, 244, 223, 0.78);
-  box-shadow: 0 5px 0 rgba(255, 244, 223, 0.78), 0 -5px 0 rgba(255, 244, 223, 0.78);
+  box-shadow:
+    0 5px 0 rgba(255, 244, 223, 0.78),
+    0 -5px 0 rgba(255, 244, 223, 0.78);
 }
 
 .nav-calendar::before {
@@ -1006,8 +1015,7 @@ select {
 .filter-row button.active,
 .segmented button.active {
   color: #fff;
-  background:
-    linear-gradient(135deg, rgba(233, 247, 229, 0.24), rgba(233, 247, 229, 0.12));
+  background: linear-gradient(135deg, rgba(233, 247, 229, 0.24), rgba(233, 247, 229, 0.12));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -1036,9 +1044,7 @@ select {
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(244, 184, 96, 0.14), transparent 70%),
-    rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(244, 184, 96, 0.14), transparent 70%), rgba(255, 255, 255, 0.08);
   color: #fff4dc;
 }
 
@@ -1057,9 +1063,7 @@ select {
   padding: 11px;
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 8px;
-  background:
-    linear-gradient(120deg, rgba(224, 154, 93, 0.18), transparent),
-    rgba(255, 255, 255, 0.08);
+  background: linear-gradient(120deg, rgba(224, 154, 93, 0.18), transparent), rgba(255, 255, 255, 0.08);
   color: #fff4dc;
 }
 
@@ -1329,9 +1333,7 @@ select {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 48%),
-    var(--panel);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 48%), var(--panel);
 }
 
 .top-metrics strong,
@@ -1617,7 +1619,12 @@ select {
   border-radius: 10px;
   color: color-mix(in srgb, var(--salary-progress-text), transparent 12%);
   background:
-    radial-gradient(circle at 84% 72%, color-mix(in srgb, var(--salary-warm), transparent 76%), transparent 0 7%, transparent 8%),
+    radial-gradient(
+      circle at 84% 72%,
+      color-mix(in srgb, var(--salary-warm), transparent 76%),
+      transparent 0 7%,
+      transparent 8%
+    ),
     radial-gradient(circle at 16% 12%, color-mix(in srgb, var(--salary-card-a), transparent 82%), transparent 30%),
     linear-gradient(145deg, color-mix(in srgb, var(--salary-card-a), var(--salary-card-b) 18%), var(--salary-card-b));
   box-shadow:
@@ -1634,9 +1641,21 @@ select {
   height: 44px;
   pointer-events: none;
   background:
-    radial-gradient(circle at 78% 36%, color-mix(in srgb, var(--salary-warm), transparent 72%) 0 20px, transparent 21px),
-    radial-gradient(ellipse at 52% 74%, color-mix(in srgb, var(--salary-card-b), transparent 72%) 0 54px, transparent 55px),
-    radial-gradient(ellipse at 78% 78%, color-mix(in srgb, var(--salary-card-b), transparent 78%) 0 70px, transparent 71px);
+    radial-gradient(
+      circle at 78% 36%,
+      color-mix(in srgb, var(--salary-warm), transparent 72%) 0 20px,
+      transparent 21px
+    ),
+    radial-gradient(
+      ellipse at 52% 74%,
+      color-mix(in srgb, var(--salary-card-b), transparent 72%) 0 54px,
+      transparent 55px
+    ),
+    radial-gradient(
+      ellipse at 78% 78%,
+      color-mix(in srgb, var(--salary-card-b), transparent 78%) 0 70px,
+      transparent 71px
+    );
   opacity: 0.78;
 }
 
@@ -1741,7 +1760,11 @@ select {
   border-radius: inherit;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.62), transparent 58%),
-    linear-gradient(90deg, color-mix(in srgb, var(--salary-progress-text), var(--salary-card-a) 12%), var(--salary-warm));
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--salary-progress-text), var(--salary-card-a) 12%),
+      var(--salary-warm)
+    );
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.34),
     0 0 16px color-mix(in srgb, var(--salary-warm), transparent 70%);
@@ -1832,7 +1855,9 @@ select {
     0 8px 14px color-mix(in srgb, var(--salary-warm), transparent 72%);
   font-size: 13px;
   font-weight: 950;
-  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .salary-overview-claim .gift-icon {
@@ -1852,8 +1877,17 @@ select {
   position: absolute;
   border: 2px solid currentColor;
   background:
-    linear-gradient(90deg, transparent calc(50% - 2px), rgba(122, 81, 23, 0.34) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 2px)),
-    linear-gradient(180deg, color-mix(in srgb, var(--salary-warm), white 42%), color-mix(in srgb, var(--salary-warm), transparent 12%));
+    linear-gradient(
+      90deg,
+      transparent calc(50% - 2px),
+      rgba(122, 81, 23, 0.34) calc(50% - 1px) calc(50% + 1px),
+      transparent calc(50% + 2px)
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--salary-warm), white 42%),
+      color-mix(in srgb, var(--salary-warm), transparent 12%)
+    );
 }
 
 .salary-overview-claim .gift-icon::before {
@@ -1955,7 +1989,11 @@ select {
   background:
     radial-gradient(circle at 20% 6%, color-mix(in srgb, var(--pet-glow, #f1d889), transparent 54%), transparent 32%),
     radial-gradient(circle at 100% 18%, var(--home-pet-theme-glow), transparent 34%),
-    linear-gradient(145deg, var(--home-pet-panel), color-mix(in srgb, var(--home-pet-theme-soft), var(--home-pet-panel-soft) 42%));
+    linear-gradient(
+      145deg,
+      var(--home-pet-panel),
+      color-mix(in srgb, var(--home-pet-theme-soft), var(--home-pet-panel-soft) 42%)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
     0 14px 26px color-mix(in srgb, var(--pet-shadow, #325338), transparent 84%);
@@ -2048,7 +2086,11 @@ select {
   background:
     radial-gradient(ellipse at 50% 72%, color-mix(in srgb, var(--pet-body, #8aac91), transparent 52%), transparent 44%),
     radial-gradient(circle at 34% 22%, var(--home-pet-theme-glow), transparent 33%),
-    linear-gradient(145deg, color-mix(in srgb, var(--home-pet-panel), transparent 8%), color-mix(in srgb, var(--home-pet-theme-soft), var(--home-pet-panel-soft) 44%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--home-pet-panel), transparent 8%),
+      color-mix(in srgb, var(--home-pet-theme-soft), var(--home-pet-panel-soft) 44%)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.74),
     0 8px 14px color-mix(in srgb, var(--accent), transparent 88%);
@@ -2082,9 +2124,7 @@ select {
   z-index: 2;
   max-width: 92%;
   max-height: calc(100% - 28px);
-  filter:
-    drop-shadow(0 14px 14px color-mix(in srgb, var(--pet-shadow, #325338), transparent 68%))
-    saturate(0.98);
+  filter: drop-shadow(0 14px 14px color-mix(in srgb, var(--pet-shadow, #325338), transparent 68%)) saturate(0.98);
   animation-duration: 4.8s;
 }
 
@@ -2386,7 +2426,11 @@ select {
   place-items: center;
   overflow: hidden;
   border-radius: 10px;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--accent-2), white 70%), color-mix(in srgb, var(--accent), white 82%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent-2), white 70%),
+    color-mix(in srgb, var(--accent), white 82%)
+  );
 }
 
 .home-pet-supply-icon img {
@@ -2537,7 +2581,13 @@ select {
   color: color-mix(in srgb, var(--salary-warm, var(--accent-2)), black 42%);
   background:
     radial-gradient(circle at 34% 24%, rgba(255, 248, 186, 0.95) 0 9%, transparent 10%),
-    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--salary-warm, var(--accent-2)), white 42%) 0 34%, var(--salary-warm, var(--accent-2)) 35% 51%, color-mix(in srgb, var(--salary-warm, var(--accent-2)), black 34%) 52% 59%, transparent 60%),
+    radial-gradient(
+      circle at 50% 50%,
+      color-mix(in srgb, var(--salary-warm, var(--accent-2)), white 42%) 0 34%,
+      var(--salary-warm, var(--accent-2)) 35% 51%,
+      color-mix(in srgb, var(--salary-warm, var(--accent-2)), black 34%) 52% 59%,
+      transparent 60%
+    ),
     radial-gradient(circle at 50% 50%, rgba(255, 245, 204, 0.96) 0 68%, rgba(233, 212, 159, 0.68) 69% 100%);
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.48),
@@ -2551,16 +2601,18 @@ select {
   height: 38%;
   border: 2px solid rgba(119, 82, 22, 0.78);
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(123, 84, 21, 0.74) 0 21%, transparent 23%),
-    transparent;
+  background: radial-gradient(circle at 50% 50%, rgba(123, 84, 21, 0.74) 0 21%, transparent 23%), transparent;
 }
 
 .coin-icon::after {
   content: "";
   position: absolute;
   inset: 34%;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--salary-warm, var(--accent-2)), white 48%), color-mix(in srgb, var(--salary-warm, var(--accent-2)), black 30%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--salary-warm, var(--accent-2)), white 48%),
+    color-mix(in srgb, var(--salary-warm, var(--accent-2)), black 30%)
+  );
   clip-path: polygon(50% 0, 84% 25%, 84% 75%, 50% 100%, 16% 75%, 16% 25%);
   opacity: 0.82;
 }
@@ -2585,8 +2637,7 @@ select {
   height: 45px;
   border-radius: 50% 50% 14px 14px;
   background:
-    radial-gradient(ellipse at 50% 86%, #fff1c8 0 22%, transparent 24%),
-    linear-gradient(180deg, #898076, #353833);
+    radial-gradient(ellipse at 50% 86%, #fff1c8 0 22%, transparent 24%), linear-gradient(180deg, #898076, #353833);
   transform: rotate(-18deg);
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.25),
@@ -2655,9 +2706,7 @@ select {
   width: 104px;
   height: 20px;
   border-radius: 50%;
-  background:
-    radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.24), transparent 38%),
-    #6f6a62;
+  background: radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.24), transparent 38%), #6f6a62;
 }
 
 .mug {
@@ -2711,8 +2760,16 @@ select {
   top: 0;
   width: 38px;
   height: 42px;
-  background:
-    conic-gradient(from 210deg, transparent 0 14%, #6e8558 14% 21%, transparent 21% 34%, #4e6d4f 34% 42%, transparent 42% 58%, #7c945c 58% 66%, transparent 66% 100%);
+  background: conic-gradient(
+    from 210deg,
+    transparent 0 14%,
+    #6e8558 14% 21%,
+    transparent 21% 34%,
+    #4e6d4f 34% 42%,
+    transparent 42% 58%,
+    #7c945c 58% 66%,
+    transparent 66% 100%
+  );
 }
 
 .home-cards {
@@ -2730,8 +2787,7 @@ select {
   border-radius: 8px;
   background:
     radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--accent-2), transparent 76%), transparent 30%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 58%),
-    var(--panel);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 58%), var(--panel);
   box-shadow: var(--shadow);
 }
 
@@ -2806,9 +2862,7 @@ select {
   border-radius: 8px;
   color: var(--text);
   text-align: center;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.64), transparent 72%),
-    var(--surface);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.64), transparent 72%), var(--surface);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
   transition:
     border-color 0.18s ease,
@@ -2963,8 +3017,7 @@ select {
   width: 30px;
   height: 22px;
   border-radius: 5px 13px 6px 6px;
-  background:
-    linear-gradient(180deg, #ffe4f1 0 28%, #f8b6c9 28% 43%, #ffe1a5 43% 66%, #e29b72 66% 100%);
+  background: linear-gradient(180deg, #ffe4f1 0 28%, #f8b6c9 28% 43%, #ffe1a5 43% 66%, #e29b72 66% 100%);
   clip-path: polygon(0 12%, 100% 0, 86% 100%, 0 100%);
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4);
 }
@@ -2976,8 +3029,7 @@ select {
   height: 12px;
   border-radius: 8px 8px 6px 6px;
   background:
-    radial-gradient(circle at 50% 22%, #fff3cf 0 2px, transparent 3px),
-    linear-gradient(145deg, #ef4e5f, #b73448);
+    radial-gradient(circle at 50% 22%, #fff3cf 0 2px, transparent 3px), linear-gradient(145deg, #ef4e5f, #b73448);
   transform: rotate(14deg);
 }
 
@@ -2987,8 +3039,7 @@ select {
   width: 31px;
   height: 16px;
   border-radius: 99px;
-  background:
-    linear-gradient(90deg, #f06b62 0 49%, #f7cb82 49% 51%, #f6d880 51% 100%);
+  background: linear-gradient(90deg, #f06b62 0 49%, #f7cb82 49% 51%, #f6d880 51% 100%);
   box-shadow:
     inset 0 3px 0 rgba(255, 255, 255, 0.34),
     0 0 0 1px rgba(96, 72, 44, 0.08);
@@ -3075,9 +3126,7 @@ select {
   border: 1px solid color-mix(in srgb, var(--accent), transparent 72%);
   border-radius: 7px;
   color: var(--muted);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 90%),
-    var(--panel);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 90%), var(--panel);
   box-shadow: 0 8px 18px rgba(66, 50, 24, 0.14);
   font-size: 10.5px;
   line-height: 1.35;
@@ -3129,9 +3178,7 @@ select {
 .home-wish-card {
   min-height: 160px;
   padding: 12px;
-  background:
-    linear-gradient(150deg, rgba(255, 255, 255, 0.08), transparent 56%),
-    var(--panel);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.08), transparent 56%), var(--panel);
 }
 
 .home-soft-card {
@@ -3222,7 +3269,11 @@ select {
   border-radius: 9px 9px 12px 12px;
   background:
     linear-gradient(90deg, transparent 0 45%, rgba(255, 255, 255, 0.2) 45% 48%, transparent 48% 100%),
-    linear-gradient(145deg, color-mix(in srgb, var(--accent-2), white 18%), color-mix(in srgb, var(--accent), transparent 18%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--accent-2), white 18%),
+      color-mix(in srgb, var(--accent), transparent 18%)
+    );
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.24),
     0 12px 22px color-mix(in srgb, var(--accent-2), transparent 78%);
@@ -3236,7 +3287,11 @@ select {
   top: -10px;
   height: 14px;
   border-radius: 8px;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--accent-3), white 18%), color-mix(in srgb, var(--accent-2), transparent 14%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent-3), white 18%),
+    color-mix(in srgb, var(--accent-2), transparent 14%)
+  );
 }
 
 .cache-bottle {
@@ -3247,7 +3302,11 @@ select {
   border-radius: 13px 13px 8px 8px;
   background:
     radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.48), transparent 25%),
-    linear-gradient(180deg, color-mix(in srgb, var(--accent), white 20%), color-mix(in srgb, var(--accent-3), transparent 6%));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent), white 20%),
+      color-mix(in srgb, var(--accent-3), transparent 6%)
+    );
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.24);
 }
 
@@ -3268,8 +3327,12 @@ select {
   width: 34px;
   height: 22px;
   border-radius: 5px;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent-2), white 20%) 0 34%, transparent 34% 42%, color-mix(in srgb, var(--panel-strong), white 8%) 42% 100%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent-2), white 20%) 0 34%,
+    transparent 34% 42%,
+    color-mix(in srgb, var(--panel-strong), white 8%) 42% 100%
+  );
   transform: rotate(-12deg);
   box-shadow: 0 10px 18px color-mix(in srgb, var(--accent-2), transparent 84%);
 }
@@ -3303,9 +3366,7 @@ select {
   border-radius: 8px;
   color: var(--text);
   text-align: left;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent),
-    var(--surface);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent), var(--surface);
 }
 
 .supply-mini-list span {
@@ -3316,7 +3377,11 @@ select {
   border-radius: 14px 14px 8px 8px;
   background:
     radial-gradient(circle at 38% 26%, rgba(255, 255, 255, 0.38), transparent 28%),
-    linear-gradient(155deg, color-mix(in srgb, var(--accent-2), white 10%), color-mix(in srgb, var(--accent), transparent 46%));
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--accent-2), white 10%),
+      color-mix(in srgb, var(--accent), transparent 46%)
+    );
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.22),
     0 10px 18px rgba(83, 52, 25, 0.1);
@@ -3380,8 +3445,7 @@ select {
   border: 2px solid rgba(75, 111, 135, 0.26);
   background:
     radial-gradient(circle at 44% 76%, rgba(255, 242, 168, 0.32), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(122, 178, 196, 0.16)),
-    rgba(255, 255, 255, 0.38);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(122, 178, 196, 0.16)), rgba(255, 255, 255, 0.38);
   box-shadow:
     inset 10px 0 18px rgba(255, 255, 255, 0.24),
     inset -12px 0 20px rgba(75, 111, 135, 0.12);
@@ -3420,9 +3484,7 @@ select {
 }
 
 .jar-object span.on {
-  background:
-    radial-gradient(circle at 45% 35%, #fff6c8, transparent 34%),
-    linear-gradient(135deg, #b3e5ee, #f5b05d);
+  background: radial-gradient(circle at 45% 35%, #fff6c8, transparent 34%), linear-gradient(135deg, #b3e5ee, #f5b05d);
   box-shadow: 0 0 18px rgba(245, 176, 93, 0.58);
 }
 
@@ -3651,9 +3713,7 @@ select {
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.46), transparent 82%),
-    var(--surface);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.46), transparent 82%), var(--surface);
 }
 
 .ledger-summary-metrics article {
@@ -3733,9 +3793,7 @@ select {
   grid-template-rows: auto auto auto auto auto;
   gap: 12px;
   padding: 18px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 58%),
-    var(--panel-strong);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 58%), var(--panel-strong);
 }
 
 .ledger-modal .panel-header,
@@ -3837,8 +3895,7 @@ select {
 .paw-badge {
   width: 40px;
   font-size: 12px;
-  background:
-    linear-gradient(145deg, #f2c66b, #b66b32);
+  background: linear-gradient(145deg, #f2c66b, #b66b32);
 }
 
 .wish-workbench-tabs {
@@ -3884,8 +3941,11 @@ select {
 .primary-button {
   padding: 0 16px;
   color: #fff;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent), white 10%), color-mix(in srgb, var(--accent), black 8%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent), white 10%),
+    color-mix(in srgb, var(--accent), black 8%)
+  );
   border-color: transparent;
   font-weight: 800;
   box-shadow:
@@ -3929,8 +3989,7 @@ select {
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.28);
   color: #fff;
-  background:
-    linear-gradient(145deg, #f7c96b, #c56f42 55%, #7f4e2d);
+  background: linear-gradient(145deg, #f7c96b, #c56f42 55%, #7f4e2d);
   box-shadow:
     inset 0 3px 0 rgba(255, 255, 255, 0.28),
     inset 0 -5px 12px rgba(58, 37, 18, 0.28),
@@ -4157,7 +4216,11 @@ select {
 .wish-workbench-tabs button.active {
   color: var(--asset-card-green);
   border-color: transparent;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--asset-card-soft-green), white 58%), color-mix(in srgb, var(--asset-card-soft-green), var(--asset-card-panel) 46%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--asset-card-soft-green), white 58%),
+    color-mix(in srgb, var(--asset-card-soft-green), var(--asset-card-panel) 46%)
+  );
 }
 
 .wish-workbench-panel .wish-progress {
@@ -4204,7 +4267,11 @@ select {
   background:
     radial-gradient(circle at 22% 62%, color-mix(in srgb, var(--asset-card-gold), transparent 84%), transparent 10%),
     radial-gradient(circle at 84% 34%, var(--asset-card-soft-green), transparent 22%),
-    linear-gradient(145deg, color-mix(in srgb, var(--asset-card-panel-soft), transparent 12%), color-mix(in srgb, var(--asset-card-panel), transparent 28%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--asset-card-panel-soft), transparent 12%),
+      color-mix(in srgb, var(--asset-card-panel), transparent 28%)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.74),
     0 12px 24px var(--asset-card-shadow);
@@ -4260,7 +4327,11 @@ select {
   height: 120px;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 78%, color-mix(in srgb, var(--asset-card-gold), transparent 34%) 0 30px, transparent 31px),
+    radial-gradient(
+      circle at 50% 78%,
+      color-mix(in srgb, var(--asset-card-gold), transparent 34%) 0 30px,
+      transparent 31px
+    ),
     radial-gradient(ellipse at 28% 92%, color-mix(in srgb, var(--accent), transparent 78%) 0 96px, transparent 98px),
     radial-gradient(ellipse at 62% 93%, color-mix(in srgb, var(--accent), transparent 74%) 0 126px, transparent 128px),
     radial-gradient(ellipse at 88% 92%, color-mix(in srgb, var(--accent-3), transparent 70%) 0 70px, transparent 72px),
@@ -4278,8 +4349,11 @@ select {
   padding: 11px 11px 28px;
   border-color: var(--asset-card-line);
   border-radius: 10px;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--asset-card-panel), transparent 10%), color-mix(in srgb, var(--asset-card-panel-soft), transparent 46%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--asset-card-panel), transparent 10%),
+    color-mix(in srgb, var(--asset-card-panel-soft), transparent 46%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.74),
     0 10px 20px var(--asset-card-shadow);
@@ -4456,8 +4530,11 @@ select {
   padding: 8px 9px 6px;
   border: 1px solid var(--asset-card-line);
   border-radius: 10px;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--asset-card-panel), transparent 24%), color-mix(in srgb, var(--asset-card-soft-green), var(--asset-card-panel) 44%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--asset-card-panel), transparent 24%),
+    color-mix(in srgb, var(--asset-card-soft-green), var(--asset-card-panel) 44%)
+  );
 }
 
 .home-bottom-row .wish-workbench-tabs {
@@ -4529,7 +4606,11 @@ select {
   background:
     radial-gradient(circle at 25% 36%, color-mix(in srgb, var(--asset-card-gold), transparent 86%), transparent 24%),
     radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--asset-card-green), transparent 88%), transparent 28%),
-    linear-gradient(145deg, color-mix(in srgb, var(--asset-card-panel), transparent 8%), color-mix(in srgb, var(--asset-card-soft-green), var(--asset-card-panel) 34%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--asset-card-panel), transparent 8%),
+      color-mix(in srgb, var(--asset-card-soft-green), var(--asset-card-panel) 34%)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.82),
     0 10px 18px var(--asset-card-shadow);
@@ -4545,7 +4626,11 @@ select {
   border-radius: 50%;
   background:
     radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--asset-card-panel), #ffffff 10%) 0 47%, transparent 48%),
-    conic-gradient(from -90deg, var(--asset-card-green) 0 var(--wish-progress, 0%), color-mix(in srgb, var(--asset-card-muted), transparent 82%) var(--wish-progress, 0%) 100%);
+    conic-gradient(
+      from -90deg,
+      var(--asset-card-green) 0 var(--wish-progress, 0%),
+      color-mix(in srgb, var(--asset-card-muted), transparent 82%) var(--wish-progress, 0%) 100%
+    );
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--asset-card-green), transparent 72%),
     inset 0 -7px 14px color-mix(in srgb, var(--asset-card-green), transparent 86%),
@@ -4576,7 +4661,11 @@ select {
   background:
     radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.92), transparent 18%),
     radial-gradient(circle at 50% 78%, color-mix(in srgb, var(--asset-card-green), transparent 86%), transparent 40%),
-    linear-gradient(145deg, color-mix(in srgb, var(--asset-card-panel), #ffffff 12%), color-mix(in srgb, var(--asset-card-soft-green), var(--asset-card-panel) 52%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--asset-card-panel), #ffffff 12%),
+      color-mix(in srgb, var(--asset-card-soft-green), var(--asset-card-panel) 52%)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     inset 0 -5px 12px color-mix(in srgb, var(--asset-card-green), transparent 88%);
@@ -4779,8 +4868,7 @@ select {
   border: 1px solid color-mix(in srgb, var(--accent), transparent 70%);
   border-radius: 5px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent),
-    color-mix(in srgb, var(--muted), transparent 88%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent), color-mix(in srgb, var(--muted), transparent 88%);
   box-shadow: inset 0 1px 2px rgba(32, 26, 18, 0.1);
 }
 
@@ -4809,8 +4897,7 @@ select {
   background:
     radial-gradient(ellipse at 50% 78%, rgba(42, 51, 46, 0.16), transparent 42%),
     radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent-3), transparent 76%), transparent 40%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.12), transparent 58%),
-    var(--surface);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.12), transparent 58%), var(--surface);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
 }
 
@@ -4875,15 +4962,18 @@ select {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.22), transparent 60%),
     color-mix(in srgb, var(--muted), transparent 82%);
-  transition: transform 0.42s ease, opacity 0.25s ease, filter 0.25s ease, background 0.25s ease;
+  transition:
+    transform 0.42s ease,
+    opacity 0.25s ease,
+    filter 0.25s ease,
+    background 0.25s ease;
 }
 
 .mac-part.on {
   opacity: 1;
   border-style: solid;
   border-color: rgba(255, 255, 255, 0.48);
-  filter:
-    drop-shadow(0 12px 16px color-mix(in srgb, var(--accent), transparent 82%))
+  filter: drop-shadow(0 12px 16px color-mix(in srgb, var(--accent), transparent 82%))
     drop-shadow(0 2px 2px rgba(255, 255, 255, 0.22));
 }
 
@@ -4897,8 +4987,7 @@ select {
 }
 
 .part-screen.on {
-  background:
-    linear-gradient(145deg, #f5f7f4, #aeb8bb 48%, #758288);
+  background: linear-gradient(145deg, #f5f7f4, #aeb8bb 48%, #758288);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     inset 0 -5px 12px rgba(44, 53, 58, 0.3),
@@ -4987,9 +5076,7 @@ select {
 }
 
 .part-battery.on {
-  background:
-    linear-gradient(90deg, #58c98b 0 75%, #e2f4e6 75% 82%, #349263 82%),
-    #4eac76;
+  background: linear-gradient(90deg, #58c98b 0 75%, #e2f4e6 75% 82%, #349263 82%), #4eac76;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
     0 0 20px rgba(88, 201, 139, 0.5);
@@ -5007,9 +5094,11 @@ select {
 .part-memory.on {
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.32) 0 2px, transparent 2px 8px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 48%),
-    linear-gradient(145deg, #56bd91, #216c51);
-  background-size: 10px 100%, auto, auto;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 48%), linear-gradient(145deg, #56bd91, #216c51);
+  background-size:
+    10px 100%,
+    auto,
+    auto;
   box-shadow:
     inset 0 0 0 3px rgba(255, 255, 255, 0.15),
     0 0 16px rgba(79, 178, 138, 0.36);
@@ -5046,9 +5135,11 @@ select {
 .part-keyboard.on {
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.58) 0 1px, transparent 1px 8px),
-    linear-gradient(rgba(255, 255, 255, 0.52) 0 1px, transparent 1px 7px),
-    linear-gradient(145deg, #2d3439, #14191d);
-  background-size: 8px 100%, 100% 7px, auto;
+    linear-gradient(rgba(255, 255, 255, 0.52) 0 1px, transparent 1px 7px), linear-gradient(145deg, #2d3439, #14191d);
+  background-size:
+    8px 100%,
+    100% 7px,
+    auto;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
     inset 0 -4px 8px rgba(0, 0, 0, 0.34);
@@ -5118,7 +5209,10 @@ select {
 }
 
 .macbook-mini .part-keyboard.on {
-  background-size: 5px 100%, 100% 5px, auto;
+  background-size:
+    5px 100%,
+    100% 5px,
+    auto;
 }
 
 .macbook-mini .part-keyboard.on::after {
@@ -5139,9 +5233,7 @@ select {
   width: 98%;
   height: 92%;
   object-fit: contain;
-  filter:
-    drop-shadow(0 22px 24px rgba(31, 34, 33, 0.22))
-    drop-shadow(0 2px 0 rgba(255, 255, 255, 0.35));
+  filter: drop-shadow(0 22px 24px rgba(31, 34, 33, 0.22)) drop-shadow(0 2px 0 rgba(255, 255, 255, 0.35));
   transform: translate(-50%, -50%);
 }
 
@@ -5156,11 +5248,7 @@ select {
   opacity: 0.56;
   background: transparent;
   object-fit: contain;
-  filter:
-    grayscale(0.18)
-    saturate(0.96)
-    opacity(0.96)
-    drop-shadow(0 8px 12px rgba(31, 34, 33, 0.1));
+  filter: grayscale(0.18) saturate(0.96) opacity(0.96) drop-shadow(0 8px 12px rgba(31, 34, 33, 0.1));
   transform: translateY(0) rotate(0);
   transition:
     opacity 0.22s ease,
@@ -5170,9 +5258,7 @@ select {
 
 .asset-macbook .mac-art-part.on {
   opacity: 1;
-  filter:
-    drop-shadow(0 14px 18px rgba(31, 34, 33, 0.18))
-    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.36));
+  filter: drop-shadow(0 14px 18px rgba(31, 34, 33, 0.18)) drop-shadow(0 1px 0 rgba(255, 255, 255, 0.36));
 }
 
 .wish-part-hotspot {
@@ -5204,7 +5290,9 @@ select {
   background: color-mix(in srgb, var(--accent-2), transparent 86%);
   box-shadow: 0 0 22px color-mix(in srgb, var(--accent-2), transparent 68%);
   transform: scale(0.96);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .wish-part-hotspot:hover::before,
@@ -5238,9 +5326,7 @@ select {
 .asset-macbook .wish-part-hotspot:hover .mac-art-part,
 .asset-macbook .wish-part-hotspot:focus-visible .mac-art-part {
   opacity: 1;
-  filter:
-    saturate(1.08)
-    drop-shadow(0 14px 20px color-mix(in srgb, var(--accent-2), transparent 58%))
+  filter: saturate(1.08) drop-shadow(0 14px 20px color-mix(in srgb, var(--accent-2), transparent 58%))
     drop-shadow(0 2px 0 rgba(255, 255, 255, 0.38));
   transform: translateY(-3px) scale(1.04);
 }
@@ -5261,15 +5347,16 @@ select {
   border-radius: 8px;
   color: var(--text);
   text-align: left;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 58%),
-    var(--panel-strong);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 58%), var(--panel-strong);
   box-shadow: var(--shadow);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transform: translateX(-50%) translateY(6px);
-  transition: opacity 0.16s ease, visibility 0.16s ease, transform 0.16s ease;
+  transition:
+    opacity 0.16s ease,
+    visibility 0.16s ease,
+    transform 0.16s ease;
   z-index: 100;
 }
 
@@ -5365,11 +5452,7 @@ select {
 
 .macbook-mini.asset-macbook:not(.complete) .mac-art-part {
   opacity: 0.58;
-  filter:
-    grayscale(0.18)
-    saturate(0.96)
-    opacity(0.98)
-    drop-shadow(0 5px 8px rgba(31, 34, 33, 0.09));
+  filter: grayscale(0.18) saturate(0.96) opacity(0.98) drop-shadow(0 5px 8px rgba(31, 34, 33, 0.09));
 }
 
 .macbook-mini.asset-macbook:not(.complete) .mac-art-part.on {
@@ -5433,9 +5516,7 @@ select {
   to {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
-    filter:
-      drop-shadow(0 22px 24px rgba(31, 34, 33, 0.22))
-      drop-shadow(0 2px 0 rgba(255, 255, 255, 0.35));
+    filter: drop-shadow(0 22px 24px rgba(31, 34, 33, 0.22)) drop-shadow(0 2px 0 rgba(255, 255, 255, 0.35));
   }
 }
 
@@ -5511,9 +5592,7 @@ select {
 
 .part-grid button.unlocked {
   border-color: color-mix(in srgb, var(--good), transparent 55%);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--good), transparent 76%), transparent),
-    var(--surface);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--good), transparent 76%), transparent), var(--surface);
 }
 
 .part-grid span,
@@ -5585,8 +5664,7 @@ select {
   border: 1px solid var(--line);
   border-radius: 8px;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--accent-3), transparent 86%), transparent),
-    var(--surface);
+    linear-gradient(145deg, color-mix(in srgb, var(--accent-3), transparent 86%), transparent), var(--surface);
 }
 
 .wish-object span {
@@ -5603,8 +5681,11 @@ select {
 .wish-object span.on {
   border-style: solid;
   border-color: color-mix(in srgb, var(--accent), transparent 40%);
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--accent), white 24%), color-mix(in srgb, var(--accent-3), transparent 18%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent), white 24%),
+    color-mix(in srgb, var(--accent-3), transparent 18%)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
@@ -5705,9 +5786,7 @@ select {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(150deg, rgba(255, 255, 255, 0.08), transparent 56%),
-    var(--surface);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.08), transparent 56%), var(--surface);
 }
 
 .product-card {
@@ -5720,8 +5799,7 @@ select {
   overflow: hidden;
   background:
     radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--accent-2), transparent 74%), transparent 32%),
-    linear-gradient(150deg, rgba(255, 255, 255, 0.12), transparent 56%),
-    var(--surface);
+    linear-gradient(150deg, rgba(255, 255, 255, 0.12), transparent 56%), var(--surface);
 }
 
 .product-card.physical::after {
@@ -5743,8 +5821,11 @@ select {
   height: 46px;
   place-items: center;
   border-radius: 16px 16px 16px 6px;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--accent-2), transparent 62%), color-mix(in srgb, var(--accent), transparent 72%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent-2), transparent 62%),
+    color-mix(in srgb, var(--accent), transparent 72%)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
   font-size: 25px;
 }
@@ -5772,8 +5853,7 @@ select {
   border: 1px solid color-mix(in srgb, var(--accent), transparent 68%);
   border-radius: 8px;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--accent), transparent 90%), transparent 70%),
-    var(--surface);
+    linear-gradient(145deg, color-mix(in srgb, var(--accent), transparent 90%), transparent 70%), var(--surface);
 }
 
 .earned-goods-zone header {
@@ -5938,8 +6018,7 @@ select {
   border-color: color-mix(in srgb, var(--accent), transparent 58%);
   background:
     radial-gradient(circle at 96% 8%, color-mix(in srgb, var(--accent-2), transparent 74%), transparent 30%),
-    linear-gradient(145deg, color-mix(in srgb, var(--accent), transparent 88%), transparent 72%),
-    var(--surface);
+    linear-gradient(145deg, color-mix(in srgb, var(--accent), transparent 88%), transparent 72%), var(--surface);
 }
 
 .inventory-earned-zone header {
@@ -6102,7 +6181,11 @@ select {
   border-radius: 8px;
   background:
     radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.58), transparent 52%),
-    linear-gradient(145deg, color-mix(in srgb, var(--accent), white 76%), color-mix(in srgb, var(--accent-2), white 74%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--accent), white 76%),
+      color-mix(in srgb, var(--accent-2), white 74%)
+    );
 }
 
 .shop-card-visual .product-icon {
@@ -6158,11 +6241,19 @@ select {
   white-space: nowrap;
   font-size: 12px;
   font-weight: 900;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent), white 10%), color-mix(in srgb, var(--accent), black 8%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent), white 10%),
+    color-mix(in srgb, var(--accent), black 8%)
+  );
 }
 
 .price-badge.rage {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2), white 8%), color-mix(in srgb, var(--accent-2), black 10%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-2), white 8%),
+    color-mix(in srgb, var(--accent-2), black 10%)
+  );
 }
 
 .shop-card-body p {
@@ -6215,8 +6306,11 @@ select {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--panel-strong), white 10%), color-mix(in srgb, var(--surface), white 4%));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--panel-strong), white 10%),
+    color-mix(in srgb, var(--surface), white 4%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.25),
     0 12px 24px rgba(66, 47, 28, 0.07);
@@ -6247,8 +6341,11 @@ select {
   border-radius: 10px;
   color: var(--text);
   text-align: left;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-strong), white 6%), color-mix(in srgb, var(--panel-strong), transparent 22%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel-strong), white 6%),
+    color-mix(in srgb, var(--panel-strong), transparent 22%)
+  );
   transition:
     transform 0.16s ease,
     border-color 0.16s ease,
@@ -6264,19 +6361,28 @@ select {
   bottom: 14px;
   width: 4px;
   border-radius: 999px;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--accent), white 28%), color-mix(in srgb, var(--accent-2), white 10%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent), white 28%),
+    color-mix(in srgb, var(--accent-2), white 10%)
+  );
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
 .supply-hub-tabs button:nth-child(2)::before {
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--accent-3), white 18%), color-mix(in srgb, var(--accent), white 4%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent-3), white 18%),
+    color-mix(in srgb, var(--accent), white 4%)
+  );
 }
 
 .supply-hub-tabs button:nth-child(3)::before {
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--surface), var(--accent) 18%), color-mix(in srgb, var(--panel-strong), var(--accent-2) 16%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--surface), var(--accent) 18%),
+    color-mix(in srgb, var(--panel-strong), var(--accent-2) 16%)
+  );
 }
 
 .supply-hub-tabs button:hover {
@@ -6288,14 +6394,16 @@ select {
 .supply-hub-tabs button.active {
   color: #fff8e9;
   border-color: color-mix(in srgb, var(--accent), black 8%);
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--accent), white 8%), color-mix(in srgb, var(--accent), black 12%));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent), white 8%),
+    color-mix(in srgb, var(--accent), black 12%)
+  );
   box-shadow: 0 10px 18px color-mix(in srgb, var(--accent), transparent 78%);
 }
 
 .supply-hub-tabs button.active::before {
-  background:
-    linear-gradient(145deg, #f3d487, #c57a35);
+  background: linear-gradient(145deg, #f3d487, #c57a35);
 }
 
 .supply-hub-tabs strong,
@@ -6363,7 +6471,11 @@ select {
   border-radius: 14px;
   background:
     radial-gradient(circle at 94% 10%, rgba(255, 255, 255, 0.58), transparent 28%),
-    linear-gradient(145deg, color-mix(in srgb, var(--panel-strong), white 9%), color-mix(in srgb, var(--surface), white 1%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--panel-strong), white 9%),
+      color-mix(in srgb, var(--surface), white 1%)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
     0 10px 18px rgba(66, 47, 28, 0.06);
@@ -6591,7 +6703,11 @@ select {
   border-radius: 10px;
   background:
     radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.62), transparent 50%),
-    linear-gradient(145deg, color-mix(in srgb, var(--accent), white 78%), color-mix(in srgb, var(--accent-2), white 76%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--accent), white 78%),
+      color-mix(in srgb, var(--accent-2), white 76%)
+    );
 }
 
 .wish-shop-visual {
@@ -6753,7 +6869,10 @@ select {
   opacity: 0;
   pointer-events: none;
   transform: translateY(8px);
-  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease,
+    visibility 0.16s ease;
   visibility: hidden;
 }
 
@@ -6961,7 +7080,11 @@ select {
 .supply-shop-card footer button {
   color: #fff8e9;
   border-color: color-mix(in srgb, var(--accent-2), black 5%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2), white 7%), color-mix(in srgb, var(--accent-2), black 10%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-2), white 7%),
+    color-mix(in srgb, var(--accent-2), black 10%)
+  );
 }
 
 .inventory-slot-grid {
@@ -7147,7 +7270,11 @@ select {
 .realized-in-workbench .realized-card {
   background:
     radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--accent), transparent 80%), transparent 34%),
-    linear-gradient(145deg, color-mix(in srgb, var(--panel-strong), white 4%), color-mix(in srgb, var(--surface), white 2%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--panel-strong), white 4%),
+      color-mix(in srgb, var(--surface), white 2%)
+    );
 }
 
 .realized-card {
@@ -7208,8 +7335,11 @@ select {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--panel-strong), white 4%), color-mix(in srgb, var(--surface), white 2%));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--panel-strong), white 4%),
+    color-mix(in srgb, var(--surface), white 2%)
+  );
   box-shadow: 0 28px 72px rgba(0, 0, 0, 0.32);
 }
 
@@ -7398,8 +7528,16 @@ select {
   border: 1px solid color-mix(in srgb, var(--accent), transparent 74%);
   border-radius: 16px;
   background:
-    radial-gradient(circle at 32% 24%, color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 58%), transparent 34%),
-    linear-gradient(160deg, color-mix(in srgb, var(--panel-strong), white 3%), color-mix(in srgb, var(--surface), white 2%));
+    radial-gradient(
+      circle at 32% 24%,
+      color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 58%),
+      transparent 34%
+    ),
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--panel-strong), white 3%),
+      color-mix(in srgb, var(--surface), white 2%)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     0 18px 32px color-mix(in srgb, var(--accent), transparent 90%);
@@ -7415,7 +7553,11 @@ select {
   border-radius: 14px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 34%),
-    radial-gradient(ellipse at 50% 72%, color-mix(in srgb, var(--pet-body, var(--accent-2)), transparent 62%), transparent 42%),
+    radial-gradient(
+      ellipse at 50% 72%,
+      color-mix(in srgb, var(--pet-body, var(--accent-2)), transparent 62%),
+      transparent 42%
+    ),
     linear-gradient(180deg, #fff9e7 0%, #dfcab0 56%, #78b8a8 57%, #4c8d7f 100%);
 }
 
@@ -7497,8 +7639,11 @@ select {
   z-index: 1;
   height: 44px;
   border-radius: 14px 14px 22px 22px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-2), white 26%), color-mix(in srgb, var(--accent-2), black 8%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-2), white 26%),
+    color-mix(in srgb, var(--accent-2), black 8%)
+  );
   box-shadow: 0 16px 18px rgba(67, 45, 24, 0.16);
 }
 
@@ -7549,9 +7694,7 @@ select {
   padding: 12px;
   border: 1px solid color-mix(in srgb, var(--accent), transparent 70%);
   border-radius: 14px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.42), transparent 60%),
-    rgba(255, 250, 235, 0.86);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.42), transparent 60%), rgba(255, 250, 235, 0.86);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
   backdrop-filter: blur(16px) saturate(1.08);
 }
@@ -7656,7 +7799,9 @@ select {
   opacity: 0;
   pointer-events: none;
   transform: translateY(4px);
-  transition: opacity 0.14s ease, transform 0.14s ease;
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
 }
 
 .pet-attribute-row:hover > small,
@@ -7719,9 +7864,7 @@ select {
 .pet-refine-body textarea {
   min-height: 112px;
   border-radius: 12px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.48), transparent 54%),
-    var(--field);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.48), transparent 54%), var(--field);
 }
 
 .refine-meter {
@@ -7849,7 +7992,9 @@ select {
 }
 
 .pet-screen-redesign {
-  --pet-ui-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --pet-ui-font:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei",
+    sans-serif;
   gap: 12px;
   font-family: var(--pet-ui-font);
 }
@@ -7876,7 +8021,11 @@ select {
   background:
     radial-gradient(circle at 55% 16%, color-mix(in srgb, var(--accent-2), transparent 82%), transparent 24%),
     linear-gradient(115deg, rgba(255, 255, 255, 0.56), transparent 38%),
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-strong), white 3%), color-mix(in srgb, var(--surface), white 5%));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--panel-strong), white 3%),
+      color-mix(in srgb, var(--surface), white 5%)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.56),
     0 22px 44px rgba(46, 51, 31, 0.12);
@@ -7984,7 +8133,11 @@ select {
   padding: 10px;
   border-radius: 10px;
   background:
-    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 72%), transparent 36%),
+    radial-gradient(
+      circle at 8% 12%,
+      color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 72%),
+      transparent 36%
+    ),
     color-mix(in srgb, var(--field), var(--accent) 3%);
 }
 
@@ -8044,7 +8197,11 @@ select {
   border-radius: 18px;
   isolation: isolate;
   background:
-    radial-gradient(ellipse at 50% 72%, color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 52%), transparent 38%),
+    radial-gradient(
+      ellipse at 50% 72%,
+      color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 52%),
+      transparent 38%
+    ),
     #f4e8d2;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
@@ -8087,8 +8244,7 @@ select {
   z-index: 0;
   height: 22%;
   border-radius: 50%;
-  background:
-    radial-gradient(ellipse, rgba(31, 55, 47, 0.28) 0 22%, rgba(31, 55, 47, 0.13) 48%, transparent 74%);
+  background: radial-gradient(ellipse, rgba(31, 55, 47, 0.28) 0 22%, rgba(31, 55, 47, 0.13) 48%, transparent 74%);
   filter: blur(5px);
   transform: scaleX(1.18);
 }
@@ -8099,7 +8255,12 @@ select {
   inset: 16% 18% 18%;
   z-index: 3;
   border-radius: 50%;
-  background: radial-gradient(ellipse at 46% 38%, rgba(255, 239, 196, 0.18), rgba(70, 128, 106, 0.08) 54%, transparent 72%);
+  background: radial-gradient(
+    ellipse at 46% 38%,
+    rgba(255, 239, 196, 0.18),
+    rgba(70, 128, 106, 0.08) 54%,
+    transparent 72%
+  );
   filter: blur(10px);
   mix-blend-mode: screen;
   opacity: 0.38;
@@ -8129,11 +8290,8 @@ select {
   --pet-size: clamp(84px, 6vw, 103px);
   z-index: 2;
   margin-top: 0;
-  filter:
-    drop-shadow(0 11px 12px rgba(38, 59, 49, 0.24))
-    drop-shadow(0 1px 3px rgba(255, 239, 190, 0.24))
-    saturate(0.96)
-    sepia(0.05);
+  filter: drop-shadow(0 11px 12px rgba(38, 59, 49, 0.24)) drop-shadow(0 1px 3px rgba(255, 239, 190, 0.24))
+    saturate(0.96) sepia(0.05);
   animation-duration: 4.8s;
 }
 
@@ -8457,8 +8615,16 @@ select {
   place-items: center;
   border-radius: 26px 26px 26px 10px;
   background:
-    radial-gradient(circle at 50% 56%, color-mix(in srgb, var(--pet-glow, var(--accent)), transparent 70%), transparent 58%),
-    linear-gradient(145deg, color-mix(in srgb, var(--pet-body, var(--accent)), transparent 52%), color-mix(in srgb, var(--pet-accent, var(--accent-2)), transparent 76%)),
+    radial-gradient(
+      circle at 50% 56%,
+      color-mix(in srgb, var(--pet-glow, var(--accent)), transparent 70%),
+      transparent 58%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--pet-body, var(--accent)), transparent 52%),
+      color-mix(in srgb, var(--pet-accent, var(--accent-2)), transparent 76%)
+    ),
     var(--surface);
   box-shadow:
     inset 0 3px 0 rgba(255, 255, 255, 0.18),
@@ -8498,7 +8664,11 @@ select {
   border: 1px solid var(--line);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--pet-glow, var(--accent)), transparent 78%), transparent 46%),
+    radial-gradient(
+      circle at 50% 18%,
+      color-mix(in srgb, var(--pet-glow, var(--accent)), transparent 78%),
+      transparent 46%
+    ),
     color-mix(in srgb, var(--panel-strong), transparent 10%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
@@ -8513,7 +8683,11 @@ select {
   background:
     linear-gradient(110deg, rgba(255, 255, 255, 0.5) 0 10%, transparent 10% 100%),
     radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.3), transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--pet-body, var(--accent)), white 48%), color-mix(in srgb, var(--pet-shadow, var(--accent)), transparent 16%));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pet-body, var(--accent)), white 48%),
+      color-mix(in srgb, var(--pet-shadow, var(--accent)), transparent 16%)
+    );
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--pet-glow, var(--accent)), transparent 58%),
     inset 0 18px 24px rgba(255, 255, 255, 0.18),
@@ -8557,7 +8731,11 @@ select {
   border-radius: inherit;
   background:
     radial-gradient(circle at 50% 0, rgba(255, 255, 255, 0.38), transparent 28%),
-    linear-gradient(180deg, color-mix(in srgb, var(--pet-glow, var(--accent)), white 5%), color-mix(in srgb, var(--pet-accent, var(--accent-2)), black 3%));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pet-glow, var(--accent)), white 5%),
+      color-mix(in srgb, var(--pet-accent, var(--accent-2)), black 3%)
+    );
   box-shadow:
     0 -8px 24px color-mix(in srgb, var(--pet-glow, var(--accent)), transparent 58%),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
@@ -8579,7 +8757,9 @@ select {
   height: 5px;
   border-radius: 99px;
   background: color-mix(in srgb, var(--muted), transparent 76%);
-  transition: transform 0.18s ease, background 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
 }
 
 .evolution-markers span.active {
@@ -8621,9 +8801,7 @@ select {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 58%),
-    var(--panel);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 58%), var(--panel);
 }
 
 .pet-vital-card span {
@@ -8786,9 +8964,7 @@ select {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(150deg, rgba(255, 255, 255, 0.08), transparent 56%),
-    var(--surface);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.08), transparent 56%), var(--surface);
 }
 
 .stage-grid article.current {
@@ -8836,7 +9012,11 @@ select {
   border-radius: 8px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--accent-3), transparent 86%), transparent 48%),
-    linear-gradient(140deg, color-mix(in srgb, var(--accent), white 72%), color-mix(in srgb, var(--accent-2), white 68%));
+    linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--accent), white 72%),
+      color-mix(in srgb, var(--accent-2), white 68%)
+    );
   box-shadow:
     inset 0 3px 0 rgba(255, 255, 255, 0.32),
     0 18px 30px color-mix(in srgb, var(--accent), transparent 84%);
@@ -8881,8 +9061,20 @@ select {
   height: 48px;
   border-radius: 8px 8px 4px 4px;
   background:
-    linear-gradient(90deg, transparent 0 16px, color-mix(in srgb, var(--accent), transparent 78%) 16px 18px, transparent 18px),
-    linear-gradient(180deg, transparent 0 12px, rgba(0, 0, 0, 0.08) 12px 13px, transparent 13px 24px, rgba(0, 0, 0, 0.08) 24px 25px, transparent 25px),
+    linear-gradient(
+      90deg,
+      transparent 0 16px,
+      color-mix(in srgb, var(--accent), transparent 78%) 16px 18px,
+      transparent 18px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 12px,
+      rgba(0, 0, 0, 0.08) 12px 13px,
+      transparent 13px 24px,
+      rgba(0, 0, 0, 0.08) 24px 25px,
+      transparent 25px
+    ),
     #fff8e8;
   box-shadow:
     inset 0 0 0 1px rgba(58, 45, 32, 0.1),
@@ -8898,7 +9090,11 @@ select {
   border-radius: 8px 8px 12px 12px;
   background:
     radial-gradient(circle at 50% 75%, color-mix(in srgb, var(--accent-2), white 18%) 0 5px, transparent 6px),
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-3), white 28%) 0 44%, color-mix(in srgb, var(--accent-3), transparent 10%) 45% 100%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-3), white 28%) 0 44%,
+      color-mix(in srgb, var(--accent-3), transparent 10%) 45% 100%
+    );
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.28),
     0 11px 15px rgba(45, 35, 24, 0.16);
@@ -8920,7 +9116,11 @@ select {
   width: 28px;
   height: 22px;
   border-radius: 6px 6px 10px 10px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2), white 12%), color-mix(in srgb, var(--accent-2), black 6%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-2), white 12%),
+    color-mix(in srgb, var(--accent-2), black 6%)
+  );
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.3),
     0 8px 12px rgba(65, 38, 18, 0.18);
@@ -9184,7 +9384,10 @@ select {
   color: var(--text);
   background: var(--field);
   text-align: left;
-  transition: border-color 0.16s, background 0.16s, transform 0.16s;
+  transition:
+    border-color 0.16s,
+    background 0.16s,
+    transform 0.16s;
 }
 
 .profile-switch-button:hover {
@@ -9347,9 +9550,7 @@ select {
   border-radius: 8px;
   color: var(--text);
   text-align: left;
-  background:
-    linear-gradient(150deg, rgba(255, 255, 255, 0.08), transparent 54%),
-    var(--surface);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.08), transparent 54%), var(--surface);
 }
 
 .pet-style-switcher button.active {
@@ -9454,7 +9655,9 @@ select {
   cursor: grab;
   user-select: none;
   -webkit-user-drag: none;
-  transition: filter 0.3s, transform 0.15s;
+  transition:
+    filter 0.3s,
+    transform 0.15s;
   will-change: filter, transform;
   backface-visibility: hidden;
   transform: translateZ(0);
@@ -9667,7 +9870,14 @@ select {
   border: 1px solid color-mix(in srgb, var(--hammer-stroke), transparent 20%);
   border-radius: 999px;
   background:
-    linear-gradient(90deg, transparent 0 25%, rgba(255, 255, 255, 0.34) 26% 37%, transparent 38% 62%, rgba(0, 0, 0, 0.12) 63% 74%, transparent 75%),
+    linear-gradient(
+      90deg,
+      transparent 0 25%,
+      rgba(255, 255, 255, 0.34) 26% 37%,
+      transparent 38% 62%,
+      rgba(0, 0, 0, 0.12) 63% 74%,
+      transparent 75%
+    ),
     linear-gradient(180deg, color-mix(in srgb, var(--hammer-band), white 12%), var(--hammer-band));
   transform: rotate(0deg);
   transform-origin: 0 50%;
@@ -9682,7 +9892,14 @@ select {
   border: 1.5px solid var(--hammer-charm-stroke);
   border-radius: 6px;
   background:
-    linear-gradient(90deg, transparent 37%, rgba(111, 47, 35, 0.34) 38% 44%, transparent 45% 57%, rgba(111, 47, 35, 0.34) 58% 64%, transparent 65%),
+    linear-gradient(
+      90deg,
+      transparent 37%,
+      rgba(111, 47, 35, 0.34) 38% 44%,
+      transparent 45% 57%,
+      rgba(111, 47, 35, 0.34) 58% 64%,
+      transparent 65%
+    ),
     linear-gradient(180deg, #fff6ce, var(--hammer-charm));
   box-shadow: 0 3px 0 rgba(54, 30, 16, 0.18);
   transform: rotate(16deg);
@@ -10005,8 +10222,7 @@ select {
   height: 22px;
   border-radius: 4px;
   background:
-    radial-gradient(circle at 50% 28%, #d9a33c 0 18%, transparent 19%),
-    linear-gradient(180deg, #fff8dc, #e1c072);
+    radial-gradient(circle at 50% 28%, #d9a33c 0 18%, transparent 19%), linear-gradient(180deg, #fff8dc, #e1c072);
 }
 
 .app-root[data-pet-style] .pet-hammer-visual {
@@ -10098,7 +10314,9 @@ select {
   border-radius: 8px;
   color: var(--text);
   background: var(--panel-strong);
-  box-shadow: var(--shadow), 0 0 0 1px rgba(255, 244, 223, 0.12);
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px rgba(255, 244, 223, 0.12);
   text-align: center;
   transform: translateX(-50%);
   transform-origin: 50% 100%;
@@ -10330,7 +10548,9 @@ select {
   border-radius: 12px;
   color: var(--text);
   background: var(--panel-strong);
-  box-shadow: var(--shadow), 0 0 0 1px rgba(255, 244, 223, 0.12);
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px rgba(255, 244, 223, 0.12);
   font-size: 13px;
   line-height: 1.55;
   text-align: left;
@@ -10433,9 +10653,7 @@ select {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(155deg, color-mix(in srgb, var(--accent-2), transparent 84%), transparent),
-    var(--panel);
+  background: linear-gradient(155deg, color-mix(in srgb, var(--accent-2), transparent 84%), transparent), var(--panel);
   box-shadow: var(--shadow);
 }
 
@@ -10457,8 +10675,7 @@ select {
   height: 148px;
   place-items: center;
   border-radius: 28px 28px 28px 10px;
-  background:
-    radial-gradient(circle at 50% 54%, color-mix(in srgb, var(--accent), transparent 80%), transparent 70%);
+  background: radial-gradient(circle at 50% 54%, color-mix(in srgb, var(--accent), transparent 80%), transparent 70%);
   box-shadow: 0 18px 48px color-mix(in srgb, var(--accent), transparent 70%);
 }
 
@@ -10541,25 +10758,33 @@ select {
 
 .onboarding-layer {
   z-index: 30;
+  padding: 14px;
   background: rgba(22, 28, 24, 0.56);
+  -webkit-app-region: no-drag;
 }
 
 .onboarding-modal {
-  width: min(920px, 100%);
-  max-height: min(760px, calc(100vh - 40px));
+  width: min(820px, calc(100vw - 28px));
+  max-height: calc(100vh - 28px);
+  box-sizing: border-box;
   display: grid;
-  gap: 16px;
-  padding: 18px;
-  overflow: auto;
+  gap: 10px;
+  padding: 14px;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel-strong);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28);
+  -webkit-app-region: no-drag;
+}
+
+.onboarding-modal * {
+  -webkit-app-region: no-drag;
 }
 
 .onboarding-modal > header {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .onboarding-modal h2,
@@ -10568,38 +10793,40 @@ select {
 }
 
 .onboarding-modal h2 {
-  font-size: clamp(24px, 3vw, 34px);
+  font-size: clamp(22px, 2.4vw, 30px);
   letter-spacing: 0;
 }
 
 .onboarding-modal p {
   color: var(--muted);
-  line-height: 1.65;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .onboarding-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
-  gap: 14px;
+  grid-template-columns: minmax(244px, 0.78fr) minmax(0, 1.22fr);
+  gap: 12px;
   align-items: start;
 }
 
 .onboarding-form,
 .onboarding-wishes {
   min-width: 0;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
 }
 
 .onboarding-form {
+  gap: 8px;
   grid-template-columns: 1fr;
 }
 
 .onboarding-wishes {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .onboarding-wishes header,
@@ -10611,7 +10838,7 @@ select {
 }
 
 .onboarding-wishes header strong {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .onboarding-wishes header span,
@@ -10622,17 +10849,17 @@ select {
 
 .onboarding-wish-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .onboarding-wish-grid button {
   min-width: 0;
-  min-height: 132px;
+  min-height: 112px;
   display: grid;
-  grid-template-rows: minmax(68px, 1fr) auto auto;
-  gap: 6px;
-  padding: 10px;
+  grid-template-rows: minmax(54px, 1fr) auto auto;
+  gap: 5px;
+  padding: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--text);
@@ -10647,12 +10874,13 @@ select {
 
 .onboarding-wish-grid img {
   width: 100%;
-  height: 68px;
+  height: 54px;
   object-fit: contain;
 }
 
 .onboarding-wish-grid span {
   overflow: hidden;
+  font-size: 14px;
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -10660,10 +10888,31 @@ select {
 
 .onboarding-wish-grid small {
   color: var(--muted);
+  font-size: 12px;
+}
+
+.onboarding-wish-pager {
+  display: grid;
+  grid-template-columns: minmax(74px, 1fr) auto minmax(74px, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.onboarding-wish-pager .secondary-button {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.onboarding-wish-pager span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .onboarding-modal footer {
-  min-height: 44px;
+  min-height: 40px;
   padding-top: 2px;
 }
 
@@ -10673,9 +10922,21 @@ select {
   opacity: 0.55;
 }
 
+.onboarding-form input {
+  min-height: 34px;
+}
+
+.number-field,
+.number-field input {
+  cursor: text;
+}
+
 @media (max-width: 760px) {
-  .onboarding-grid,
-  .onboarding-wish-grid {
+  .onboarding-modal {
+    overflow: auto;
+  }
+
+  .onboarding-grid {
     grid-template-columns: 1fr;
   }
 
@@ -10691,9 +10952,7 @@ select {
 }
 
 .wish-assembly-layer {
-  background:
-    radial-gradient(circle at 50% 42%, rgba(255, 216, 118, 0.24), transparent 34%),
-    rgba(5, 8, 7, 0.66);
+  background: radial-gradient(circle at 50% 42%, rgba(255, 216, 118, 0.24), transparent 34%), rgba(5, 8, 7, 0.66);
 }
 
 .wish-assembly-modal {
@@ -10706,9 +10965,7 @@ select {
   border: 1px solid rgba(255, 246, 210, 0.32);
   border-radius: 8px;
   color: var(--text);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 58%),
-    var(--panel-strong);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 58%), var(--panel-strong);
   box-shadow:
     0 30px 80px rgba(0, 0, 0, 0.32),
     0 0 42px color-mix(in srgb, var(--accent-2), transparent 64%);
@@ -10879,8 +11136,7 @@ select {
   border: 1px solid var(--line);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-3), transparent 82%), transparent),
-    var(--surface);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-3), transparent 82%), transparent), var(--surface);
 }
 
 .runner-track {
@@ -11836,8 +12092,17 @@ select {
   border: 1px solid color-mix(in srgb, var(--accent), transparent 60%);
   border-radius: 18px;
   background:
-    radial-gradient(circle at 22% 0, color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 68%), transparent 34%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 248, 226, 0.54) 46%, color-mix(in srgb, var(--accent), transparent 92%)),
+    radial-gradient(
+      circle at 22% 0,
+      color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 68%),
+      transparent 34%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 248, 226, 0.54) 46%,
+      color-mix(in srgb, var(--accent), transparent 92%)
+    ),
     color-mix(in srgb, var(--panel-strong), transparent 10%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
@@ -11895,7 +12160,11 @@ select {
   border-radius: 14px;
   color: #fff8e8;
   background:
-    radial-gradient(circle at 8% 0, color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 72%), transparent 36%),
+    radial-gradient(
+      circle at 8% 0,
+      color-mix(in srgb, var(--pet-glow, var(--accent-2)), transparent 72%),
+      transparent 36%
+    ),
     linear-gradient(145deg, color-mix(in srgb, var(--accent), black 10%), color-mix(in srgb, var(--accent), black 32%));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
@@ -12502,8 +12771,7 @@ select {
   inset: auto 20% 12%;
   z-index: 1;
   height: 36px;
-  background:
-    radial-gradient(ellipse, rgba(114, 151, 69, 0.46), rgba(114, 151, 69, 0.16) 48%, transparent 72%);
+  background: radial-gradient(ellipse, rgba(114, 151, 69, 0.46), rgba(114, 151, 69, 0.16) 48%, transparent 72%);
   filter: blur(6px);
 }
 
@@ -12512,7 +12780,10 @@ select {
     radial-gradient(circle at 33% 23%, rgba(188, 205, 67, 0.3) 0 2px, transparent 3px),
     radial-gradient(circle at 72% 30%, rgba(153, 185, 71, 0.28) 0 3px, transparent 4px),
     radial-gradient(circle at 82% 64%, rgba(239, 176, 61, 0.24) 0 2px, transparent 3px);
-  background-size: 128px 110px, 152px 120px, 116px 96px;
+  background-size:
+    128px 110px,
+    152px 120px,
+    116px 96px;
   mix-blend-mode: normal;
   opacity: 0.72;
 }
@@ -12578,7 +12849,10 @@ select {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.92),
     0 8px 14px rgba(97, 111, 65, 0.08);
-  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .pet-care-actions button:hover {

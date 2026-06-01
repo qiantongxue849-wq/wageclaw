@@ -94,7 +94,9 @@ const actionSheetUrl = computed(() => {
   if (props.action === "idle") return "";
   return petActionSheets[activeStyle.value]?.[props.action] || "";
 });
-const renderedAction = computed<PetMotionAction>(() => (actionSheetUrl.value && !actionLoadFailed.value ? props.action : "idle"));
+const renderedAction = computed<PetMotionAction>(() =>
+  actionSheetUrl.value && !actionLoadFailed.value ? props.action : "idle"
+);
 const spriteClass = computed(() => [
   `stage-${props.stage.level}`,
   `mode-${props.mode}`,
@@ -116,7 +118,9 @@ const styleVars = computed(
       "--pet-action-row-position": `${Math.max(0, props.stage.level - 1) * (100 / 9)}%`
     }) as CSSProperties
 );
-const actionRenderKey = computed(() => `${renderedAction.value}-${activeStyle.value}-${props.stage.level}-${props.motionKey}`);
+const actionRenderKey = computed(
+  () => `${renderedAction.value}-${activeStyle.value}-${props.stage.level}-${props.motionKey}`
+);
 
 watch(
   () => [props.action, props.stage.id, activeStyle.value],
@@ -131,34 +135,47 @@ function markActionLoadFailed() {
 </script>
 
 <template>
-  <span class="pet-sprite" :class="spriteClass" :style="styleVars" :aria-label="`${stage.name}：${stage.visual}`" role="img">
+  <span
+    class="pet-sprite"
+    :class="spriteClass"
+    :style="styleVars"
+    :aria-label="`${stage.name}：${stage.visual}`"
+    role="img"
+  >
     <template v-if="renderedAction !== 'idle'">
-      <img class="pet-action-probe" :src="actionSheetUrl" alt="" aria-hidden="true" draggable="false" @error="markActionLoadFailed" />
-      <span :key="actionRenderKey" class="pet-action-art" aria-hidden="true"></span>
+      <img
+        class="pet-action-probe"
+        :src="actionSheetUrl"
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+        @error="markActionLoadFailed"
+      />
+      <span :key="actionRenderKey" class="pet-action-art" aria-hidden="true" />
     </template>
     <template v-else-if="sheetUrl">
-      <span class="pet-sheet-art" aria-hidden="true"></span>
+      <span class="pet-sheet-art" aria-hidden="true" />
     </template>
     <img v-else-if="artUrl" class="pet-art" :src="artUrl" :alt="stage.name" draggable="false" />
     <template v-else>
-      <span class="pet-orbit pet-orbit-a"></span>
-      <span class="pet-orbit pet-orbit-b"></span>
-      <span class="pet-tail"></span>
-      <span class="pet-horn pet-horn-left"></span>
-      <span class="pet-horn pet-horn-right"></span>
-      <span class="pet-crown"></span>
+      <span class="pet-orbit pet-orbit-a" />
+      <span class="pet-orbit pet-orbit-b" />
+      <span class="pet-tail" />
+      <span class="pet-horn pet-horn-left" />
+      <span class="pet-horn pet-horn-right" />
+      <span class="pet-crown" />
       <span class="pet-body">
-        <span class="pet-core"></span>
-        <span class="pet-eye pet-eye-left"></span>
-        <span class="pet-eye pet-eye-right"></span>
-        <span class="pet-mouth"></span>
+        <span class="pet-core" />
+        <span class="pet-eye pet-eye-left" />
+        <span class="pet-eye pet-eye-right" />
+        <span class="pet-mouth" />
         <span class="pet-sigil">{{ stage.sigil }}</span>
       </span>
-      <span class="pet-claw pet-claw-left"></span>
-      <span class="pet-claw pet-claw-right"></span>
-      <span class="pet-shard pet-shard-a"></span>
-      <span class="pet-shard pet-shard-b"></span>
-      <span class="pet-shard pet-shard-c"></span>
+      <span class="pet-claw pet-claw-left" />
+      <span class="pet-claw pet-claw-right" />
+      <span class="pet-shard pet-shard-a" />
+      <span class="pet-shard pet-shard-b" />
+      <span class="pet-shard pet-shard-c" />
     </template>
   </span>
 </template>
@@ -257,7 +274,12 @@ function markActionLoadFailed() {
   background:
     radial-gradient(circle at 52% 66%, var(--pet-belly) 0 18%, transparent 19%),
     radial-gradient(circle at 34% 23%, rgba(255, 255, 255, 0.34) 0 8%, transparent 9%),
-    linear-gradient(145deg, color-mix(in srgb, var(--pet-body), white 14%), var(--pet-body) 54%, color-mix(in srgb, var(--pet-shadow), var(--pet-body) 46%));
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--pet-body), white 14%),
+      var(--pet-body) 54%,
+      color-mix(in srgb, var(--pet-shadow), var(--pet-body) 46%)
+    );
   box-shadow:
     inset 0 8px 12px rgba(255, 255, 255, 0.15),
     inset 0 -14px 24px color-mix(in srgb, var(--pet-shadow), transparent 46%),
@@ -503,8 +525,7 @@ function markActionLoadFailed() {
   height: 27%;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
   border-radius: 0;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--pet-accent), white 18%) 0 42%, var(--pet-body) 42% 100%);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--pet-accent), white 18%) 0 42%, var(--pet-body) 42% 100%);
   opacity: 1;
 }
 
@@ -547,7 +568,11 @@ function markActionLoadFailed() {
   width: 18%;
   height: 32%;
   border-radius: 80% 20% 70% 30% / 70% 28% 72% 30%;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--pet-body), white 8%), color-mix(in srgb, var(--pet-shadow), var(--pet-body) 42%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pet-body), white 8%),
+    color-mix(in srgb, var(--pet-shadow), var(--pet-body) 42%)
+  );
   opacity: 1;
 }
 
