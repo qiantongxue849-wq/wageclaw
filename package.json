@@ -34,6 +34,7 @@
       "buildResources": "electron/assets",
       "output": "release"
     },
+    "afterPack": "electron/after-pack.cjs",
     "files": [
       "electron/**/*",
       "dist/**/*",
@@ -50,11 +51,14 @@
       "target": [
         "nsis"
       ],
-      "icon": "electron/assets/app-icon.ico"
+      "icon": "electron/assets/app-icon.ico",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "electron/assets/app-icon.ico",
+      "uninstallerIcon": "electron/assets/app-icon.ico"
     }
   },
   "repository": {

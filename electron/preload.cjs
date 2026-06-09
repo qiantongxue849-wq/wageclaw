@@ -14,9 +14,9 @@ contextBridge.exposeInMainWorld("wageclawDesktop", {
   petNuke: () => ipcRenderer.invoke("wageclaw:pet-nuke"),
   petResize: (width, height) => ipcRenderer.invoke("wageclaw:pet-resize", { width, height }),
   showPet: () => ipcRenderer.invoke("wageclaw:show-pet"),
-  petDragStart: () => {},
-  petDragMove: (dx, dy) => ipcRenderer.send("wageclaw:pet-drag", { dx, dy }),
-  petDragEnd: () => {},
+  petDragStart: (screenX, screenY) => ipcRenderer.send("wageclaw:pet-drag-start", { screenX, screenY }),
+  petDragMove: (screenX, screenY) => ipcRenderer.send("wageclaw:pet-drag", { screenX, screenY }),
+  petDragEnd: () => ipcRenderer.send("wageclaw:pet-drag-end"),
   petHitTest: (interactive) => ipcRenderer.send("wageclaw:pet-hit-test", Boolean(interactive)),
   onNavigate: (callback) => {
     const listener = (_, payload) => callback(payload);
@@ -27,5 +27,10 @@ contextBridge.exposeInMainWorld("wageclawDesktop", {
     const listener = (_, payload) => callback(payload);
     ipcRenderer.on("wageclaw:pet-command", listener);
     return () => ipcRenderer.removeListener("wageclaw:pet-command", listener);
+  },
+  onMainVisibility: (callback) => {
+    const listener = (_, payload) => callback(payload);
+    ipcRenderer.on("wageclaw:main-visibility", listener);
+    return () => ipcRenderer.removeListener("wageclaw:main-visibility", listener);
   }
 });

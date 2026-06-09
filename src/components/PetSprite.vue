@@ -25,13 +25,14 @@ import lazyDogPlayAction from "@/assets/pet-actions/lazyDog-play.webp";
 import lazyDogSleepAction from "@/assets/pet-actions/lazyDog-sleep.webp";
 import honestCowPlayAction from "@/assets/pet-actions/honestCow-play.webp";
 import honestCowSleepAction from "@/assets/pet-actions/honestCow-sleep.webp";
-import type { PetStage, PetStyle } from "@/types";
+import type { PetAscensionView, PetStage, PetStyle } from "@/types";
 
 type PetMotionAction = "idle" | "play" | "sleep";
 
 const props = withDefaults(
   defineProps<{
     stage: PetStage;
+    ascension?: PetAscensionView;
     mode?: "mini" | "compact" | "hero";
     action?: PetMotionAction;
     motionKey?: number;
@@ -88,6 +89,9 @@ const petActionSheets: Record<PetStyle, Record<Exclude<PetMotionAction, "idle">,
 
 const actionLoadFailed = ref(false);
 const activeStyle = computed(() => props.stage.style || "rageBlob");
+const ascensionActive = computed(() => Boolean(props.ascension?.active));
+const ascensionProgress = computed(() => (ascensionActive.value ? props.ascension?.progress || 0 : 0));
+const ascensionTone = computed(() => (ascensionActive.value ? Math.max(1, Math.min(6, Math.round(props.ascension?.tone || 1))) : 0));
 const sheetUrl = computed(() => petSheets[props.stage.style || "rageBlob"]);
 const artUrl = computed(() => (sheetUrl.value ? "" : petArt[props.stage.id]));
 const actionSheetUrl = computed(() => {
@@ -99,7 +103,9 @@ const spriteClass = computed(() => [
   `stage-${props.stage.level}`,
   `mode-${props.mode}`,
   `pet-style-${activeStyle.value}`,
-  `pet-action-${renderedAction.value}`
+  `pet-action-${renderedAction.value}`,
+  ascensionActive.value ? "pet-ascended" : "",
+  ascensionActive.value ? `pet-ascension-tone-${ascensionTone.value}` : ""
 ]);
 const styleVars = computed(
   () =>
@@ -113,7 +119,13 @@ const styleVars = computed(
       "--pet-sheet": sheetUrl.value ? `url(${sheetUrl.value})` : "none",
       "--pet-position": `${Math.max(0, props.stage.level - 1) * (100 / 9)}%`,
       "--pet-action-sheet": actionSheetUrl.value ? `url(${actionSheetUrl.value})` : "none",
-      "--pet-action-row-position": `${Math.max(0, props.stage.level - 1) * (100 / 9)}%`
+      "--pet-action-row-position": `${Math.max(0, props.stage.level - 1) * (100 / 9)}%`,
+      "--pet-ascension-progress": String(ascensionProgress.value),
+      "--pet-ascension-hue": `${ascensionActive.value ? (ascensionTone.value - 1) * 46 + Math.round(ascensionProgress.value * 30) : 0}deg`,
+      "--pet-ascension-boost": String(ascensionActive.value ? 0.2 + ascensionProgress.value * 0.55 : 0),
+      "--pet-ascension-brightness": String(ascensionActive.value ? 1.04 + ascensionProgress.value * 0.16 : 1),
+      "--pet-ascension-ring-opacity": String(ascensionActive.value ? 0.28 + ascensionProgress.value * 0.42 : 0),
+      "--pet-ascension-core-opacity": String(ascensionActive.value ? 0.22 + ascensionProgress.value * 0.35 : 0)
     }) as CSSProperties
 );
 const actionRenderKey = computed(() => `${renderedAction.value}-${activeStyle.value}-${props.stage.level}-${props.motionKey}`);
@@ -181,6 +193,8 @@ function markActionLoadFailed() {
   display: block;
   width: 100%;
   height: 100%;
+  position: relative;
+  z-index: 2;
   object-fit: contain;
   pointer-events: none;
   user-select: none;
@@ -191,6 +205,8 @@ function markActionLoadFailed() {
   display: block;
   width: 100%;
   height: 100%;
+  position: relative;
+  z-index: 2;
   background-image: var(--pet-sheet);
   background-position: var(--pet-position) center;
   background-repeat: no-repeat;
@@ -217,6 +233,8 @@ function markActionLoadFailed() {
   display: block;
   width: 100%;
   height: 100%;
+  position: relative;
+  z-index: 2;
   background-image: var(--pet-action-sheet);
   background-position: 0 var(--pet-action-row-position);
   background-repeat: no-repeat;
@@ -451,6 +469,50 @@ function markActionLoadFailed() {
   inset: 2% 12%;
   border-color: color-mix(in srgb, var(--pet-accent), transparent 40%);
   transform: rotate(32deg);
+}
+
+.pet-ascended {
+  filter:
+    drop-shadow(0 18px 24px color-mix(in srgb, var(--pet-shadow), transparent 52%))
+    drop-shadow(0 0 22px color-mix(in srgb, var(--pet-glow), transparent 54%));
+}
+
+.pet-ascended::before,
+.pet-ascended::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.pet-ascended::before {
+  inset: -8%;
+  z-index: 0;
+  border: 1px solid color-mix(in srgb, var(--pet-glow), white 12%);
+  background:
+    conic-gradient(from 90deg, transparent, color-mix(in srgb, var(--pet-glow), white 18%), transparent 42%, color-mix(in srgb, var(--pet-accent), white 8%), transparent 76%),
+    radial-gradient(circle, transparent 52%, color-mix(in srgb, var(--pet-glow), transparent 70%) 53%, transparent 67%);
+  opacity: var(--pet-ascension-ring-opacity);
+  animation: pet-ascension-spin 8.5s linear infinite;
+}
+
+.pet-ascended::after {
+  inset: 3%;
+  z-index: 1;
+  border: 1px solid color-mix(in srgb, var(--pet-belly), transparent 36%);
+  box-shadow:
+    0 0 22px color-mix(in srgb, var(--pet-glow), transparent 56%),
+    inset 0 0 18px color-mix(in srgb, var(--pet-accent), transparent 70%);
+  opacity: var(--pet-ascension-core-opacity);
+}
+
+.pet-ascended .pet-art,
+.pet-ascended .pet-sheet-art,
+.pet-ascended .pet-action-art {
+  filter:
+    hue-rotate(var(--pet-ascension-hue))
+    saturate(calc(1 + var(--pet-ascension-boost)))
+    brightness(var(--pet-ascension-brightness));
 }
 
 .pet-style-capybaraZen .pet-body {
@@ -704,6 +766,12 @@ function markActionLoadFailed() {
 @keyframes pet-orbit-spin {
   to {
     transform: rotate(342deg);
+  }
+}
+
+@keyframes pet-ascension-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

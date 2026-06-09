@@ -15,6 +15,7 @@ import {
   transactionCategories,
   workEvents
 } from "@/data/catalog";
+import { getPetAscensionView } from "@/composables/petAscension";
 import type {
   CountMode,
   Currency,
@@ -35,7 +36,8 @@ import type {
   WorkEventEffect
 } from "@/types";
 
-const STORAGE_KEY = "wageclaw-state-v3";
+export const STORAGE_KEY = "wageclaw-state-v3";
+const STATE_SAVE_THROTTLE_MS = 4000;
 const PAGE_SIZE = 10;
 const MALL_PAGE_SIZE = 9;
 const legacyIphone16PartIds = ["iphone_frame", "iphone_screen", "iphone_battery", "iphone_camera", "iphone_chip", "iphone_storage"];
@@ -103,7 +105,7 @@ function getCurrentMonthKey(date = new Date()) {
   return `${year}-${month}`;
 }
 
-function createDefaultState(): WageClawState {
+export function createDefaultState(): WageClawState {
   return {
     nickname: "工位逃兵",
     onboardingDone: false,
@@ -168,7 +170,7 @@ function createDefaultState(): WageClawState {
   };
 }
 
-function createFirstRunState(): WageClawState {
+export function createFirstRunState(): WageClawState {
   const state = createDefaultState();
   state.transactions = [];
   state.pawLedger = [];
@@ -177,7 +179,7 @@ function createFirstRunState(): WageClawState {
   return state;
 }
 
-function sanitizeState(input: unknown): WageClawState {
+export function sanitizeState(input: unknown): WageClawState {
   const base = createDefaultState();
   if (!input || typeof input !== "object") return createFirstRunState();
   const stored = input as Partial<WageClawState>;
@@ -305,7 +307,7 @@ function normalizeEarnedGood(item: Partial<EarnedGood>): EarnedGood {
   };
 }
 
-function loadState() {
+export function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return sanitizeState(raw ? JSON.parse(raw) : null);
@@ -556,6 +558,8 @@ export function useWageClaw() {
   let petReactionTimer: number | undefined;
   let petReactionToken = 0;
   let syncingFromStorage = false;
+  let saveTimer: number | undefined;
+  let lastSaveAt = 0;
   let bridgeCleanup: Array<() => void> = [];
 
   const duel = reactive({
@@ -669,14 +673,15 @@ export function useWageClaw() {
     return [...activePetStages.value].reverse().find((stage) => state.pet.growth >= stage.threshold) || activePetStages.value[0];
   });
   const nextPetStage = computed(() => activePetStages.value.find((stage) => stage.threshold > state.pet.growth) || null);
-  const petGrowthGoal = computed(() => Math.round(nextPetStage.value?.threshold || Math.max(currentPetStage.value.threshold, state.pet.growth, 1)));
+  const petAscension = computed(() => getPetAscensionView(state.pet.growth, currentPetStage.value, nextPetStage.value));
+  const petGrowthGoal = computed(() => Math.round(nextPetStage.value?.threshold || petAscension.value.nextThreshold));
   const petProgress = computed(() => {
     const next = nextPetStage.value;
-    if (!next) return 1;
+    if (!next) return petAscension.value.progress;
     const current = currentPetStage.value;
     return clamp((state.pet.growth - current.threshold) / Math.max(1, next.threshold - current.threshold), 0, 1);
   });
-  const petManaMax = computed(() => 60 + currentPetStage.value.level * 12 + state.pet.manaBonus);
+  const petManaMax = computed(() => 60 + currentPetStage.value.level * 12 + state.pet.manaBonus + Math.min(72, petAscension.value.completedTier * 6));
   const petEnergyMax = computed(() => Math.max(1, Math.round(petManaMax.value)));
   const petAffinity = computed(() => {
     const diff = state.pet.light - state.pet.rage * 0.28;
@@ -736,12 +741,12 @@ export function useWageClaw() {
       key: "growth",
       label: "成长值",
       icon: "⭐",
-      value: Math.round(state.pet.growth),
-      max: petGrowthGoal.value,
-      percent: percentOf(state.pet.growth, petGrowthGoal.value),
+      value: petAscension.value.active ? petAscension.value.progressGrowth : Math.round(state.pet.growth),
+      max: petAscension.value.active ? petAscension.value.cycle : petGrowthGoal.value,
+      percent: petAscension.value.active ? Math.round(petAscension.value.progress * 100) : percentOf(state.pet.growth, petGrowthGoal.value),
       color: "#e7a84c"
     }
-  ]);
+  ].map((row) => row.key === "growth" && petAscension.value.active ? { ...row, label: petAscension.value.label, icon: "✦" } : row));
   const petPressureLabel = computed(() => {
     const bp = state.pet.bloodPressure;
     if (bp >= 160) return { label: "高压警报", color: "#d44a4a" };
@@ -751,7 +756,10 @@ export function useWageClaw() {
     if (bp >= 90) return { label: "正常", color: "#56b886" };
     return { label: "偏低", color: "#5b93c8" };
   });
-  const petStageLore = computed(() => currentPetStage.value.features.join(" · "));
+  const petStageLore = computed(() => {
+    const lore = currentPetStage.value.features.join(" · ");
+    return petAscension.value.active ? `${lore} · ${petAscension.value.title}` : lore;
+  });
   const activeWorkEvent = computed(() => workEvents.find((event) => event.id === state.activeWorkEventId) || null);
   const pawTodayEarned = computed(() => {
     const ledger = state.dailyPaw;
@@ -860,14 +868,28 @@ export function useWageClaw() {
   });
   const appStartedAt = Date.now();
 
-  watch(
-    state,
-    () => {
-      if (syncingFromStorage) return;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    },
-    { deep: true }
-  );
+  function saveStateNow() {
+    if (syncingFromStorage) return;
+    if (saveTimer) {
+      window.clearTimeout(saveTimer);
+      saveTimer = undefined;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    lastSaveAt = Date.now();
+  }
+
+  function scheduleStateSave() {
+    if (syncingFromStorage) return;
+    const elapsed = Date.now() - lastSaveAt;
+    if (elapsed >= STATE_SAVE_THROTTLE_MS) {
+      saveStateNow();
+      return;
+    }
+    if (saveTimer) return;
+    saveTimer = window.setTimeout(saveStateNow, STATE_SAVE_THROTTLE_MS - elapsed);
+  }
+
+  watch(state, scheduleStateSave, { deep: true });
 
   function syncStateFromStorage() {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -882,6 +904,7 @@ export function useWageClaw() {
 
   onMounted(() => {
     window.addEventListener("storage", syncStateFromStorage);
+    window.addEventListener("beforeunload", saveStateNow);
     if (viewMode === "float") {
       document.documentElement.style.cssText = "margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;";
       document.body.style.cssText = "margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;";
@@ -912,7 +935,9 @@ export function useWageClaw() {
   });
 
   onUnmounted(() => {
+    saveStateNow();
     if (tickTimer) window.clearInterval(tickTimer);
+    if (saveTimer) window.clearTimeout(saveTimer);
     if (notifyTimer) window.clearTimeout(notifyTimer);
     if (blackoutTimer) window.clearTimeout(blackoutTimer);
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
@@ -923,6 +948,7 @@ export function useWageClaw() {
     window.removeEventListener("keydown", handleGlobalKeydown);
     window.removeEventListener("keyup", handleGlobalKeyup);
     window.removeEventListener("storage", syncStateFromStorage);
+    window.removeEventListener("beforeunload", saveStateNow);
     window.removeEventListener("mousemove", handleFloatHitTest);
     window.removeEventListener("mouseleave", handleFloatMouseLeave);
     bridgeCleanup.forEach((cleanup) => cleanup());
@@ -1022,13 +1048,22 @@ export function useWageClaw() {
   }
 
   function petStageStyle(stage = currentPetStage.value) {
+    const ascension = petAscension.value;
+    const useAscension = ascension.active && stage.id === currentPetStage.value.id;
+    const ascensionProgress = useAscension ? ascension.progress : 0;
     return {
       "--pet-body": stage.palette.body,
       "--pet-belly": stage.palette.belly,
       "--pet-accent": stage.palette.accent,
       "--pet-glow": stage.palette.glow,
       "--pet-eye": stage.palette.eye,
-      "--pet-shadow": stage.palette.shadow
+      "--pet-shadow": stage.palette.shadow,
+      "--pet-ascension-progress": String(ascensionProgress),
+      "--pet-ascension-tier": String(useAscension ? ascension.tier : 0),
+      "--pet-ascension-tone": String(useAscension ? ascension.tone : 0),
+      "--pet-ascension-hue": `${useAscension ? (ascension.tone - 1) * 46 + Math.round(ascensionProgress * 30) : 0}deg`,
+      "--pet-ascension-boost": String(useAscension ? 0.2 + ascensionProgress * 0.55 : 0),
+      "--pet-ascension-brightness": String(useAscension ? 1.04 + ascensionProgress * 0.16 : 1)
     } as CSSProperties;
   }
 
@@ -1915,7 +1950,7 @@ export function useWageClaw() {
     petDragStart.screenX = e.screenX;
     petDragStart.screenY = e.screenY;
     if (viewMode === "float") {
-      window.wageclawDesktop?.petDragStart();
+      window.wageclawDesktop?.petDragStart(e.screenX, e.screenY);
     }
     window.addEventListener("mousemove", onWindowPetMove);
     window.addEventListener("mouseup", onWindowPetUp);
@@ -1923,10 +1958,10 @@ export function useWageClaw() {
 
   function onWindowPetMove(e: MouseEvent) {
     if (!petDragging.value) return;
-    const dragDelta = trackPetShake(e);
+    trackPetShake(e);
     if (!petShake.modePickerReady && didShakePet()) armPetShakeModePicker();
     if (viewMode === "float") {
-      window.wageclawDesktop?.petDragMove(dragDelta.dx, dragDelta.dy);
+      window.wageclawDesktop?.petDragMove(e.screenX, e.screenY);
       return;
     }
     petPos.x = e.clientX - petDragOffset.x;
@@ -2653,6 +2688,7 @@ export function useWageClaw() {
     daysNeeded,
     currentPetStage,
     nextPetStage,
+    petAscension,
     petProgress,
     petManaMax,
     petEnergyMax,

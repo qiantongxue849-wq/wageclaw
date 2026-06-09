@@ -12,6 +12,12 @@ import headerProgressArt from "@/assets/ui-art/header-progress.png";
 import headerSettingsArt from "@/assets/ui-art/header-settings.png";
 import headerSupplyArt from "@/assets/ui-art/header-supply.png";
 import headerPetArt from "@/assets/ui-art/header-pet.png";
+import settingsAppearanceIcon from "@/assets/settings-icons/settings-appearance.png";
+import settingsDataIcon from "@/assets/settings-icons/settings-data.png";
+import settingsPawIcon from "@/assets/settings-icons/settings-paw.png";
+import settingsProfileIcon from "@/assets/settings-icons/settings-profile.png";
+import settingsResetIcon from "@/assets/settings-icons/settings-reset.png";
+import settingsWalletIcon from "@/assets/settings-icons/settings-wallet.png";
 import profileArcadeArt from "@/assets/profile-avatars/profile-arcade.png";
 import profileCitrusArt from "@/assets/profile-avatars/profile-citrus.png";
 import profileForestArt from "@/assets/profile-avatars/profile-forest.png";
@@ -125,6 +131,34 @@ const wc = reactive(useWageClaw());
 const ledgerDialogOpen = ref(false);
 const ledgerMode = ref<"wallet" | "paw">("wallet");
 const realizedDialogOpen = ref(false);
+const appIconUrl = new URL("../electron/assets/app-icon.png", import.meta.url).href;
+const ONBOARDING_WISHES_PER_PAGE = 4;
+const onboardingWishPage = ref(0);
+const onboardingWishTotalPages = computed(() =>
+  Math.max(1, Math.ceil(wc.wishShopItems.length / ONBOARDING_WISHES_PER_PAGE))
+);
+const onboardingWishCurrentPage = computed(() =>
+  Math.min(onboardingWishPage.value, onboardingWishTotalPages.value - 1)
+);
+const onboardingWishPageItems = computed(() => {
+  const start = onboardingWishCurrentPage.value * ONBOARDING_WISHES_PER_PAGE;
+  return wc.wishShopItems.slice(start, start + ONBOARDING_WISHES_PER_PAGE);
+});
+
+function changeOnboardingWishPage(delta: number) {
+  onboardingWishPage.value = Math.min(
+    onboardingWishTotalPages.value - 1,
+    Math.max(0, onboardingWishCurrentPage.value + delta)
+  );
+}
+
+function focusNumberField(event: Event) {
+  const host = event.currentTarget as HTMLElement | null;
+  const input = host instanceof HTMLInputElement
+    ? host
+    : host?.querySelector<HTMLInputElement>('input[type="number"]');
+  input?.focus({ preventScroll: true });
+}
 
 function openTimeFieldPicker(event: Event) {
   const host = event.currentTarget as HTMLElement | null;
@@ -391,7 +425,7 @@ function wishTooltipClass(partId: string) {
   };
 }
 
-const themeEntries = computed(() => Object.entries(wc.themeLabels));
+const themeEntries = computed(() => Object.entries(wc.themeLabels) as Array<[Theme, string]>);
 const petStyleEntries = computed(() => Object.entries(wc.petStyleLabels) as Array<[PetStyle, string]>);
 const modeEntries = computed(() => Object.entries(wc.modeLabels));
 const touchEntries = computed(() => Object.entries(petTouchProfiles));
@@ -454,7 +488,7 @@ const petStylePreview = {
 const petStatusBadges = computed(() => {
   const calm = wc.state.pet.bloodPressure < 130 ? "血压稳定" : "需要降压";
   const mood = wc.state.pet.affection >= 60 ? "无忧无虑" : wc.state.pet.touchMood;
-  return [calm, wc.petAffinity.label, mood];
+  return [wc.petAscension.active ? wc.petAscension.label : calm, wc.petAffinity.label, mood];
 });
 const petMotionAction = computed(() => (wc.petReaction === "play" || wc.petReaction === "sleep" ? wc.petReaction : "idle"));
 const homePetSupplyPicker = ref<"food" | "medicine" | null>(null);
@@ -642,7 +676,7 @@ function closeLedgerDialog() {
           <span class="pet-impact-chip pet-impact-chip-b"></span>
           <span class="pet-impact-chip pet-impact-chip-c"></span>
         </span>
-        <PetSprite :stage="wc.currentPetStage" mode="compact" :action="petMotionAction" :motion-key="wc.petMotionKey" />
+        <PetSprite :stage="wc.currentPetStage" :ascension="wc.petAscension" mode="compact" :action="petMotionAction" :motion-key="wc.petMotionKey" />
       </div>
     </template>
 
@@ -653,7 +687,7 @@ function closeLedgerDialog() {
     <section v-if="wc.viewMode === 'pet'" class="summoned-pet embedded">
       <div class="pet-bubble" v-if="wc.summonedBubble">{{ wc.summonedBubble }}</div>
       <button type="button" class="pet-avatar-button" @click="wc.handlePetTouch('head')" @dblclick="wc.openScreenFromPet('pet')">
-        <PetSprite :stage="wc.currentPetStage" :mode="wc.viewMode === 'pet' ? 'hero' : 'compact'" :action="petMotionAction" :motion-key="wc.petMotionKey" />
+        <PetSprite :stage="wc.currentPetStage" :ascension="wc.petAscension" :mode="wc.viewMode === 'pet' ? 'hero' : 'compact'" :action="petMotionAction" :motion-key="wc.petMotionKey" />
       </button>
       <div class="pet-identity">
         <strong>{{ wc.currentPetStage.name }} Lv.{{ wc.currentPetStage.level }}</strong>
@@ -696,10 +730,10 @@ function closeLedgerDialog() {
             </header>
             <div class="onboarding-grid">
               <section class="onboarding-form form-grid settings-form-grid">
-                <label>月薪<input v-model.number="wc.state.salary" type="number" min="1" placeholder="例如 12000" /></label>
-                <label class="time-field" @pointerdown="openTimeFieldPicker">上班时间<input v-model="wc.state.startTime" type="time" /></label>
-                <label class="time-field" @pointerdown="openTimeFieldPicker">下班时间<input v-model="wc.state.endTime" type="time" /></label>
-                <label>发薪日<input v-model.number="wc.state.payday" type="number" min="1" max="31" /></label>
+                <label class="number-field" @pointerdown.stop="focusNumberField">月薪<input v-model.number="wc.state.salary" type="number" min="1" placeholder="例如 12000" /></label>
+                <label class="time-field" @pointerdown.stop="openTimeFieldPicker">上班时间<input v-model="wc.state.startTime" type="time" /></label>
+                <label class="time-field" @pointerdown.stop="openTimeFieldPicker">下班时间<input v-model="wc.state.endTime" type="time" /></label>
+                <label class="number-field" @pointerdown.stop="focusNumberField">发薪日<input v-model.number="wc.state.payday" type="number" min="1" max="31" /></label>
               </section>
               <section class="onboarding-wishes" aria-label="选择心愿">
                 <header>
@@ -708,7 +742,7 @@ function closeLedgerDialog() {
                 </header>
                 <div class="onboarding-wish-grid">
                   <button
-                    v-for="item in wc.wishShopItems"
+                    v-for="item in onboardingWishPageItems"
                     :key="`onboarding-wish-${item.id}`"
                     type="button"
                     :class="{ active: wc.state.activeWishId === item.id }"
@@ -718,6 +752,11 @@ function closeLedgerDialog() {
                     <span>{{ item.name }}</span>
                     <small>{{ wc.formatMoney(item.price, 0) }}</small>
                   </button>
+                </div>
+                <div class="onboarding-wish-pager" aria-label="心愿分页">
+                  <button type="button" class="secondary-button" :disabled="onboardingWishCurrentPage === 0" @click="changeOnboardingWishPage(-1)">上一页</button>
+                  <span>{{ onboardingWishCurrentPage + 1 }} / {{ onboardingWishTotalPages }}</span>
+                  <button type="button" class="secondary-button" :disabled="onboardingWishCurrentPage >= onboardingWishTotalPages - 1" @click="changeOnboardingWishPage(1)">下一页</button>
                 </div>
               </section>
             </div>
@@ -733,11 +772,7 @@ function closeLedgerDialog() {
         <aside class="sidebar">
           <div class="brand-block">
             <span class="brand-mark" aria-hidden="true">
-              <i class="paw-pad"></i>
-              <i class="paw-toe toe-a"></i>
-              <i class="paw-toe toe-b"></i>
-              <i class="paw-toe toe-c"></i>
-              <i class="paw-toe toe-d"></i>
+              <img :src="appIconUrl" alt="" draggable="false" />
             </span>
             <div>
               <strong>忍了吧</strong>
@@ -881,7 +916,10 @@ function closeLedgerDialog() {
                 <header class="home-pet-status-head">
                   <div>
                     <span>桌宠属性</span>
-                    <h2>{{ wc.currentPetStage.name }} Lv.{{ wc.currentPetStage.level }}</h2>
+                    <h2>
+                      {{ wc.currentPetStage.name }} Lv.{{ wc.currentPetStage.level }}
+                      <small v-if="wc.petAscension.active">{{ wc.petAscension.label }}</small>
+                    </h2>
                   </div>
                   <button type="button" class="home-pet-summon-chip" @click="wc.setPetSummoned()">
                     {{ wc.state.pet.summoned ? "已在桌面" : "召唤" }}
@@ -891,8 +929,8 @@ function closeLedgerDialog() {
                 <div class="home-pet-status-body">
                   <section class="home-pet-portrait" :class="wc.petReaction" aria-label="当前桌宠形象">
                     <div class="home-pet-portrait-glow" aria-hidden="true"></div>
-                    <PetSprite :stage="wc.currentPetStage" mode="hero" :action="petMotionAction" :motion-key="wc.petMotionKey" />
-                    <small>{{ wc.currentPetStage.title }}</small>
+                    <PetSprite :stage="wc.currentPetStage" :ascension="wc.petAscension" mode="hero" :action="petMotionAction" :motion-key="wc.petMotionKey" />
+                    <small>{{ wc.petAscension.active ? wc.petAscension.title : wc.currentPetStage.title }}</small>
                     <div class="home-pet-status-orbit" aria-label="桌宠状态">
                       <span v-for="badge in petStatusBadges" :key="`home-pet-badge-${badge}`">{{ badge }}</span>
                     </div>
@@ -1354,7 +1392,10 @@ function closeLedgerDialog() {
               <header class="home-pet-status-head">
                 <div>
                   <span>桌宠属性</span>
-                  <h2>{{ wc.currentPetStage.name }} Lv.{{ wc.currentPetStage.level }}</h2>
+                  <h2>
+                    {{ wc.currentPetStage.name }} Lv.{{ wc.currentPetStage.level }}
+                    <small v-if="wc.petAscension.active">{{ wc.petAscension.label }}</small>
+                  </h2>
                 </div>
                 <button type="button" class="home-pet-summon-chip" @click="wc.setPetSummoned()">
                   {{ wc.state.pet.summoned ? "已在桌面" : "召唤" }}
@@ -1364,8 +1405,8 @@ function closeLedgerDialog() {
               <div class="home-pet-status-body">
                 <section class="home-pet-portrait" :class="wc.petReaction" aria-label="当前桌宠形象">
                   <div class="home-pet-portrait-glow" aria-hidden="true"></div>
-                  <PetSprite :stage="wc.currentPetStage" mode="hero" :action="petMotionAction" :motion-key="wc.petMotionKey" />
-                  <small>{{ wc.currentPetStage.title }}</small>
+                  <PetSprite :stage="wc.currentPetStage" :ascension="wc.petAscension" mode="hero" :action="petMotionAction" :motion-key="wc.petMotionKey" />
+                  <small>{{ wc.petAscension.active ? wc.petAscension.title : wc.currentPetStage.title }}</small>
                   <div class="home-pet-status-orbit" aria-label="桌宠状态">
                     <span v-for="badge in petStatusBadges" :key="`pet-page-badge-${badge}`">{{ badge }}</span>
                   </div>
@@ -1472,6 +1513,55 @@ function closeLedgerDialog() {
               </article>
 
             </section>
+
+            <article class="panel-block pet-evolution-preview" :style="wc.petStageStyle()" aria-label="当前桌宠 1 到 10 级进化预览">
+              <header class="pet-evolution-preview-head">
+                <div>
+                  <span class="eyebrow">进化图鉴</span>
+                  <h3>{{ wc.petStyleLabels[wc.state.petStyle] }} 1-10 级形象</h3>
+                </div>
+                <div class="pet-evolution-preview-tools">
+                  <label>
+                    <span>形象</span>
+                    <select v-model="wc.state.petStyle" aria-label="切换桌宠形象">
+                      <option v-for="[key, label] in petStyleEntries" :key="`pet-preview-style-${key}`" :value="key">
+                        {{ label }}
+                      </option>
+                    </select>
+                  </label>
+                  <strong>当前 Lv.{{ wc.currentPetStage.level }}</strong>
+                </div>
+              </header>
+              <div class="pet-evolution-strip">
+                <article
+                  v-for="stage in wc.petStages"
+                  :key="`pet-evolution-preview-${stage.id}`"
+                  class="pet-evolution-tile"
+                  :class="{ current: wc.currentPetStage.id === stage.id, unlocked: wc.state.pet.growth >= stage.threshold }"
+                  :style="wc.petStageStyle(stage)"
+                  :aria-current="wc.currentPetStage.id === stage.id ? 'step' : undefined"
+                >
+                  <span class="pet-evolution-level">Lv.{{ stage.level }}</span>
+                  <div class="pet-evolution-art">
+                    <PetSprite :stage="stage" :ascension="wc.currentPetStage.id === stage.id ? wc.petAscension : undefined" mode="mini" />
+                  </div>
+                  <strong>{{ stage.name }}</strong>
+                  <small>{{ wc.state.pet.growth >= stage.threshold ? "已解锁" : `${stage.threshold} 成长` }}</small>
+                </article>
+              </div>
+              <div v-if="wc.petAscension.active" class="pet-ascension-panel" :style="wc.petStageStyle()">
+                <div>
+                  <span>顶阶星阶</span>
+                  <strong>{{ wc.petAscension.nextLabel }}</strong>
+                  <small>继续炼化怨气，给满级形象叠加新的灵纹、光环和能量上限。</small>
+                </div>
+                <div class="pet-ascension-meter">
+                  <em>{{ wc.petAscension.progressGrowth }} / {{ wc.petAscension.cycle }}</em>
+                  <i><b :style="{ width: `${Math.round(wc.petAscension.progress * 100)}%` }"></b></i>
+                  <span>还差 {{ wc.petAscension.remaining }} 成长</span>
+                </div>
+              </div>
+            </article>
           </section>
 
           <section v-if="false" class="screen-grid">
@@ -1528,7 +1618,7 @@ function closeLedgerDialog() {
               <div class="pet-aura" :style="wc.petStageStyle()" aria-hidden="true">
                 <div class="evolution-vessel">
                   <i><b :style="{ height: `${wc.petProgress * 100}%` }"></b></i>
-                  <PetSprite :stage="wc.currentPetStage" mode="mini" />
+                  <PetSprite :stage="wc.currentPetStage" :ascension="wc.petAscension" mode="mini" />
                 </div>
                 <div class="pet-tooltips" v-if="wc.state.pet.summoned">
                   <span class="pet-tip" :style="{ color: wc.petSatietyLabel.color }">{{ wc.petSatietyLabel.label }}</span>
@@ -1699,7 +1789,7 @@ function closeLedgerDialog() {
                   :key="stage.id"
                   :class="{ current: wc.currentPetStage.id === stage.id, locked: wc.state.pet.growth < stage.threshold }"
                 >
-                  <PetSprite :stage="stage" mode="mini" />
+                  <PetSprite :stage="stage" :ascension="wc.currentPetStage.id === stage.id ? wc.petAscension : undefined" mode="mini" />
                   <strong>Lv.{{ stage.level }} {{ stage.name }}</strong>
                   <small>{{ stage.title }}</small>
                   <p>{{ stage.visual }}</p>
@@ -1764,112 +1854,243 @@ function closeLedgerDialog() {
             </section>
           </section>
 
-          <section v-show="wc.activeScreen === 'settings'" class="screen-grid">
-            <article class="hero-panel compact">
-              <div>
+          <section v-show="wc.activeScreen === 'settings'" class="screen-grid settings-screen">
+            <article class="settings-hero-panel">
+              <div class="settings-hero-copy">
                 <span class="eyebrow">基础设置</span>
-                <h2>{{ wc.state.nickname }}</h2>
-                <p>{{ wc.themeLabels[wc.state.theme] }} · {{ wc.petStyleLabels[wc.state.petStyle] }} · {{ wc.modeLabels[wc.state.countMode] }} · {{ wc.state.startTime }} - {{ wc.state.endTime }}</p>
+                <h2>工位调校台</h2>
+                <p>把工资、作息、主题和本地数据调成自己的节奏，别让应用反过来消耗你。</p>
+              </div>
+              <div class="settings-hero-profile">
+                <img :src="profileAvatar.image" :alt="profileAvatar.title" draggable="false" />
+                <div>
+                  <span>{{ wc.state.nickname }}</span>
+                  <strong>{{ profileAvatar.status }}</strong>
+                </div>
+              </div>
+              <div class="settings-quick-grid" aria-label="当前设置摘要">
+                <article>
+                  <span>工作节奏</span>
+                  <strong>{{ wc.state.startTime }} - {{ wc.state.endTime }}</strong>
+                </article>
+                <article>
+                  <span>计时口径</span>
+                  <strong>{{ wc.modeLabels[wc.state.countMode] }}</strong>
+                </article>
+                <article>
+                  <span>钱包余额</span>
+                  <strong>{{ wc.formatBalance(wc.walletCoins, 2) }}</strong>
+                </article>
+                <article>
+                  <span>爪币库存</span>
+                  <strong>{{ wc.formatPawCoins(wc.state.pawBalance) }}</strong>
+                </article>
               </div>
             </article>
-            <div class="segmented wide-tabs">
-              <button type="button" :class="{ active: wc.settingsTab === 'profile' }" @click="wc.settingsTab = 'profile'">资料</button>
-              <button type="button" :class="{ active: wc.settingsTab === 'appearance' }" @click="wc.settingsTab = 'appearance'">外观</button>
-              <button type="button" :class="{ active: wc.settingsTab === 'data' }" @click="wc.settingsTab = 'data'">数据</button>
+
+            <div class="segmented wide-tabs settings-tabs" aria-label="设置分组">
+              <button type="button" :class="{ active: wc.settingsTab === 'profile' }" @click="wc.settingsTab = 'profile'">
+                <span class="settings-tab-icon" aria-hidden="true">
+                  <img :src="settingsProfileIcon" alt="" draggable="false" />
+                </span>
+                <span>资料</span>
+                <small>工资与作息</small>
+              </button>
+              <button type="button" :class="{ active: wc.settingsTab === 'appearance' }" @click="wc.settingsTab = 'appearance'">
+                <span class="settings-tab-icon" aria-hidden="true">
+                  <img :src="settingsAppearanceIcon" alt="" draggable="false" />
+                </span>
+                <span>外观</span>
+                <small>主题与桌宠</small>
+              </button>
+              <button type="button" :class="{ active: wc.settingsTab === 'data' }" @click="wc.settingsTab = 'data'">
+                <span class="settings-tab-icon" aria-hidden="true">
+                  <img :src="settingsDataIcon" alt="" draggable="false" />
+                </span>
+                <span>数据</span>
+                <small>余额与重置</small>
+              </button>
             </div>
-            <article v-show="wc.settingsTab === 'profile'" class="panel-block profile-layout-panel">
-              <div class="profile-settings-column form-grid settings-form-grid settings-profile-grid">
-                <label>称呼<input v-model="wc.state.nickname" type="text" /></label>
-                <label>月薪<input v-model.number="wc.state.salary" type="number" min="1" /></label>
-                <label>倒计时口径
-                  <select v-model="wc.state.countMode">
-                    <option v-for="[key, label] in modeEntries" :key="key" :value="key">{{ label }}</option>
-                  </select>
-                </label>
-                <label>今日被折磨分钟<input v-model.number="wc.state.rageMinutes" type="number" min="0" /></label>
-                <label class="time-field" @pointerdown="openTimeFieldPicker">上班时间<input v-model="wc.state.startTime" type="time" /></label>
-                <label class="time-field" @pointerdown="openTimeFieldPicker">下班时间<input v-model="wc.state.endTime" type="time" /></label>
-                <label>发薪日<input v-model.number="wc.state.payday" type="number" min="1" max="31" /></label>
-                <button
-                  type="button"
-                  class="profile-switch-button"
-                  :class="{ active: wc.state.privacyMode }"
-                  :aria-pressed="wc.state.privacyMode"
-                  @click="wc.state.privacyMode = !wc.state.privacyMode"
-                >
-                  <span>
-                    <strong>薪资隐私</strong>
-                    <small>{{ wc.state.privacyMode ? '已隐藏具体数额' : '公开显示' }}</small>
-                  </span>
-                  <span class="switch-track" :class="{ on: wc.state.privacyMode }">
-                    <span class="switch-knob"></span>
-                  </span>
-                </button>
+
+            <article v-show="wc.settingsTab === 'profile'" class="panel-block profile-layout-panel settings-profile-panel">
+              <div class="profile-settings-column">
+                <header class="settings-panel-head">
+                  <div>
+                    <span>个人资料</span>
+                    <h3>工资、作息、发薪日</h3>
+                  </div>
+                  <strong>{{ wc.state.privacyMode ? '隐私模式已开' : '金额公开显示' }}</strong>
+                </header>
+                <div class="form-grid settings-form-grid settings-profile-grid">
+                  <label class="settings-field">
+                    <span>称呼</span>
+                    <input v-model="wc.state.nickname" type="text" />
+                  </label>
+                  <label class="settings-field number-field" @pointerdown.stop="focusNumberField">
+                    <span>月薪</span>
+                    <input v-model.number="wc.state.salary" type="number" min="1" />
+                  </label>
+                  <label class="settings-field">
+                    <span>倒计时口径</span>
+                    <select v-model="wc.state.countMode">
+                      <option v-for="[key, label] in modeEntries" :key="key" :value="key">{{ label }}</option>
+                    </select>
+                  </label>
+                  <label class="settings-field number-field" @pointerdown.stop="focusNumberField">
+                    <span>今日被折磨分钟</span>
+                    <input v-model.number="wc.state.rageMinutes" type="number" min="0" />
+                  </label>
+                  <label class="settings-field time-field" @pointerdown.stop="openTimeFieldPicker">
+                    <span>上班时间</span>
+                    <input v-model="wc.state.startTime" type="time" />
+                  </label>
+                  <label class="settings-field time-field" @pointerdown.stop="openTimeFieldPicker">
+                    <span>下班时间</span>
+                    <input v-model="wc.state.endTime" type="time" />
+                  </label>
+                  <label class="settings-field number-field" @pointerdown.stop="focusNumberField">
+                    <span>发薪日</span>
+                    <input v-model.number="wc.state.payday" type="number" min="1" max="31" />
+                  </label>
+                  <button
+                    type="button"
+                    class="profile-switch-button settings-privacy-switch"
+                    :class="{ active: wc.state.privacyMode }"
+                    :aria-pressed="wc.state.privacyMode"
+                    @click="wc.state.privacyMode = !wc.state.privacyMode"
+                  >
+                    <span>
+                      <strong>薪资隐私</strong>
+                      <small>{{ wc.state.privacyMode ? '余额、工资和心愿金额会低调处理' : '金额按原样展示' }}</small>
+                    </span>
+                    <span class="switch-track" :class="{ on: wc.state.privacyMode }">
+                      <span class="switch-knob"></span>
+                    </span>
+                  </button>
+                </div>
               </div>
-              <aside class="profile-avatar-panel" aria-label="用户形象">
+              <aside class="profile-avatar-panel settings-avatar-panel" aria-label="用户形象">
                 <header>
-                  <span>用户形象</span>
+                  <span>当前形象</span>
                   <strong>{{ profileAvatar.title }}</strong>
-                  <small>{{ profileAvatar.status }}</small>
+                  <small>{{ wc.themeLabels[wc.state.theme] }} · {{ wc.petStyleLabels[wc.state.petStyle] }}</small>
                 </header>
                 <div class="profile-avatar-frame">
                   <img class="profile-avatar-image" :src="profileAvatar.image" :alt="profileAvatar.title" draggable="false" />
                 </div>
                 <p>{{ profileAvatar.detail }}</p>
                 <div class="profile-avatar-meta">
-                  <span>{{ wc.themeLabels[wc.state.theme] }}</span>
                   <span>{{ wc.modeLabels[wc.state.countMode] }}</span>
+                  <span>{{ wc.state.payday }} 号发薪</span>
                   <span>{{ wc.state.privacyMode ? '隐私已开' : '金额可见' }}</span>
                 </div>
               </aside>
             </article>
-            <article v-show="wc.settingsTab === 'appearance'" class="panel-block form-grid">
-              <label>主题
-                <select v-model="wc.state.theme">
-                  <option v-for="[key, label] in themeEntries" :key="key" :value="key">{{ label }}</option>
-                </select>
-              </label>
-              <label>桌宠系列
-                <select v-model="wc.state.petStyle">
-                  <option v-for="[key, label] in petStyleEntries" :key="key" :value="key">{{ label }}</option>
-                </select>
-              </label>
-              <div class="pet-style-switcher">
-                <button
-                  v-for="[key, label] in petStyleEntries"
-                  :key="key"
-                  type="button"
-                  :class="{ active: wc.state.petStyle === key }"
-                  @click="wc.state.petStyle = key"
-                >
-                  <img :src="petStylePreview[key].image" :alt="label" draggable="false" />
-                  <strong>{{ label }}</strong>
-                  <small>{{ petStylePreview[key].summary }}</small>
-                </button>
-              </div>
+
+            <article v-show="wc.settingsTab === 'appearance'" class="panel-block settings-appearance-panel">
+              <header class="settings-panel-head">
+                <div>
+                  <span>视觉系统</span>
+                  <h3>主题和桌宠形象</h3>
+                </div>
+                <strong>{{ wc.themeLabels[wc.state.theme] }} · {{ wc.petStyleLabels[wc.state.petStyle] }}</strong>
+              </header>
+
+              <section class="settings-theme-section" aria-label="主题选择">
+                <div class="settings-section-label">
+                  <span>主题</span>
+                  <select v-model="wc.state.theme" aria-label="主题">
+                    <option v-for="[key, label] in themeEntries" :key="key" :value="key">{{ label }}</option>
+                  </select>
+                </div>
+                <div class="settings-theme-grid">
+                  <button
+                    v-for="[key, label] in themeEntries"
+                    :key="`settings-theme-${key}`"
+                    type="button"
+                    class="theme-option"
+                    :class="{ active: wc.state.theme === key }"
+                    :data-theme-option="key"
+                    :aria-pressed="wc.state.theme === key"
+                    @click="wc.state.theme = key"
+                  >
+                    <span class="theme-swatch" aria-hidden="true"><i></i><b></b><em></em></span>
+                    <strong>{{ label }}</strong>
+                  </button>
+                </div>
+              </section>
+
+              <section class="settings-pet-section" aria-label="桌宠系列选择">
+                <div class="settings-section-label">
+                  <span>桌宠系列</span>
+                  <select v-model="wc.state.petStyle" aria-label="桌宠系列">
+                    <option v-for="[key, label] in petStyleEntries" :key="key" :value="key">{{ label }}</option>
+                  </select>
+                </div>
+                <div class="pet-style-switcher settings-pet-style-switcher">
+                  <button
+                    v-for="[key, label] in petStyleEntries"
+                    :key="key"
+                    type="button"
+                    :class="{ active: wc.state.petStyle === key }"
+                    :aria-pressed="wc.state.petStyle === key"
+                    @click="wc.state.petStyle = key"
+                  >
+                    <img :src="petStylePreview[key].image" :alt="label" draggable="false" />
+                    <strong>{{ label }}</strong>
+                    <small>{{ petStylePreview[key].summary }}</small>
+                  </button>
+                </div>
+              </section>
             </article>
-            <article v-show="wc.settingsTab === 'data'" class="panel-block data-management-panel">
-              <h3>数据管理</h3>
-              <p>Vue 版继续使用原来的本地存储 key：wageclaw-state-v3。</p>
-              <div class="data-action-list">
-                <div class="data-action-row">
-                  <div>
-                    <span>工资余额</span>
-                    <strong>{{ wc.formatBalance(wc.walletCoins, 2) }}</strong>
-                    <small>只清空当前余额，工资流水会保留。</small>
-                  </div>
-                  <button type="button" class="secondary-button" @click="wc.clearWalletBalance">清除</button>
+
+            <article v-show="wc.settingsTab === 'data'" class="panel-block data-management-panel settings-data-panel">
+              <header class="settings-panel-head">
+                <div>
+                  <span>本地数据</span>
+                  <h3>余额仓库与重置</h3>
                 </div>
-                <div class="data-action-row">
+                <strong>wageclaw-state-v3</strong>
+              </header>
+              <p>数据保存在本机浏览器存储里。清余额会保留账本记录，完整重置会恢复到初始状态。</p>
+              <div class="settings-data-meter">
+                <article>
+                  <span>工资余额</span>
+                  <strong>{{ wc.formatBalance(wc.walletCoins, 2) }}</strong>
+                </article>
+                <article>
+                  <span>爪币余额</span>
+                  <strong>{{ wc.formatPawCoins(wc.state.pawBalance) }}</strong>
+                </article>
+              </div>
+              <div class="data-action-list settings-data-list">
+                <div class="data-action-row settings-data-row">
+                  <span class="data-row-icon" aria-hidden="true">
+                    <img :src="settingsWalletIcon" alt="" draggable="false" />
+                  </span>
                   <div>
-                    <span>爪币余额</span>
-                    <strong>{{ wc.formatPawCoins(wc.state.pawBalance) }}</strong>
-                    <small>只清空当前余额，爪币账本会保留。</small>
+                    <span>清空工资余额</span>
+                    <strong>{{ wc.formatBalance(wc.walletCoins, 2) }}</strong>
+                    <small>只清空当前余额，工资流水会保留并新增一条清除记录。</small>
                   </div>
-                  <button type="button" class="secondary-button" @click="wc.clearPawBalance">清除</button>
+                  <button type="button" class="secondary-button" @click="wc.clearWalletBalance">清除余额</button>
+                </div>
+                <div class="data-action-row settings-data-row">
+                  <span class="data-row-icon" aria-hidden="true">
+                    <img :src="settingsPawIcon" alt="" draggable="false" />
+                  </span>
+                  <div>
+                    <span>清空爪币余额</span>
+                    <strong>{{ wc.formatPawCoins(wc.state.pawBalance) }}</strong>
+                    <small>只清空当前余额，爪币账本会保留并新增一条清除记录。</small>
+                  </div>
+                  <button type="button" class="secondary-button" @click="wc.clearPawBalance">清除爪币</button>
                 </div>
               </div>
-              <div class="data-danger-row">
+              <div class="data-danger-row settings-danger-row">
+                <span class="data-row-icon danger-icon" aria-hidden="true">
+                  <img :src="settingsResetIcon" alt="" draggable="false" />
+                </span>
                 <div>
                   <span>完整重置</span>
                   <small>清除本地存储并恢复默认数据，此操作不可撤销。</small>
@@ -1953,7 +2174,7 @@ function closeLedgerDialog() {
             <p>{{ wc.duel.status }}</p>
             <em>连击 x{{ wc.duel.combo }}</em>
           </div>
-          <div class="fighter enemy"><PetSprite :stage="wc.currentPetStage" mode="mini" /></div>
+          <div class="fighter enemy"><PetSprite :stage="wc.currentPetStage" :ascension="wc.petAscension" mode="mini" /></div>
         </div>
         <div class="skill-grid">
           <button type="button" @click="wc.performDuelSkill('punch')">J 普通拳</button>
@@ -2003,7 +2224,7 @@ function closeLedgerDialog() {
         </header>
         <div class="runner-stage" :class="wc.runner.pose">
           <div class="runner-track"></div>
-          <div class="runner-player"><PetSprite :stage="wc.currentPetStage" mode="mini" /></div>
+          <div class="runner-player"><PetSprite :stage="wc.currentPetStage" :ascension="wc.petAscension" mode="mini" /></div>
           <div class="runner-obstacle">{{ wc.runner.obstacle }}</div>
         </div>
         <p class="game-result">{{ wc.runner.result || "空格/↑ 跳跃，↓ 下蹲，躲避老板的怨念攻击。" }}</p>

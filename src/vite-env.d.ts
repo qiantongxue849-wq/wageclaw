@@ -14,12 +14,13 @@ type WageClawDesktopApi = {
   petNuke: () => Promise<{ ok: boolean; visible: boolean }>;
   petResize: (width: number, height: number) => Promise<{ ok: boolean }>;
   showPet: () => Promise<{ ok: boolean }>;
-  petDragStart: () => void;
-  petDragMove: (dx: number, dy: number) => void;
+  petDragStart: (screenX: number, screenY: number) => void;
+  petDragMove: (screenX: number, screenY: number) => void;
   petDragEnd: () => void;
   petHitTest: (interactive: boolean) => void;
   onNavigate: (callback: (payload: { screen?: string }) => void) => () => void;
   onPetCommand: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  onMainVisibility: (callback: (payload: { visible?: boolean }) => void) => () => void;
 };
 
 declare global {

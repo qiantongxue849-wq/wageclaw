@@ -31,6 +31,23 @@ export type PetStage = {
   palette: PetStagePalette;
 };
 
+export type PetAscensionView = {
+  active: boolean;
+  tier: number;
+  completedTier: number;
+  tone: number;
+  label: string;
+  title: string;
+  nextLabel: string;
+  overflow: number;
+  progress: number;
+  progressGrowth: number;
+  remaining: number;
+  nextThreshold: number;
+  cycle: number;
+  className: string;
+};
+
 export type Part = {
   id: string;
   wishItemId: string;
