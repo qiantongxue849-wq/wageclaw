@@ -1,6 +1,17 @@
 /// <reference types="vite/client" />
 
+import type { AuthSessionState, UpdateState } from "./auth-types";
+
 type WageClawDesktopApi = {
+  authGetSession: () => Promise<AuthSessionState>;
+  authSignUp: (payload: { email: string; password: string }) => Promise<AuthSessionState>;
+  authSignIn: (payload: { email: string; password: string }) => Promise<AuthSessionState>;
+  authSignOut: () => Promise<AuthSessionState>;
+  authRequestPasswordReset: (email: string) => Promise<{ ok: boolean }>;
+  getUpdateState: () => Promise<UpdateState>;
+  checkForUpdates: () => Promise<UpdateState>;
+  downloadAndInstallUpdate: () => Promise<UpdateState>;
+  exportBackup: (contents: string) => Promise<{ ok: boolean; canceled?: boolean; filePath?: string; message?: string }>;
   focusScreen: (screen: string) => Promise<{ ok: boolean; screen: string }>;
   openMainPanel: () => Promise<{ ok: boolean }>;
   togglePet: (enabled: boolean) => Promise<{ ok: boolean; visible: boolean }>;
@@ -21,6 +32,7 @@ type WageClawDesktopApi = {
   onNavigate: (callback: (payload: { screen?: string }) => void) => () => void;
   onPetCommand: (callback: (payload: Record<string, unknown>) => void) => () => void;
   onMainVisibility: (callback: (payload: { visible?: boolean }) => void) => () => void;
+  onUpdateStatus: (callback: (payload: UpdateState) => void) => () => void;
 };
 
 declare global {

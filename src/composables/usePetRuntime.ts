@@ -1,16 +1,23 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import type { CSSProperties } from "vue";
-import { petStageSeries, petTouchProfiles } from "@/data/catalog";
+import { petStageSeries, petTouchProfiles, workEvents } from "@/data/catalog";
 import { getPetAscensionView } from "@/composables/petAscension";
-import type { DailyPawLedger, PawLedgerBucket, PetInteractionMode, PetStage, WageClawState } from "@/types";
-import { loadState, sanitizeState, STORAGE_KEY } from "@/composables/useWageClaw";
+import {
+  addDailyPetGrowth,
+  ensureDailyPetGrowth,
+  PET_DOUBLE_CLICK_GROWTH,
+  PET_PASSIVE_GROWTH_CAP,
+  PET_REMINDER_GROWTH
+} from "@/composables/petDailyGrowth";
+import type { DailyPawLedger, PawLedgerBucket, PetStage, WageClawState, WorkEventEffect } from "@/types";
+import { getWageClawStorageKey, loadState } from "@/state/persistence";
+import { sanitizeState } from "@/state/sanitize";
 
 type TouchKey = keyof typeof petTouchProfiles;
 type TouchHeatTier = "low" | "warm" | "tired";
 type PetMotionAction = "idle" | "play" | "sleep";
 type PetDelta = {
   rage?: number;
-  growth?: number;
   light?: number;
   satiety?: number;
   affection?: number;
@@ -23,20 +30,20 @@ type PetDelta = {
 const STATE_SAVE_THROTTLE_MS = 4000;
 const DAILY_PAW_ATTENDANCE_CAP = 120;
 const DAILY_PAW_INTERACTION_CAP = 48;
+const DAILY_PAW_EVENT_CAP = 140;
 const PAW_ATTENDANCE_RATE_PER_MINUTE = 0.45;
+const WORK_EVENT_MIN_GAP_MS = 8 * 60 * 1000;
+const WORK_EVENT_RANDOM_GAP_MS = 12 * 60 * 1000;
+const WORK_EVENT_DAILY_LIMIT = 5;
 const PET_SATIETY_DECAY_PER_SECOND = 0.0018;
 const PET_TOUCH_HEAT_DECAY_PER_SECOND = 0.004;
 const BLOOD_PRESSURE_MIN = 80;
 const BLOOD_PRESSURE_IDEAL = 118;
 const BLOOD_PRESSURE_MAX = 180;
 const RELAX_BLOOD_PRESSURE_FLOOR = 96;
-const PET_SHAKE_MIN_HORIZONTAL_TRAVEL = 120;
-const PET_SHAKE_MIN_HORIZONTAL_RANGE = 48;
-const PET_SHAKE_MIN_DIRECTION_CHANGES = 2;
-const PET_SHAKE_MAX_VERTICAL_DRIFT = 160;
-const PET_SHAKE_HORIZONTAL_DOMINANCE = 1.35;
-const PET_SHAKE_MIN_DIRECTION_RUN = 20;
-const PET_SHAKE_PICKER_REVEAL_DELAY_MS = 120;
+const DEFAULT_SEDENTARY_REMINDER_MINUTES = 45;
+const DEFAULT_PET_FOCUS_REMINDER_MINUTES = 50;
+const PET_SINGLE_CLICK_DELAY_MS = 520;
 
 const rawViewMode = new URLSearchParams(window.location.search).get("view");
 const viewMode = rawViewMode === "float" ? "float" : "main";
@@ -90,10 +97,6 @@ function formatTime(date = new Date()) {
   return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
 }
 
-function randomInt(min: number, max: number) {
-  return min + Math.floor(Math.random() * (max - min + 1));
-}
-
 function formatDuration(ms: number, withSeconds = true) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
   const hours = Math.floor(totalSeconds / 3600);
@@ -138,9 +141,8 @@ function formatRage(value: number) {
   return `${Math.round(value || 0)} 怨气`;
 }
 
-function formatBloodPressureDelta(value: number) {
-  const delta = Math.round(value || 0);
-  return `血压${delta > 0 ? "+" : ""}${delta}mmHg`;
+function getNextWorkEventAt(base = Date.now()) {
+  return base + WORK_EVENT_MIN_GAP_MS + Math.floor(Math.random() * WORK_EVENT_RANDOM_GAP_MS);
 }
 
 function createDailyPawLedger(date = getLocalDateKey(), base = Date.now()): DailyPawLedger {
@@ -151,7 +153,7 @@ function createDailyPawLedger(date = getLocalDateKey(), base = Date.now()): Dail
     eventEarned: 0,
     handledEvents: [],
     lastAttendanceAt: base,
-    nextEventAt: base + 20 * 60 * 1000
+    nextEventAt: getNextWorkEventAt(base)
   };
 }
 
@@ -161,7 +163,6 @@ export function usePetRuntime() {
   const summonedBubble = ref("");
   const petDialog = ref("");
   const petReaction = ref("");
-  const petModePicker = ref(false);
   const petMotionAction = ref<PetMotionAction>("idle");
   const petMotionKey = ref(0);
   const petDragging = ref(false);
@@ -169,26 +170,11 @@ export function usePetRuntime() {
   const petPos = reactive({ x: 0, y: 0 });
   const petDragOffset = { x: 0, y: 0 };
   const petDragStart = { x: 0, y: 0, screenX: 0, screenY: 0 };
-  let petShake = {
-    lastX: 0,
-    lastY: 0,
-    lastScreenX: 0,
-    lastScreenY: 0,
-    gestureX: 0,
-    gestureY: 0,
-    minGestureX: 0,
-    maxGestureX: 0,
-    lastDir: 0,
-    directionChanges: 0,
-    horizontalTravel: 0,
-    verticalTravel: 0,
-    directionRun: 0,
-    modePickerReady: false
-  };
   let lastFloatPetInteractive: boolean | null = null;
   let tickTimer: number | undefined;
   let bubbleTimer: number | undefined;
   let desktopPetClickTimer: number | undefined;
+  let desktopPetTouchTimer: number | undefined;
   let desktopPetClickCount = 0;
   let reactionTimer: number | undefined;
   let saveTimer: number | undefined;
@@ -202,6 +188,7 @@ export function usePetRuntime() {
   });
   const nextPetStage = computed(() => activePetStages.value.find((stage) => stage.threshold > state.pet.growth) || null);
   const petAscension = computed(() => getPetAscensionView(state.pet.growth, currentPetStage.value, nextPetStage.value));
+  const activeWorkEvent = computed(() => workEvents.find((event) => event.id === state.activeWorkEventId) || null);
   const petManaMax = computed(() => 60 + currentPetStage.value.level * 12 + state.pet.manaBonus + Math.min(72, petAscension.value.completedTier * 6));
   const hasValidWorkTime = computed(() => {
     const start = normalizeClockTime(state.startTime, "");
@@ -220,7 +207,7 @@ export function usePetRuntime() {
       window.clearTimeout(saveTimer);
       saveTimer = undefined;
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(getWageClawStorageKey(), JSON.stringify(state));
     lastSaveAt = Date.now();
   }
 
@@ -236,7 +223,7 @@ export function usePetRuntime() {
   }
 
   function syncStateFromStorage() {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getWageClawStorageKey());
     if (!raw) return;
     try {
       syncingFromStorage = true;
@@ -253,6 +240,7 @@ export function usePetRuntime() {
 
   function ensureDailyRageBucket() {
     const today = getLocalDateKey(now.value);
+    const growthReset = ensureDailyPetGrowth(state, today);
     if (!state.dailyRage || state.dailyRage.date !== today) {
       const yesterdayRage = Math.round(state.dailyRage?.value || state.pet.rage || 0);
       state.dailyRage = { date: today, value: 0, triggered: [] };
@@ -261,9 +249,12 @@ export function usePetRuntime() {
       state.pet.touchHeat = 0;
       state.pet.bloodPressure = settleDailyBloodPressure(state.pet.bloodPressure);
       state.pet.lastLine = yesterdayRage > 0
-        ? `昨天的${formatRage(yesterdayRage)}已经沉淀，今天重新开始。`
-        : "新工作日开始，软团已经开始值班。";
-      addPetLog("每日怨气重置", state.pet.lastLine);
+        ? `昨天的${formatRage(yesterdayRage)}已经沉淀，桌宠回到 Lv.1，今天重新进化。`
+        : "新工作日开始，桌宠回到 Lv.1，今天重新进化。";
+      addPetLog("每日成长重置", state.pet.lastLine);
+    } else if (growthReset) {
+      state.pet.lastLine = "新工作日开始，桌宠回到 Lv.1，今天重新进化。";
+      addPetLog("每日成长重置", state.pet.lastLine);
     }
     if (!Array.isArray(state.dailyRage.triggered)) state.dailyRage.triggered = [];
     return state.dailyRage;
@@ -289,7 +280,6 @@ export function usePetRuntime() {
 
   function applyPetDelta(delta: PetDelta) {
     const rage = Math.round(Number(delta.rage) || 0);
-    const growth = Math.round(Number(delta.growth) || 0);
     const light = Math.round(Number(delta.light) || 0);
     const satiety = Number(delta.satiety) || 0;
     const affection = Math.round(Number(delta.affection) || 0);
@@ -298,7 +288,6 @@ export function usePetRuntime() {
     const touchHeat = Number(delta.touchHeat) || 0;
 
     if (rage) state.pet.rage = Math.max(0, state.pet.rage + rage);
-    if (growth) state.pet.growth = Math.max(0, state.pet.growth + growth);
     if (light) state.pet.light += light;
     if (satiety) state.pet.satiety = clamp(state.pet.satiety + satiety, 0, 100);
     if (affection) state.pet.affection = clamp(state.pet.affection + affection, 0, 100);
@@ -318,8 +307,12 @@ export function usePetRuntime() {
     const ledger = ensureDailyPawLedger();
     const delta = Number(amount) || 0;
     if (!delta) return 0;
-    const cap = bucket === "attendance" ? DAILY_PAW_ATTENDANCE_CAP : DAILY_PAW_INTERACTION_CAP;
-    const earned = bucket === "attendance" ? ledger.attendanceEarned : ledger.interactionEarned;
+    const cap = bucket === "attendance"
+      ? DAILY_PAW_ATTENDANCE_CAP
+      : bucket === "interaction" ? DAILY_PAW_INTERACTION_CAP : DAILY_PAW_EVENT_CAP;
+    const earned = bucket === "attendance"
+      ? ledger.attendanceEarned
+      : bucket === "interaction" ? ledger.interactionEarned : ledger.eventEarned;
     const actual = delta > 0 ? Math.min(delta, Math.max(0, cap - earned)) : delta;
     if (!actual) return 0;
     state.pawBalance = Math.max(0, state.pawBalance + actual);
@@ -331,20 +324,70 @@ export function usePetRuntime() {
     return actual;
   }
 
-  function addRageCoins(amount: number, source = "怨气增长", pressureGain?: number, growthGain?: number) {
-    const gained = Math.max(0, Math.round(amount));
-    if (!gained) return 0;
-    const growth = Math.max(0, Math.round(growthGain ?? gained));
-    const pressure = pressureGain ?? Math.min(8, Math.max(1, Math.round(gained * 0.06)));
-    applyPetDelta({
-      rage: gained,
-      growth,
-      bloodPressure: pressure,
-      bloodPressureFloor: pressure < 0 ? RELAX_BLOOD_PRESSURE_FLOOR : undefined
-    });
-    ensureDailyRageBucket().value += gained;
-    addPetLog(source, `新增 ${formatRage(gained)}，成长+${growth}，${formatBloodPressureDelta(pressure)}。`);
-    return gained;
+  function getTodayShiftBounds(current = now.value) {
+    const start = normalizeClockTime(state.startTime, "");
+    const end = normalizeClockTime(state.endTime, "");
+    if (!start || !end || timeToMinutes(end) <= timeToMinutes(start)) return null;
+    const [startHour = "0", startMinute = "0"] = start.split(":");
+    const [endHour = "0", endMinute = "0"] = end.split(":");
+    const startAt = new Date(current);
+    startAt.setHours(Number(startHour), Number(startMinute), 0, 0);
+    const endAt = new Date(current);
+    endAt.setHours(Number(endHour), Number(endMinute), 0, 0);
+    return { startAt: startAt.getTime(), endAt: endAt.getTime() };
+  }
+
+  function isWithinWorkShift(current = now.value) {
+    const bounds = getTodayShiftBounds(current);
+    if (!bounds) return false;
+    const time = current.getTime();
+    return time >= bounds.startAt && time <= bounds.endAt;
+  }
+
+  function markPetInteraction() {
+    state.pet.lastInteractionAt = now.value.getTime();
+  }
+
+  function collectBroadcastGrowth(amount: number, source: string) {
+    const actual = addDailyPetGrowth(state, amount, "broadcast", getLocalDateKey(now.value));
+    if (actual > 0) {
+      addPetLog(source, `今日成长 +${Math.round(actual)}。`);
+      saveStateNow();
+    }
+    return actual;
+  }
+
+  function maybeTriggerCareReminders() {
+    const current = now.value.getTime();
+    const bounds = getTodayShiftBounds(now.value);
+    if (!bounds || !isWithinWorkShift(now.value)) return;
+
+    if (state.sedentaryReminderEnabled) {
+      const intervalMs = clamp(Number(state.sedentaryReminderMinutes) || DEFAULT_SEDENTARY_REMINDER_MINUTES, 20, 180) * 60 * 1000;
+      const anchor = Math.max(bounds.startAt, Number(state.lastStretchAt) || 0, Number(state.lastSedentaryReminderAt) || 0);
+      if (current - anchor >= intervalMs) {
+        state.lastSedentaryReminderAt = current;
+        const growth = collectBroadcastGrowth(PET_REMINDER_GROWTH, "久坐提醒收集");
+        const line = `久坐提醒：离开椅子活动一下，喝口水，肩颈也该下线维护了。${growth ? ` 今日成长 +${Math.round(growth)}。` : ""}`;
+        state.pet.lastLine = line;
+        addPetLog("久坐活动提醒", line);
+        showPetBubble(line);
+      }
+    }
+
+    if (state.petFocusReminderEnabled) {
+      const intervalMs = clamp(Number(state.petFocusReminderMinutes) || DEFAULT_PET_FOCUS_REMINDER_MINUTES, 15, 180) * 60 * 1000;
+      const anchor = Math.max(bounds.startAt, Number(state.pet.lastInteractionAt) || 0, Number(state.lastPetFocusReminderAt) || 0);
+      if (current - anchor >= intervalMs) {
+        state.lastPetFocusReminderAt = current;
+        const pawGain = addPawCoins(2, "专注太久提醒", "interaction", true);
+        const growth = collectBroadcastGrowth(PET_REMINDER_GROWTH, "专注提醒收集");
+        const line = `你已经专注太久没理我了。伸个懒腰、摸我一下再继续${pawGain ? `，我先把 ${formatPawCoins(pawGain)} 放进爪账` : ""}${growth ? `，今日成长 +${Math.round(growth)}` : ""}。`;
+        state.pet.lastLine = line;
+        addPetLog("专注太久提醒", line);
+        showPetBubble(line);
+      }
+    }
   }
 
   function updatePetDecay() {
@@ -361,13 +404,81 @@ export function usePetRuntime() {
     const previous = ledger.lastAttendanceAt || current;
     const elapsedMs = clamp(current - previous, 0, 60 * 1000);
     ledger.lastAttendanceAt = current;
-    if (elapsedMs <= 0 || ledger.attendanceEarned >= DAILY_PAW_ATTENDANCE_CAP) return;
-    addPawCoins((elapsedMs / 60000) * PAW_ATTENDANCE_RATE_PER_MINUTE, "桌宠出勤", "attendance", true);
+    if (elapsedMs <= 0) return;
+
+    const bounds = getTodayShiftBounds(now.value);
+    if (bounds && current >= bounds.startAt && current <= bounds.endAt) {
+      const shiftMinutes = Math.max(1, (bounds.endAt - bounds.startAt) / 60000);
+      const passiveGrowth = (elapsedMs / 60000) * (PET_PASSIVE_GROWTH_CAP / shiftMinutes);
+      addDailyPetGrowth(state, passiveGrowth, "passive", getLocalDateKey(now.value));
+    }
+
+    if (ledger.attendanceEarned < DAILY_PAW_ATTENDANCE_CAP) {
+      addPawCoins((elapsedMs / 60000) * PAW_ATTENDANCE_RATE_PER_MINUTE, "桌宠出勤", "attendance", true);
+    }
+  }
+
+  function maybeTriggerWorkEvent() {
+    const ledger = ensureDailyPawLedger();
+    if (state.activeWorkEventId) return;
+    if (ledger.handledEvents.length >= Math.min(WORK_EVENT_DAILY_LIMIT, workEvents.length)) return;
+    if (now.value.getTime() < ledger.nextEventAt) return;
+    const candidates = workEvents.filter((event) => !ledger.handledEvents.includes(event.id));
+    const next = candidates[Math.floor(Math.random() * candidates.length)] || workEvents[0];
+    if (!next) return;
+    state.activeWorkEventId = next.id;
+    state.pet.lastLine = `打工来消息：${next.title}。选一个最像你此刻心情的回应。`;
+    addPetLog("桌宠打工事件", next.prompt);
+    summonedBubble.value = "";
+    petDialog.value = "";
+  }
+
+  function scheduleNextWorkEvent() {
+    ensureDailyPawLedger().nextEventAt = getNextWorkEventAt(now.value.getTime());
+  }
+
+  function applyWorkEventEffect(effect: WorkEventEffect) {
+    const actualPaw = effect.paw ? addPawCoins(effect.paw, "打工选择结算", "event", true) : 0;
+    const actualGrowth = effect.growth
+      ? addDailyPetGrowth(state, effect.growth, "event", getLocalDateKey(now.value))
+      : 0;
+    const rage = Number(effect.rage) || 0;
+    if (rage) {
+      applyPetDelta({ rage });
+      if (rage > 0) ensureDailyRageBucket().value += rage;
+    }
+    applyPetDelta({
+      bloodPressure: effect.bloodPressure,
+      bloodPressureFloor: Number(effect.bloodPressure) < 0 ? RELAX_BLOOD_PRESSURE_FLOOR : undefined,
+      satiety: effect.satiety,
+      affection: effect.affection,
+      light: effect.light,
+      mana: effect.mana
+    });
+    return { actualPaw, actualGrowth };
+  }
+
+  function resolveWorkEventChoice(choiceId: string) {
+    const event = activeWorkEvent.value;
+    if (!event) return;
+    const choice = event.choices.find((item) => item.id === choiceId);
+    if (!choice) return;
+    const ledger = ensureDailyPawLedger();
+    const { actualPaw, actualGrowth } = applyWorkEventEffect(choice.effect);
+    if (!ledger.handledEvents.includes(event.id)) ledger.handledEvents.push(event.id);
+    state.activeWorkEventId = "";
+    scheduleNextWorkEvent();
+    const growthLine = actualGrowth ? `成长 +${Math.round(actualGrowth)}` : "成长已到今日上限";
+    const pawLine = choice.effect.paw ? `，爪币${actualPaw >= 0 ? "+" : ""}${Math.round(actualPaw)}` : "";
+    const detail = choice.detail.replace(/[。！？!?，,；;：:\s]+$/g, "");
+    state.pet.lastLine = `${choice.label}：${detail}，${growthLine}${pawLine}。`;
+    addPetLog(`打工事件：${event.title}`, state.pet.lastLine);
+    showPetBubble(state.pet.lastLine);
+    saveStateNow();
   }
 
   function showPetBubble(message: string) {
     petDialog.value = "";
-    petModePicker.value = false;
     summonedBubble.value = message;
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
     bubbleTimer = window.setTimeout(() => {
@@ -389,30 +500,15 @@ export function usePetRuntime() {
     }, durationMs);
   }
 
-  function showPetModePicker() {
-    summonedBubble.value = "";
-    petDialog.value = "";
-    petModePicker.value = true;
-    desktopPetClickCount = 0;
-    if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
-    playPetReaction("shake", 500);
-  }
-
-  function selectPetInteractionMode(mode: PetInteractionMode) {
-    state.pet.interactionMode = mode;
-    desktopPetClickCount = 0;
-    if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
-    const line = mode === "rage"
-      ? "已切到怨气收集模式。点击会敲一下软团，顺手收集怨气。"
-      : "已切回陪伴模式。点击摸摸，双击播报，三击打开主界面。";
-    state.pet.lastLine = line;
-    addPetLog("桌宠互动模式", line);
-    showPetBubble(line);
-    saveStateNow();
+  function clearPendingDesktopPetTouch() {
+    if (!desktopPetTouchTimer) return;
+    window.clearTimeout(desktopPetTouchTimer);
+    desktopPetTouchTimer = undefined;
   }
 
   function handlePetTouch(key: string) {
     if (!(key in petTouchProfiles)) return;
+    markPetInteraction();
     const profile = petTouchProfiles[key as TouchKey];
     const tier = getTouchHeatTier(state.pet.touchHeat);
     const affectionDelta = softenPositiveDelta(profile.affection, tier);
@@ -436,25 +532,6 @@ export function usePetRuntime() {
     saveStateNow();
   }
 
-  function handlePetHammerTouch(key: string) {
-    if (!(key in petTouchProfiles)) return;
-    const profile = petTouchProfiles[key as TouchKey];
-    const touchKey = key as TouchKey;
-    const tier = getTouchHeatTier(state.pet.touchHeat);
-    const moodDeltaByTouch: Record<TouchKey, number> = { head: 0, face: -1, belly: 0, horn: -1, tail: -3 };
-    state.pet.touchCount += 1;
-    applyPetDelta({ affection: moodDeltaByTouch[touchKey], touchHeat: 18 });
-    const pawGain = addPawCoins(profile.nourish, "小锤互动", "interaction", true);
-    const baseRageGain = randomInt(4, 10) + Math.floor(currentPetStage.value.level / 3);
-    const rageGain = tier === "tired" ? Math.max(1, Math.round(baseRageGain * 0.5)) : baseRageGain;
-    const pressureGain = randomInt(2, 5) + (tier === "tired" ? 1 : 0);
-    const actualRage = addRageCoins(rageGain, "小锤怨气收集", pressureGain);
-    const line = `小锤敲击成功，收集${formatRage(actualRage)}，${formatBloodPressureDelta(pressureGain)}${pawGain ? `，爪币+${Math.round(pawGain)}` : ""}。`;
-    state.pet.lastLine = line;
-    showPetBubble(line);
-    saveStateNow();
-  }
-
   function setFloatPetInteractive(interactive: boolean) {
     if (viewMode !== "float" || lastFloatPetInteractive === interactive) return;
     lastFloatPetInteractive = interactive;
@@ -464,7 +541,7 @@ export function usePetRuntime() {
   function isFloatPetPointInteractive(x: number, y: number) {
     return document
       .elementsFromPoint(x, y)
-      .some((element) => Boolean(element.closest(".pet-sprite, .pet-mode-picker, .pet-bubble, .pet-dialog")));
+      .some((element) => Boolean(element.closest(".pet-sprite, .pet-bubble, .pet-dialog, .pet-work-event")));
   }
 
   function handleFloatHitTest(event: MouseEvent) {
@@ -477,78 +554,12 @@ export function usePetRuntime() {
     if (!petDragging.value) setFloatPetInteractive(false);
   }
 
-  function resetPetShakeTracker(event: MouseEvent) {
-    petShake = {
-      lastX: event.clientX,
-      lastY: event.clientY,
-      lastScreenX: event.screenX,
-      lastScreenY: event.screenY,
-      gestureX: 0,
-      gestureY: 0,
-      minGestureX: 0,
-      maxGestureX: 0,
-      lastDir: 0,
-      directionChanges: 0,
-      horizontalTravel: 0,
-      verticalTravel: 0,
-      directionRun: 0,
-      modePickerReady: false
-    };
-  }
-
-  function trackPetShake(event: MouseEvent) {
-    const screenDx = event.screenX - petShake.lastScreenX;
-    const screenDy = event.screenY - petShake.lastScreenY;
-    const dx = screenDx || event.movementX || event.clientX - petShake.lastX;
-    const dy = screenDy || event.movementY || event.clientY - petShake.lastY;
-    petShake.lastX = event.clientX;
-    petShake.lastY = event.clientY;
-    petShake.lastScreenX = event.screenX;
-    petShake.lastScreenY = event.screenY;
-    petShake.gestureX += dx;
-    petShake.gestureY += dy;
-    petShake.minGestureX = Math.min(petShake.minGestureX, petShake.gestureX);
-    petShake.maxGestureX = Math.max(petShake.maxGestureX, petShake.gestureX);
-    petShake.horizontalTravel += Math.abs(dx);
-    petShake.verticalTravel += Math.abs(dy);
-    const horizontalStep = Math.abs(dx);
-    if (horizontalStep < 3) return { dx, dy };
-    const dir = dx > 0 ? 1 : -1;
-    if (!petShake.lastDir) {
-      petShake.lastDir = dir;
-      petShake.directionRun = horizontalStep;
-      return { dx, dy };
-    }
-    if (petShake.lastDir === dir) {
-      petShake.directionRun += horizontalStep;
-      return { dx, dy };
-    }
-    if (petShake.directionRun >= PET_SHAKE_MIN_DIRECTION_RUN) {
-      petShake.directionChanges += 1;
-    }
-    petShake.lastDir = dir;
-    petShake.directionRun = horizontalStep;
-    return { dx, dy };
-  }
-
-  function didShakePet() {
-    const mostlyHorizontal = petShake.horizontalTravel >= petShake.verticalTravel * PET_SHAKE_HORIZONTAL_DOMINANCE;
-    const horizontalRange = petShake.maxGestureX - petShake.minGestureX;
-    return (
-      petShake.horizontalTravel >= PET_SHAKE_MIN_HORIZONTAL_TRAVEL &&
-      horizontalRange >= PET_SHAKE_MIN_HORIZONTAL_RANGE &&
-      petShake.directionChanges >= PET_SHAKE_MIN_DIRECTION_CHANGES &&
-      petShake.verticalTravel <= PET_SHAKE_MAX_VERTICAL_DRIFT &&
-      mostlyHorizontal
-    );
-  }
-
   function startPetDrag(event: MouseEvent) {
-    if ((event.target as HTMLElement | null)?.closest(".pet-mode-picker")) return;
+    if ((event.target as HTMLElement | null)?.closest(".pet-work-event")) return;
+    clearPendingDesktopPetTouch();
+    markPetInteraction();
     petDragging.value = true;
     setFloatPetInteractive(true);
-    petModePicker.value = false;
-    resetPetShakeTracker(event);
     petDragOffset.x = event.clientX - petPos.x;
     petDragOffset.y = event.clientY - petPos.y;
     petDragStart.x = event.clientX;
@@ -562,12 +573,6 @@ export function usePetRuntime() {
 
   function onWindowPetMove(event: MouseEvent) {
     if (!petDragging.value) return;
-    trackPetShake(event);
-    if (!petShake.modePickerReady && didShakePet()) {
-      petShake.modePickerReady = true;
-      desktopPetClickCount = 0;
-      if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
-    }
     if (viewMode === "float") {
       window.wageclawDesktop?.petDragMove?.(event.screenX, event.screenY);
       return;
@@ -580,29 +585,25 @@ export function usePetRuntime() {
     const dx = event.screenX - petDragStart.screenX || event.clientX - petDragStart.x;
     const dy = event.screenY - petDragStart.screenY || event.clientY - petDragStart.y;
     const dragged = Math.abs(dx) > 4 || Math.abs(dy) > 4;
-    const shouldOpenModePicker = petShake.modePickerReady || didShakePet();
     petDragging.value = false;
     window.removeEventListener("mousemove", onWindowPetMove);
     window.removeEventListener("mouseup", onWindowPetUp);
     window.wageclawDesktop?.petDragEnd?.();
-    if (!dragged && !shouldOpenModePicker) {
+    if (!dragged) {
       triggerPetClickFromEvent(event);
-    } else if (shouldOpenModePicker) {
-      petReaction.value = "";
-      window.setTimeout(showPetModePicker, PET_SHAKE_PICKER_REVEAL_DELAY_MS);
     }
     if (viewMode === "float") {
-      setFloatPetInteractive(shouldOpenModePicker || isFloatPetPointInteractive(event.clientX, event.clientY));
+      setFloatPetInteractive(isFloatPetPointInteractive(event.clientX, event.clientY));
     }
   }
 
   function triggerPetClickFromEvent(event: MouseEvent) {
-    const isRageCollection = state.pet.interactionMode === "rage";
-    if (viewMode === "float" && !isRageCollection) {
+    if (viewMode === "float") {
       desktopPetClickCount += 1;
       if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
       if (desktopPetClickCount >= 3) {
         desktopPetClickCount = 0;
+        clearPendingDesktopPetTouch();
         void openMainPanelFromPet();
         return;
       }
@@ -618,17 +619,27 @@ export function usePetRuntime() {
     let reaction: string;
     if (relY < 0.35) {
       touchKey = Math.random() < 0.6 ? "head" : "face";
-      reaction = isRageCollection ? "hammer" : "frown";
+      reaction = "frown";
     } else if (relY < 0.7) {
       touchKey = "belly";
-      reaction = isRageCollection ? "hammer" : "squish";
+      reaction = "squish";
     } else {
       touchKey = Math.random() < 0.5 ? "horn" : "tail";
-      reaction = isRageCollection ? "hammer" : "shake";
+      reaction = "shake";
     }
-    playPetReaction(reaction, isRageCollection ? 340 : 500);
-    if (isRageCollection) handlePetHammerTouch(touchKey);
-    else handlePetTouch(touchKey);
+    const runTouch = () => {
+      playPetReaction(reaction, 500);
+      handlePetTouch(touchKey);
+    };
+    if (viewMode === "float") {
+      clearPendingDesktopPetTouch();
+      desktopPetTouchTimer = window.setTimeout(() => {
+        desktopPetTouchTimer = undefined;
+        runTouch();
+      }, PET_SINGLE_CLICK_DELAY_MS);
+      return;
+    }
+    runTouch();
   }
 
   async function openMainPanelFromPet() {
@@ -638,7 +649,7 @@ export function usePetRuntime() {
     await window.wageclawDesktop?.openMainPanel?.();
   }
 
-  function showPetDialog() {
+  function showPetDialog(growthGain = 0) {
     summonedBubble.value = "";
     if (!state.onboardingDone || !isProfileReady.value) {
       petDialog.value = `<span class="line">先完成首次设置，桌宠就能开始替你记录工资进度。</span>`;
@@ -653,7 +664,8 @@ export function usePetRuntime() {
       const line = state.activeWorkEventId
         ? `${offWorkText}。后台还有一个打工事件没处理，先别让它挤满脑子。`
         : `${offWorkText}。我在桌面值班，主界面不用一直开着。`;
-      petDialog.value = `<span class="line">${line}</span>`;
+      const growthLine = growthGain > 0 ? `<span class="growth-line">本次报时收集成长 +${Math.round(growthGain)}</span>` : "";
+      petDialog.value = `<span class="line">${line}</span>${growthLine}`;
     }
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
     bubbleTimer = window.setTimeout(() => {
@@ -662,12 +674,10 @@ export function usePetRuntime() {
   }
 
   function handleFloatPetDoubleClick() {
-    if (state.pet.interactionMode === "rage") {
-      desktopPetClickCount = 0;
-      if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
-      return;
-    }
-    showPetDialog();
+    clearPendingDesktopPetTouch();
+    markPetInteraction();
+    const growth = isProfileReady.value ? collectBroadcastGrowth(PET_DOUBLE_CLICK_GROWTH, "双击报时收集") : 0;
+    showPetDialog(growth);
   }
 
   async function triggerBlackoutSkill(options: { automatic?: boolean } = {}) {
@@ -712,6 +722,8 @@ export function usePetRuntime() {
       ensureDailyPawLedger();
       updatePetDecay();
       updatePawAttendance();
+      maybeTriggerCareReminders();
+      maybeTriggerWorkEvent();
     }
   }
 
@@ -739,6 +751,7 @@ export function usePetRuntime() {
     if (tickTimer) window.clearInterval(tickTimer);
     if (bubbleTimer) window.clearTimeout(bubbleTimer);
     if (desktopPetClickTimer) window.clearTimeout(desktopPetClickTimer);
+    if (desktopPetTouchTimer) window.clearTimeout(desktopPetTouchTimer);
     if (reactionTimer) window.clearTimeout(reactionTimer);
     if (saveTimer) window.clearTimeout(saveTimer);
     window.removeEventListener("storage", syncStateFromStorage);
@@ -759,7 +772,6 @@ export function usePetRuntime() {
     summonedBubble,
     petDialog,
     petReaction,
-    petModePicker,
     petMotionAction,
     petMotionKey,
     petDragging,
@@ -767,10 +779,11 @@ export function usePetRuntime() {
     floatingPetStyle,
     currentPetStage,
     petAscension,
+    activeWorkEvent,
     isProfileReady,
     startPetDrag,
     handleFloatPetDoubleClick,
-    selectPetInteractionMode,
+    resolveWorkEventChoice,
     openMainPanelFromPet
   };
 }

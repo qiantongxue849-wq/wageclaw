@@ -12,7 +12,7 @@ const ASCENSION_TITLES = [
 ];
 
 export function getPetAscensionView(growth: number, currentStage: PetStage, nextStage: PetStage | null): PetAscensionView {
-  if (nextStage) {
+  if (nextStage || growth <= currentStage.threshold) {
     return {
       active: false,
       tier: 0,
@@ -25,7 +25,7 @@ export function getPetAscensionView(growth: number, currentStage: PetStage, next
       progress: 0,
       progressGrowth: 0,
       remaining: 0,
-      nextThreshold: nextStage.threshold,
+      nextThreshold: nextStage?.threshold ?? currentStage.threshold,
       cycle: PET_ASCENSION_STEP,
       className: ""
     };

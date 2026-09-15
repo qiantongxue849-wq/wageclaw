@@ -13,18 +13,31 @@
     "preview": "vite preview --host 127.0.0.1",
     "dist:mac": "npm run build && electron-builder -- --mac",
     "dist:mac:dmg:localfix": "npm run build && electron-builder --mac dmg",
-    "dist:win": "npm run build && electron-builder --win"
+    "dist:win": "npm run build && electron-builder --win",
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "lint": "eslint src tests electron scripts",
+    "prepare": "husky"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "vue": "^3.5.22"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "electron": "^41.2.1",
     "electron-builder": "^26.8.1",
+    "eslint": "^10.9.1",
+    "eslint-plugin-vue": "^10.10.0",
+    "globals": "^17.11.0",
+    "husky": "^9.1.7",
+    "sharp": "^0.35.4",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.68.0",
     "vite": "^7.1.12",
+    "vitest": "^4.1.11",
     "vue-tsc": "^3.1.1"
   },
   "build": {
@@ -39,6 +52,18 @@
       "electron/**/*",
       "dist/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "electron/app-config.json",
+        "to": "app-config.json"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://downloads.your-domain.com/wageclaw"
+      }
     ],
     "mac": {
       "target": [

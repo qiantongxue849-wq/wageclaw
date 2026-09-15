@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WageClaw 小游戏体验 V2</title>
+  <style>
+    :root {
+      --paper: #f5eedc;
+      --paper-2: #fff9ec;
+      --ink: #251f1a;
+      --muted: #746b5f;
+      --green: #123f37;
+      --green-2: #236a59;
+      --orange: #c96f43;
+      --red: #b34b40;
+      --blue: #4f67b3;
+      --gold: #e1a741;
+      --line: rgba(64, 47, 31, .14);
+      --shadow: 0 24px 80px rgba(40, 31, 22, .16);
+      font-family: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background: #18221e;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-width: 1180px; min-height: 100%; }
+    body {
+      min-height: 100vh;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 18% 8%, rgba(88, 154, 128, .18), transparent 32%),
+        radial-gradient(circle at 82% 100%, rgba(201, 111, 67, .12), transparent 35%),
+        #111b17;
+    }
+    button { font: inherit; }
+
+    .prototype {
+      width: min(1440px, calc(100vw - 36px));
+      height: min(900px, calc(100vh - 36px));
+      min-height: 760px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 186px minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 24px;
+      background: var(--paper);
+      box-shadow: 0 30px 90px rgba(0,0,0,.34);
+    }
+
+    .rail {
+      position: relative;
+      padding: 26px 16px;
+      display: flex;
+      flex-direction: column;
+      color: #fff8e9;
+      background:
+        linear-gradient(180deg, rgba(98, 159, 133, .12), transparent 32%),
+        linear-gradient(150deg, #154b41, #092d28 70%);
+    }
+    .rail::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: .06;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px);
+      background-size: 100% 26px;
+    }
+    .brand, .rail-nav, .rail-foot { position: relative; z-index: 1; }
+    .brand { display: flex; align-items: center; gap: 10px; margin: 0 7px 34px; }
+    .paw {
+      width: 42px; height: 42px; display: grid; place-items: center;
+      border-radius: 13px; background: #edf2d4; color: var(--green);
+      font-size: 20px; box-shadow: inset 0 -4px 0 rgba(18,63,55,.12);
+    }
+    .brand strong { display: block; font-size: 16px; letter-spacing: .08em; }
+    .brand small { display: block; margin-top: 3px; color: rgba(255,255,255,.58); font-size: 10px; }
+    .rail-nav { display: grid; gap: 8px; }
+    .rail-nav button {
+      min-height: 54px; padding: 0 14px; display: grid; grid-template-columns: 28px 1fr;
+      align-items: center; gap: 8px; border: 0; border-radius: 14px; text-align: left;
+      color: rgba(255,255,255,.68); background: transparent; cursor: pointer;
+    }
+    .rail-nav button:hover { background: rgba(255,255,255,.06); color: #fff; }
+    .rail-nav button.active {
+      color: #fff; background: rgba(255,255,255,.14);
+      box-shadow: inset 3px 0 0 #f1c36a;
+    }
+    .rail-nav i { font-style: normal; font-size: 19px; text-align: center; }
+    .rail-nav span { font-size: 13px; font-weight: 800; }
+    .rail-foot {
+      margin-top: auto; padding: 16px 14px; border-radius: 15px;
+      background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.1);
+    }
+    .rail-foot small { display: block; color: rgba(255,255,255,.6); font-size: 10px; }
+    .rail-foot strong { display: block; margin: 5px 0 9px; font-size: 14px; }
+    .rail-foot .meter { height: 6px; overflow: hidden; border-radius: 9px; background: rgba(255,255,255,.12); }
+    .rail-foot .meter i { display: block; width: 58%; height: 100%; background: #f0bd5f; }
+
+    .canvas { position: relative; min-width: 0; overflow: hidden; background: var(--paper); }
+    .canvas::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .34;
+      background-image:
+        linear-gradient(110deg, transparent 0 48%, rgba(201,111,67,.04) 48% 48.2%, transparent 48.2%),
+        linear-gradient(rgba(54,42,28,.035) 1px, transparent 1px);
+      background-size: 260px 260px, 26px 26px;
+      mask-image: linear-gradient(#000, transparent 86%);
+    }
+    .screen { position: relative; z-index: 1; height: 100%; display: none; grid-template-rows: auto 1fr; }
+    .screen.active { display: grid; }
+    .topbar {
+      min-height: 78px; padding: 17px 25px; display: grid;
+      grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 20px;
+      border-bottom: 1px solid var(--line); background: rgba(255,251,240,.78); backdrop-filter: blur(12px);
+    }
+    .top-title { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .back {
+      width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 13px;
+      background: #fffaf0; color: var(--green); font-weight: 900;
+    }
+    .top-title h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+    .top-title p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .chip, .soft-button {
+      min-height: 36px; display: inline-flex; align-items: center; gap: 7px;
+      padding: 0 12px; border: 1px solid var(--line); border-radius: 999px;
+      color: var(--muted); background: rgba(255,255,255,.62); font-size: 11px; font-weight: 700;
+    }
+    .soft-button { border-radius: 11px; color: var(--green); cursor: pointer; }
+    .screen-body { min-height: 0; padding: 22px 25px 26px; overflow: auto; }
+
+    /* Lobby */
+    .lobby-hero {
+      min-height: 146px; padding: 23px 26px; display: grid; grid-template-columns: 1fr 420px;
+      align-items: center; gap: 30px; overflow: hidden; border-radius: 22px; color: #fff8e9;
+      background:
+        radial-gradient(circle at 84% 30%, rgba(244,194,103,.22), transparent 28%),
+        linear-gradient(140deg, #194f45, #0c332e 72%);
+      box-shadow: var(--shadow);
+    }
+    .lobby-hero h2 { margin: 0 0 9px; font-size: 30px; letter-spacing: -.04em; }
+    .lobby-hero p { margin: 0; color: rgba(255,255,255,.7); font-size: 13px; line-height: 1.7; }
+    .mission { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+    .mission-medal {
+      width: 52px; height: 52px; display: grid; place-items: center; border-radius: 18px;
+      color: #624518; background: #f0c36f; font-size: 22px; transform: rotate(-4deg);
+    }
+    .mission strong { display: block; font-size: 13px; }
+    .mission small { color: rgba(255,255,255,.6); font-size: 10px; }
+    .mission .mission-bar { grid-column: 2 / 4; height: 7px; border-radius: 8px; background: rgba(255,255,255,.14); }
+    .mission .mission-bar i { display: block; width: 66%; height: 100%; border-radius: inherit; background: #f0c36f; }
+    .game-grid { margin-top: 20px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .game-card {
+      position: relative; min-height: 410px; overflow: hidden; display: grid; grid-template-rows: 194px 1fr;
+      border: 1px solid var(--line); border-radius: 21px; background: rgba(255,250,239,.9);
+      box-shadow: 0 12px 34px rgba(58,42,25,.09); transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .game-card:hover { transform: translateY(-3px); box-shadow: 0 18px 42px rgba(58,42,25,.13); }
+    .card-art { position: relative; overflow: hidden; }
+    .card-art::after { content: ""; position: absolute; inset: auto 0 0; height: 70px; background: linear-gradient(transparent, rgba(0,0,0,.1)); }
+    .game-card.duel .card-art { background: linear-gradient(145deg, #f1d1b3, #d88b5a); }
+    .game-card.gomoku .card-art { background: linear-gradient(145deg, #d8c28f, #b48a52); }
+    .game-card.runner .card-art { background: linear-gradient(145deg, #cdd9f3, #6f83c5); }
+    .tagline {
+      position: absolute; z-index: 2; left: 14px; top: 14px; padding: 6px 9px; border-radius: 999px;
+      color: #fff; background: rgba(25,25,25,.6); backdrop-filter: blur(5px); font-size: 9px; font-weight: 900; letter-spacing: .08em;
+    }
+    .duel-mini { position: absolute; inset: 32px 12px 0; display: flex; justify-content: center; align-items: flex-end; gap: 38px; }
+    .duel-mini .pet { width: 104px; filter: drop-shadow(0 12px 13px rgba(45,30,20,.2)); }
+    .mini-boss { position: relative; width: 84px; height: 104px; }
+    .mini-boss .head { position: absolute; z-index: 2; top: 0; left: 15px; width: 54px; height: 54px; display: grid; place-items: center; border-radius: 50%; background: #f0c59f; font-size: 25px; }
+    .mini-boss .body { position: absolute; bottom: 0; left: 0; width: 84px; height: 68px; border-radius: 30px 30px 12px 12px; background: #233a4d; clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%); }
+    .mini-boss .tie { position: absolute; z-index: 3; left: 38px; top: 51px; width: 9px; height: 32px; background: #b34b40; clip-path: polygon(50% 0,100% 20%,70% 100%,30% 100%,0 20%); }
+    .vs { align-self: center; margin-bottom: 42px; color: #fff7e4; font-size: 19px; font-weight: 1000; text-shadow: 0 2px 10px rgba(0,0,0,.22); }
+    .mini-board { position: absolute; width: 158px; height: 158px; left: 50%; top: 50%; transform: translate(-50%,-44%) rotate(-2deg); border: 7px solid rgba(76,48,22,.3); border-radius: 9px; background-color: #dbb66f; background-image: linear-gradient(rgba(65,43,19,.42) 1px, transparent 1px), linear-gradient(90deg, rgba(65,43,19,.42) 1px, transparent 1px); background-size: 17px 17px; box-shadow: 0 16px 20px rgba(69,42,19,.2); }
+    .mini-board i { position: absolute; width: 15px; height: 15px; border-radius: 50%; background: #151515; box-shadow: 0 2px 3px rgba(0,0,0,.35); }
+    .mini-board i:nth-child(1){left:34px;top:68px}.mini-board i:nth-child(2){left:51px;top:68px}.mini-board i:nth-child(3){left:68px;top:68px}.mini-board i:nth-child(4){left:85px;top:68px}.mini-board i:nth-child(5){left:102px;top:68px;background:#f7f3e9}
+    .mini-track { position: absolute; inset: auto 0 24px; height: 45px; background: repeating-linear-gradient(90deg,#d4a15e 0 32px,#bf8550 32px 36px); border-top: 3px solid rgba(51,39,27,.22); }
+    .runner-pet { position: absolute; z-index: 2; left: 74px; bottom: 45px; width: 86px; filter: drop-shadow(0 12px 10px rgba(31,40,67,.2)); }
+    .runner-note { position: absolute; z-index: 2; right: 70px; bottom: 54px; width: 58px; height: 72px; display: grid; place-items: center; border-radius: 8px 8px 20px 8px; color: #8b3e35; background: #fff5d9; font-size: 24px; font-weight: 900; transform: rotate(5deg); box-shadow: 0 10px 16px rgba(43,45,64,.2); }
+    .card-copy { padding: 18px; display: flex; flex-direction: column; }
+    .card-copy h3 { margin: 0; font-size: 20px; }
+    .card-copy p { min-height: 38px; margin: 7px 0 13px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .facts { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 15px; }
+    .facts span { padding: 8px 5px; text-align: center; border-radius: 9px; color: var(--muted); background: #f5ecda; font-size: 9px; }
+    .facts b { display: block; margin-bottom: 2px; color: var(--ink); font-size: 11px; }
+    .play {
+      min-height: 44px; margin-top: auto; border: 0; border-radius: 12px; color: #fff; background: var(--green);
+      font-size: 12px; font-weight: 900; cursor: pointer; box-shadow: inset 0 -3px 0 rgba(0,0,0,.14);
+    }
+    .duel .play { background: #9d4e35; } .runner .play { background: #43589f; }
+
+    /* Shared game layouts */
+    .game-body { height: 100%; min-height: 0; display: grid; gap: 15px; }
+    .game-stage-shell { min-height: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: #fffaf0; box-shadow: 0 16px 45px rgba(55,40,25,.1); }
+    .tiny-kbd { min-width: 25px; height: 25px; padding: 0 7px; display: inline-grid; place-items: center; border: 1px solid rgba(42,31,21,.2); border-radius: 7px; color: var(--ink); background: #fffdf5; box-shadow: 0 2px 0 rgba(42,31,21,.18); font-size: 9px; font-style: normal; font-weight: 900; }
+
+    /* Duel */
+    .duel-layout { grid-template-rows: minmax(340px, 1fr) auto; }
+    .battle-stage { position: relative; height: 100%; min-height: 365px; overflow: hidden; color: #fff8e9; background: linear-gradient(180deg,#3e5160 0,#243941 48%,#162c2b 100%); }
+    .battle-stage::before { content:""; position:absolute; inset:0; opacity:.32; background: linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px), linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px); background-size: 28px 28px; }
+    .city { position: absolute; inset: auto 0 0; height: 48%; opacity: .35; background: linear-gradient(90deg, transparent 0 6%, #071918 6% 17%, transparent 17% 21%, #071918 21% 34%, transparent 34% 39%, #071918 39% 53%, transparent 53% 59%, #071918 59% 74%, transparent 74% 80%, #071918 80% 94%, transparent 94%); clip-path: polygon(0 30%,10% 30%,10% 5%,16% 5%,16% 45%,28% 45%,28% 15%,33% 15%,33% 52%,46% 52%,46% 0,53% 0,53% 34%,65% 34%,65% 13%,72% 13%,72% 48%,83% 48%,83% 20%,90% 20%,90% 58%,100% 58%,100% 100%,0 100%); }
+    .battle-hud { position: relative; z-index: 3; padding: 18px 20px; display: grid; grid-template-columns: 1fr 145px 1fr; gap: 20px; align-items: start; }
+    .fighter-hud { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+    .fighter-hud.boss-hud { grid-template-columns: 1fr auto; text-align: right; }
+    .avatar { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: rgba(255,255,255,.14); font-size: 20px; border: 1px solid rgba(255,255,255,.15); }
+    .fighter-hud strong { display:block; font-size: 11px; }
+    .hp { position: relative; height: 13px; margin-top: 6px; overflow: hidden; border-radius: 8px; background: rgba(0,0,0,.28); }
+    .hp::after { content:""; position:absolute; inset:0 18% 0 0; background:#56b886; border-radius:inherit; }
+    .boss-hud .hp::after { inset:0 0 0 33%; background:#d66258; }
+    .hp small { position:absolute; z-index:2; inset:0; display:grid; place-items:center; font-size:8px; color:white; }
+    .round { text-align:center; }
+    .round b { display:block; padding:7px 9px; border-radius:999px; color:#37260f; background:#efbb59; font-size:10px; }
+    .round span { display:block; margin-top:7px; color:rgba(255,255,255,.62); font-size:9px; }
+    .battlefield { position:absolute; z-index:2; left:0; right:0; bottom:32px; height:245px; display:flex; align-items:flex-end; justify-content:space-around; padding:0 80px; }
+    .battlefield .pet-fighter { width:160px; filter:drop-shadow(0 18px 20px rgba(0,0,0,.3)); }
+    .boss-large { transform:scale(1.55); transform-origin:bottom; margin-bottom:14px; filter:drop-shadow(0 18px 18px rgba(0,0,0,.3)); }
+    .hit-word { position:absolute; left:60%; top:20%; color:#ffd06f; font-size:28px; font-weight:1000; transform:rotate(-6deg); text-shadow:0 3px 0 #7b392b,0 7px 20px rgba(0,0,0,.4); }
+    .battle-ticker { position:absolute; z-index:4; left:50%; bottom:14px; transform:translateX(-50%); min-width:430px; padding:7px 16px; border-radius:999px; text-align:center; color:rgba(255,255,255,.78); background:rgba(4,14,13,.68); font-size:10px; backdrop-filter:blur(6px); }
+    .command-deck { padding:14px 16px 16px; background:#fff9ec; }
+    .energy-row { display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; margin-bottom:11px; }
+    .energy-row span,.energy-row b { font-size:10px; }
+    .energy-bar { height:8px; overflow:hidden; border-radius:7px; background:#eadfc7; }
+    .energy-bar i { display:block; width:62%; height:100%; border-radius:inherit; background:linear-gradient(90deg,#d79735,#efc460); }
+    .skills { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; }
+    .skill { min-height:72px; padding:8px 7px; display:grid; grid-template-columns:auto 1fr; align-content:center; gap:3px 7px; border:1px solid var(--line); border-radius:12px; text-align:left; color:var(--ink); background:#fffdf6; }
+    .skill:hover { border-color:rgba(201,111,67,.6); }
+    .skill b { font-size:10px; } .skill small { grid-column:2; color:var(--muted); font-size:8px; }
+    .skill.power { background:#fff1e6; border-color:rgba(201,111,67,.25); }.skill.safe { background:#edf6ed; }
+
+    /* Gomoku */
+    .gomoku-layout { grid-template-columns:minmax(520px,1fr) 280px; }
+    .board-wrap { min-height:0; padding:17px; display:grid; place-items:center; background:linear-gradient(145deg,#f1e2bd,#d8b16a); }
+    .board-large { position:relative; width:min(61vh,650px); max-width:100%; aspect-ratio:1; border:10px solid rgba(82,51,22,.28); border-radius:13px; background-color:#dcb56b; background-image:linear-gradient(rgba(61,40,18,.45) 1px,transparent 1px),linear-gradient(90deg,rgba(61,40,18,.45) 1px,transparent 1px); background-size:calc(100% / 14) calc(100% / 14); box-shadow:inset 0 3px 18px rgba(77,45,15,.22),0 20px 30px rgba(70,44,20,.16); }
+    .stone { position:absolute; width:5.9%; aspect-ratio:1; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 3px 5px rgba(0,0,0,.34); }
+    .stone.black { background:radial-gradient(circle at 30% 26%,#6b6b6b,#111 66%); }.stone.white { background:radial-gradient(circle at 30% 26%,#fff,#d7d2c8 70%); }
+    .stone.last::after { content:""; position:absolute; inset:38%; border-radius:50%; background:#e44b43; box-shadow:0 0 0 2px rgba(255,255,255,.55); }
+    .win-line { position:absolute; left:28%; top:45.8%; width:38%; height:4px; border-radius:4px; background:#ffdc6c; box-shadow:0 0 10px 3px rgba(255,213,78,.6); transform:rotate(45deg); transform-origin:left center; }
+    .r1{left:21.4%;top:28.6%}.r2{left:28.6%;top:35.7%}.r3{left:35.7%;top:42.8%}.r4{left:42.8%;top:50%}.r5{left:50%;top:57.1%}.r6{left:50%;top:42.8%}.r7{left:57.1%;top:42.8%}.r8{left:64.2%;top:42.8%}.r9{left:57.1%;top:50%}.r10{left:64.2%;top:57.1%}.r11{left:42.8%;top:35.7%}.r12{left:35.7%;top:50%}.r13{left:28.6%;top:50%}.r14{left:42.8%;top:57.1%}
+    .opponent-panel { padding:20px; display:flex; flex-direction:column; background:#fff9ec; border-left:1px solid var(--line); }
+    .opponent-head { display:flex; align-items:center; gap:12px; padding-bottom:17px; border-bottom:1px solid var(--line); }
+    .opponent-avatar { width:58px; height:58px; display:grid; place-items:center; overflow:hidden; border-radius:18px; background:#dfe9d1; }
+    .opponent-avatar img { width:70px; }
+    .opponent-head strong { display:block; font-size:13px; }.opponent-head span{display:block;margin-top:5px;color:var(--muted);font-size:9px}
+    .turn-card { margin:16px 0; padding:14px; border-radius:14px; color:#fff; background:var(--green); }
+    .turn-card small{display:block;color:rgba(255,255,255,.62);font-size:8px}.turn-card b{display:block;margin-top:5px;font-size:15px}
+    .score-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+    .score-strip span { padding:9px 3px; text-align:center; border-radius:10px; background:#f2ead9; color:var(--muted); font-size:8px; }.score-strip b{display:block;color:var(--ink);font-size:14px}
+    .move-note { margin-top:16px; padding:13px; border:1px dashed rgba(64,47,31,.18); border-radius:13px; color:var(--muted); font-size:9px; line-height:1.6; }
+    .difficulty { margin-top:14px; display:flex; gap:7px; }.difficulty button{flex:1;min-height:34px;border:1px solid var(--line);border-radius:10px;background:#fffdf6;color:var(--muted);font-size:9px}.difficulty button.active{color:#fff;background:var(--green)}
+    .opponent-panel .restart { min-height:43px; margin-top:auto; border:1px solid var(--line); border-radius:12px; color:var(--green); background:#fffdf6; font-weight:900; font-size:10px; }
+
+    /* Runner */
+    .runner-layout { grid-template-rows:minmax(390px,1fr) auto; }
+    .run-stage { position:relative; min-height:410px; overflow:hidden; background:linear-gradient(180deg,#a8c5e7 0,#d9e4e8 55%,#e7c88f 56%,#c28b52 100%); }
+    .run-stage::before { content:""; position:absolute; inset:0; opacity:.28; background:linear-gradient(90deg,transparent 0 7%,rgba(255,255,255,.85) 7% 12%,transparent 12% 22%,rgba(255,255,255,.7) 22% 28%,transparent 28% 43%,rgba(255,255,255,.7) 43% 49%,transparent 49% 67%,rgba(255,255,255,.7) 67% 76%,transparent 76%); clip-path:polygon(0 46%,7% 46%,7% 15%,12% 15%,12% 60%,22% 60%,22% 25%,28% 25%,28% 54%,43% 54%,43% 8%,49% 8%,49% 58%,67% 58%,67% 20%,76% 20%,76% 52%,100% 52%,100% 100%,0 100%); }
+    .run-hud { position:relative; z-index:5; padding:16px 18px; display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:start; }
+    .score-box { width:max-content; padding:9px 13px; border-radius:13px; color:#fff; background:rgba(15,37,50,.73); backdrop-filter:blur(5px); }
+    .score-box.right { justify-self:end; text-align:right; }.score-box small{display:block;color:rgba(255,255,255,.58);font-size:8px}.score-box b{display:block;margin-top:3px;font-size:22px}.speed{padding:8px 14px;border-radius:999px;color:#fff;background:#43589f;font-size:10px;font-weight:900}
+    .danger-zone { position:absolute; z-index:2; left:11%; top:0; bottom:72px; width:11%; background:linear-gradient(90deg,transparent,rgba(255,229,132,.2),transparent); border-left:1px dashed rgba(255,232,151,.7); border-right:1px dashed rgba(255,232,151,.7); }
+    .danger-zone span { position:absolute; left:50%; bottom:10px; transform:translateX(-50%); white-space:nowrap; color:rgba(77,55,22,.75); font-size:8px; font-weight:900; }
+    .track-lines { position:absolute; inset:auto 0 0; height:72px; background:repeating-linear-gradient(90deg,rgba(73,43,20,.09) 0 46px,rgba(255,255,255,.16) 46px 50px),linear-gradient(#d5a667,#b87743); border-top:4px solid rgba(89,56,28,.26); }
+    .run-pet { position:absolute; z-index:4; left:12.5%; bottom:58px; width:108px; filter:drop-shadow(0 15px 12px rgba(50,44,34,.22)); }
+    .obstacle { position:absolute; z-index:4; min-width:72px; padding:9px 10px; display:grid; place-items:center; gap:2px; border-radius:13px; color:#fff; box-shadow:0 8px 14px rgba(42,38,37,.2); }
+    .obstacle b{font-size:20px}.obstacle small{font-size:8px;font-weight:900}.ground{right:25%;bottom:65px;background:#b34b40}.air{right:9%;bottom:145px;background:#4f67b3}.action-arrow{position:absolute;z-index:4;color:rgba(255,255,255,.86);font-size:9px;font-weight:900}.arrow-jump{right:26.3%;bottom:140px}.arrow-duck{right:10.3%;bottom:112px}
+    .run-streak { position:absolute; z-index:5; left:50%; top:28%; transform:translateX(-50%); padding:7px 13px; border-radius:999px; color:#5d4212; background:#f5c968; font-size:10px; font-weight:1000; box-shadow:0 6px 18px rgba(89,67,18,.18); }
+    .runner-controls { padding:14px 16px; display:grid; grid-template-columns:1fr 1fr 180px; gap:10px; background:#fff9ec; }
+    .runner-controls button { min-height:58px; display:flex; justify-content:center; align-items:center; gap:10px; border:1px solid var(--line); border-radius:14px; color:#fff; background:#43589f; font-size:12px; font-weight:900; }.runner-controls button.duck{background:#9c5843}.runner-controls .pause{color:var(--green);background:#fffdf6}
+
+    .annotation {
+      position:fixed; right:28px; bottom:26px; z-index:30; padding:9px 13px; border-radius:999px;
+      color:rgba(255,255,255,.78); background:rgba(4,12,9,.72); backdrop-filter:blur(8px); font-size:10px;
+    }
+
+    @media (max-height: 820px) {
+      .prototype { min-height: 720px; }
+      .game-card { min-height: 370px; grid-template-rows: 166px 1fr; }
+      .lobby-hero { min-height: 125px; }
+      .screen-body { padding-top: 17px; }
+      .battle-stage { min-height: 320px; }
+      .battlefield { height: 210px; }
+      .battlefield .pet-fighter { width: 135px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="prototype">
+    <aside class="rail">
+      <div class="brand"><span class="paw">🐾</span><div><strong>忍了吧</strong><small>WageClaw · 解压游戏厅</small></div></div>
+      <nav class="rail-nav" aria-label="设计图切换">
+        <button class="active" data-screen="lobby"><i>⌂</i><span>游戏大厅</span></button>
+        <button data-screen="duel"><i>⚔</i><span>桌面切磋</span></button>
+        <button data-screen="gomoku"><i>●</i><span>五子棋</span></button>
+        <button data-screen="runner"><i>↗</i><span>怨气闯关</span></button>
+      </nav>
+      <div class="rail-foot"><small>今日活动爪币</small><strong>82 / 140</strong><div class="meter"><i></i></div></div>
+    </aside>
+
+    <section class="canvas">
+      <article class="screen active" id="screen-lobby">
+        <header class="topbar">
+          <div class="top-title"><div><h1>解压游戏厅</h1><p>跟软团玩一局，把工位怨气换成一点胜负欲。</p></div></div>
+          <div class="top-actions"><span class="chip">🎯 今日任务 2 / 3 局</span><button class="soft-button">战绩与成就</button><button class="soft-button">×</button></div>
+        </header>
+        <div class="screen-body">
+          <section class="lobby-hero">
+            <div><h2>今天想怎么解压？</h2><p>三款游戏，共用每日 140 爪币活动额度。<br />成绩会推进桌宠任务和游戏成就。</p></div>
+            <div class="mission"><span class="mission-medal">🏅</span><div><strong>再完成 1 局，领取今日任务奖励</strong><small>任意游戏均可 · 进度每日刷新</small></div><b>2 / 3</b><div class="mission-bar"><i></i></div></div>
+          </section>
+          <section class="game-grid">
+            <article class="game-card duel">
+              <div class="card-art"><span class="tagline">策略 · 约 2 分钟</span><div class="duel-mini"><img class="pet" src="../src/assets/pet-stages/level-04-claw.webp" alt="软团" /><span class="vs">VS</span><div class="mini-boss"><span class="head">😤</span><span class="body"></span><span class="tie"></span></div></div></div>
+              <div class="card-copy"><h3>桌面切磋</h3><p>攒爆发、接连击，和软团一起打散老板怨念体。</p><div class="facts"><span><b>25</b>胜利爪币</span><span><b>8</b>最佳连击</span><span><b>12 胜</b>累计战绩</span></div><button class="play" data-jump="duel">立即开战</button></div>
+            </article>
+            <article class="game-card gomoku">
+              <div class="card-art"><span class="tagline">休闲 · 约 5 分钟</span><div class="mini-board"><i></i><i></i><i></i><i></i><i></i></div></div>
+              <div class="card-copy"><h3>五子棋</h3><p>你执黑先行，和软团安静地下完一盘。</p><div class="facts"><span><b>20</b>胜利爪币</span><span><b>轻松</b>当前难度</span><span><b>7 / 3</b>胜 / 负</span></div><button class="play" data-jump="gomoku">坐下对弈</button></div>
+            </article>
+            <article class="game-card runner">
+              <div class="card-art"><span class="tagline">反应 · 约 1 分钟</span><div class="mini-track"></div><img class="runner-pet" src="../src/assets/pet-stages/level-04-claw.webp" alt="软团" /><div class="runner-note">周报</div></div>
+              <div class="card-copy"><h3>怨气闯关</h3><p>跳过会议和周报，蹲过临时需求与已读。</p><div class="facts"><span><b>20</b>最高爪币</span><span><b>386</b>历史最佳</span><span><b>2.8x</b>最高速度</span></div><button class="play" data-jump="runner">开始摸鱼</button></div>
+            </article>
+          </section>
+        </div>
+      </article>
+
+      <article class="screen" id="screen-duel">
+        <header class="topbar"><div class="top-title"><button class="back" data-jump="lobby">←</button><div><h1>桌面切磋</h1><p>策略回合制 · 与软团并肩出战</p></div></div><div class="top-actions"><span class="chip">连击 x3</span><span class="chip">🔊 音效开</span><button class="soft-button">暂停</button><button class="soft-button">退出</button></div></header>
+        <div class="screen-body"><div class="game-body duel-layout"><section class="game-stage-shell battle-stage"><div class="city"></div><div class="battle-hud"><div class="fighter-hud"><span class="avatar">🐾</span><div><strong>你 · 软团</strong><div class="hp"><small>78 / 100</small></div></div></div><div class="round"><b>你的回合</b><span>第 4 回合</span></div><div class="fighter-hud boss-hud"><div><strong>老板怨念体</strong><div class="hp"><small>67 / 100</small></div></div><span class="avatar">😤</span></div></div><div class="battlefield"><img class="pet-fighter" src="../src/assets/pet-stages/level-04-claw.webp" alt="软团" /><span class="hit-word">暴击 42!</span><div class="mini-boss boss-large"><span class="head">😤</span><span class="body"></span><span class="tie"></span></div></div><div class="battle-ticker">嘴替暴击命中，造成 42 点伤害。老板怨念体准备反击。</div></section><section class="game-stage-shell command-deck"><div class="energy-row"><span>爆发能量</span><div class="energy-bar"><i></i></div><b>62 / 100</b></div><div class="skills"><button class="skill"><i class="tiny-kbd">J</i><b>普通拳</b><small>+12 爆发</small></button><button class="skill"><i class="tiny-kbd">K</i><b>反弹脚</b><small>+9 爆发</small></button><button class="skill power"><i class="tiny-kbd">I</i><b>嘴替暴击</b><small>24 爆发</small></button><button class="skill power"><i class="tiny-kbd">L</i><b>怨气波</b><small>36 爆发</small></button><button class="skill safe"><i class="tiny-kbd">H</i><b>安抚回血</b><small>恢复 18</small></button><button class="skill safe"><i class="tiny-kbd">⇧</i><b>格挡</b><small>减伤 60%</small></button><button class="skill"><i class="tiny-kbd">Q/E</i><b>闪身</b><small>8 爆发</small></button></div></section></div></div>
+      </article>
+
+      <article class="screen" id="screen-gomoku">
+        <header class="topbar"><div class="top-title"><button class="back" data-jump="lobby">←</button><div><h1>五子棋</h1><p>桌面对弈 · 你执黑先行</p></div></div><div class="top-actions"><span class="chip">第 18 手</span><span class="chip">奖励：胜 +20 / 平 +8</span><button class="soft-button">退出</button></div></header>
+        <div class="screen-body"><div class="game-body gomoku-layout game-stage-shell"><section class="board-wrap"><div class="board-large"><i class="stone black r1"></i><i class="stone white r2"></i><i class="stone black r3"></i><i class="stone white r4"></i><i class="stone black r5 last"></i><i class="stone white r6"></i><i class="stone black r7"></i><i class="stone white r8"></i><i class="stone black r9"></i><i class="stone white r10"></i><i class="stone black r11"></i><i class="stone white r12"></i><i class="stone black r13"></i><i class="stone white r14"></i><span class="win-line"></span></div></section><aside class="opponent-panel"><div class="opponent-head"><div class="opponent-avatar"><img src="../src/assets/pet-stages/level-04-claw.webp" alt="软团" /></div><div><strong>软团 · 白棋</strong><span>正在观察你的斜线</span></div></div><div class="turn-card"><small>当前回合</small><b>轮到你落子</b></div><div class="score-strip"><span><b>7</b>胜</span><span><b>3</b>负</span><span><b>1</b>平</span></div><div class="move-note">最近一步：黑棋 H9<br />红点标记最后落子；金色线显示当前五连。</div><div class="difficulty"><button class="active">轻松</button><button>认真 🔒</button></div><button class="restart">重新开始</button></aside></div></div>
+      </article>
+
+      <article class="screen" id="screen-runner">
+        <header class="topbar"><div class="top-title"><button class="back" data-jump="lobby">←</button><div><h1>怨气闯关</h1><p>反应跑酷 · 跳过地面，蹲过空中</p></div></div><div class="top-actions"><span class="chip">摸鱼连段 x7</span><span class="chip">🔊 音效开</span><button class="soft-button">退出</button></div></header>
+        <div class="screen-body"><div class="game-body runner-layout"><section class="game-stage-shell run-stage"><div class="run-hud"><div class="score-box"><small>本局得分</small><b>286</b></div><span class="speed">速度 1.8x</span><div class="score-box right"><small>历史最佳</small><b>386</b></div></div><div class="danger-zone"><span>判定区</span></div><div class="track-lines"></div><img class="run-pet" src="../src/assets/pet-stages/level-04-claw.webp" alt="软团" /><span class="run-streak">摸鱼连段 x7</span><div class="obstacle ground"><b>📊</b><small>周报</small></div><span class="action-arrow arrow-jump">↑ 跳过</span><div class="obstacle air"><b>⚡</b><small>临需</small></div><span class="action-arrow arrow-duck">↓ 蹲过</span></section><section class="game-stage-shell runner-controls"><button><i class="tiny-kbd">Space / ↑</i>跳跃</button><button class="duck"><i class="tiny-kbd">S / ↓</i>下蹲</button><button class="pause">Ⅱ 暂停</button></section></div></div>
+      </article>
+    </section>
+  </main>
+  <div class="annotation">关键设计原型 · 点击左侧可切换 4 个场景</div>
+  <script>
+    const switchTo = (name) => {
+      document.querySelectorAll('.screen').forEach((el) => el.classList.toggle('active', el.id === `screen-${name}`));
+      document.querySelectorAll('.rail-nav button').forEach((el) => el.classList.toggle('active', el.dataset.screen === name));
+      history.replaceState(null, '', `#${name}`);
+    };
+    document.querySelectorAll('[data-screen]').forEach((el) => el.addEventListener('click', () => switchTo(el.dataset.screen)));
+    document.querySelectorAll('[data-jump]').forEach((el) => el.addEventListener('click', () => switchTo(el.dataset.jump)));
+    const initial = location.hash.slice(1);
+    if (['lobby','duel','gomoku','runner'].includes(initial)) switchTo(initial);
+  </script>
+</body>
+</html>

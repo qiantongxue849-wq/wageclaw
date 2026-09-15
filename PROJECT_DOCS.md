@@ -1,3 +1,8 @@
+# ⚠️ 历史文档（2026-05 版本，数据已过时）
+
+> 最新架构与扩展指南请看 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)；
+> 本轮优化记录见 [docs/OPTIMIZATION_PLAN.md](./docs/OPTIMIZATION_PLAN.md)。
+
 # 忍了吧 WageClaw - 项目功能文档
 
 ## 一、项目概述

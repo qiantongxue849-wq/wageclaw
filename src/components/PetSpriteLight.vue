@@ -22,16 +22,16 @@ const props = withDefaults(
 );
 
 const stageLoaders: Record<string, AssetLoader> = {
-  mist: () => import("@/assets/pet-stages/level-01-mist.png?url").then((asset) => asset.default),
-  cable: () => import("@/assets/pet-stages/level-02-cable.png?url").then((asset) => asset.default),
-  horn: () => import("@/assets/pet-stages/level-03-horn.png?url").then((asset) => asset.default),
-  claw: () => import("@/assets/pet-stages/level-04-claw.png?url").then((asset) => asset.default),
-  crown: () => import("@/assets/pet-stages/level-05-crown.png?url").then((asset) => asset.default),
-  array: () => import("@/assets/pet-stages/level-06-array.png?url").then((asset) => asset.default),
-  halo: () => import("@/assets/pet-stages/level-07-halo.png?url").then((asset) => asset.default),
-  thunder: () => import("@/assets/pet-stages/level-08-thunder.png?url").then((asset) => asset.default),
-  jade: () => import("@/assets/pet-stages/level-09-jade.png?url").then((asset) => asset.default),
-  immortal: () => import("@/assets/pet-stages/level-10-immortal.png?url").then((asset) => asset.default)
+  mist: () => import("@/assets/pet-stages/level-01-mist.webp?url").then((asset) => asset.default),
+  cable: () => import("@/assets/pet-stages/level-02-cable.webp?url").then((asset) => asset.default),
+  horn: () => import("@/assets/pet-stages/level-03-horn.webp?url").then((asset) => asset.default),
+  claw: () => import("@/assets/pet-stages/level-04-claw.webp?url").then((asset) => asset.default),
+  crown: () => import("@/assets/pet-stages/level-05-crown.webp?url").then((asset) => asset.default),
+  array: () => import("@/assets/pet-stages/level-06-array.webp?url").then((asset) => asset.default),
+  halo: () => import("@/assets/pet-stages/level-07-halo.webp?url").then((asset) => asset.default),
+  thunder: () => import("@/assets/pet-stages/level-08-thunder.webp?url").then((asset) => asset.default),
+  jade: () => import("@/assets/pet-stages/level-09-jade.webp?url").then((asset) => asset.default),
+  immortal: () => import("@/assets/pet-stages/level-10-immortal.webp?url").then((asset) => asset.default)
 };
 
 const sheetLoaders: Partial<Record<PetStyle, AssetLoader>> = {

@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import type { CSSProperties } from "vue";
-import stage01 from "@/assets/pet-stages/level-01-mist.png";
-import stage02 from "@/assets/pet-stages/level-02-cable.png";
-import stage03 from "@/assets/pet-stages/level-03-horn.png";
-import stage04 from "@/assets/pet-stages/level-04-claw.png";
-import stage05 from "@/assets/pet-stages/level-05-crown.png";
-import stage06 from "@/assets/pet-stages/level-06-array.png";
-import stage07 from "@/assets/pet-stages/level-07-halo.png";
-import stage08 from "@/assets/pet-stages/level-08-thunder.png";
-import stage09 from "@/assets/pet-stages/level-09-jade.png";
-import stage10 from "@/assets/pet-stages/level-10-immortal.png";
+import stage01 from "@/assets/pet-stages/level-01-mist.webp";
+import stage02 from "@/assets/pet-stages/level-02-cable.webp";
+import stage03 from "@/assets/pet-stages/level-03-horn.webp";
+import stage04 from "@/assets/pet-stages/level-04-claw.webp";
+import stage05 from "@/assets/pet-stages/level-05-crown.webp";
+import stage06 from "@/assets/pet-stages/level-06-array.webp";
+import stage07 from "@/assets/pet-stages/level-07-halo.webp";
+import stage08 from "@/assets/pet-stages/level-08-thunder.webp";
+import stage09 from "@/assets/pet-stages/level-09-jade.webp";
+import stage10 from "@/assets/pet-stages/level-10-immortal.webp";
 import capybaraZenSheet from "@/assets/pet-sheets/capybara-zen-sheet.png";
 import lazyCatSheet from "@/assets/pet-sheets/lazy-cat-sheet.png";
 import lazyDogSheet from "@/assets/pet-sheets/lazy-dog-sheet.png";

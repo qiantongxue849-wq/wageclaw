@@ -8,21 +8,39 @@ const {
   summonedBubble,
   petDialog,
   petReaction,
-  petModePicker,
   petMotionAction,
   petMotionKey,
   petDragging,
   floatingPetStyle,
   currentPetStage,
   petAscension,
+  activeWorkEvent,
   startPetDrag,
   handleFloatPetDoubleClick,
-  selectPetInteractionMode
+  resolveWorkEventChoice
 } = usePetRuntime();
 </script>
 
 <template>
   <main class="pet-light-root" :data-pet-style="state.petStyle">
+    <div v-if="activeWorkEvent" class="pet-work-event" @mousedown.stop @dblclick.stop>
+      <span>{{ activeWorkEvent.tone }}</span>
+      <strong>{{ activeWorkEvent.title }}</strong>
+      <p>{{ activeWorkEvent.prompt }}</p>
+      <div class="pet-work-event-actions">
+        <button
+          v-for="choice in activeWorkEvent.choices"
+          :key="choice.id"
+          type="button"
+          @click="resolveWorkEventChoice(choice.id)"
+        >
+          <strong>{{ choice.label }}</strong>
+          <small>{{ choice.detail }}</small>
+          <em>成长 +{{ choice.effect.growth || 0 }}</em>
+        </button>
+      </div>
+    </div>
+
     <section
       class="floating-pet float-mode"
       :class="[viewMode === 'float' ? 'electron-float' : 'browser-float', petReaction, { dragging: petDragging }]"
@@ -33,19 +51,6 @@ const {
     >
       <div v-if="summonedBubble" class="pet-bubble">{{ summonedBubble }}</div>
       <div v-if="petDialog" class="pet-dialog" v-html="petDialog"></div>
-
-      <div v-if="petModePicker" class="pet-mode-picker" @mousedown.stop>
-        <strong>互动模式</strong>
-        <div class="pet-mode-actions">
-          <button type="button" @click="selectPetInteractionMode('normal')">陪伴</button>
-          <button type="button" @click="selectPetInteractionMode('rage')">收集怨气</button>
-        </div>
-      </div>
-
-      <span v-if="petReaction === 'hammer'" class="pet-hammer" aria-hidden="true">
-        <span class="pet-hammer-head"></span>
-        <span class="pet-hammer-handle"></span>
-      </span>
 
       <PetSpriteLight
         :stage="currentPetStage"

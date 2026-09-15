@@ -2,9 +2,8 @@ export type Theme = "forest" | "arcade" | "sakura" | "ink" | "citrus";
 export type CountMode = "natural" | "workday";
 export type Mood = "rage" | "stable" | "numb";
 export type Currency = "wallet" | "paw" | "rage";
-export type ScreenKey = "converter" | "mall" | "pet" | "ninja" | "community" | "sync" | "settings";
+export type ScreenKey = "converter" | "mall" | "pet" | "settings";
 export type PetStyle = "rageBlob" | "capybaraZen" | "lazyCat" | "lazyDog" | "honestCow";
-export type PetInteractionMode = "normal" | "rage";
 
 export type PetStagePalette = {
   body: string;
@@ -147,11 +146,11 @@ export type PetState = {
   touchCount: number;
   touchHeat: number;
   touchMood: string;
-  interactionMode: PetInteractionMode;
   battleWins: number;
   battleLosses: number;
   battleBestCombo: number;
   lastBusinessHint: string;
+  lastInteractionAt: number;
 };
 
 export type DailyPawLedger = {
@@ -169,9 +168,17 @@ export type MonthlyPawLedger = {
   earned: number;
 };
 
+export type DailyPetGrowth = {
+  date: string;
+  passive: number;
+  broadcast: number;
+  event: number;
+};
+
 export type WorkEventEffect = {
   paw?: number;
   rage?: number;
+  growth?: number;
   bloodPressure?: number;
   satiety?: number;
   affection?: number;
@@ -192,6 +199,43 @@ export type WorkEvent = {
   prompt: string;
   tone: string;
   choices: WorkEventChoice[];
+};
+
+export type InteractionPromptKind = "health" | "clock" | "touch";
+
+export type InteractionPromptItem = {
+  id: string;
+  label: string;
+  text: string;
+  weight: number;
+  enabled: boolean;
+  custom?: boolean;
+};
+
+export type NewsApiSource = {
+  id: string;
+  name: string;
+  url: string;
+  enabled: boolean;
+  weight: number;
+  apiKeyHeader: string;
+  apiKeyValue: string;
+  note: string;
+  custom?: boolean;
+};
+
+export type InteractionPromptSettings = {
+  healthPrompts: InteractionPromptItem[];
+  clockPrompts: InteractionPromptItem[];
+  touchPrompts: InteractionPromptItem[];
+  newsEnabled: boolean;
+  newsSources: NewsApiSource[];
+};
+
+export type DailyQuestState = {
+  date: string;
+  progress: Record<string, number>;
+  claimed: string[];
 };
 
 export type WageClawState = {
@@ -218,6 +262,7 @@ export type WageClawState = {
   };
   dailyPaw: DailyPawLedger;
   monthlyPaw: MonthlyPawLedger;
+  dailyPetGrowth: DailyPetGrowth;
   activeWorkEventId: string;
   lastClaimTime: string;
   activeWishId: string;
@@ -232,4 +277,14 @@ export type WageClawState = {
   transactionFilter: "all" | TransactionCategory;
   mallFilter: string;
   privacyMode: boolean;
+  sedentaryReminderEnabled: boolean;
+  sedentaryReminderMinutes: number;
+  petFocusReminderEnabled: boolean;
+  petFocusReminderMinutes: number;
+  lastStretchAt: number;
+  lastSedentaryReminderAt: number;
+  lastPetFocusReminderAt: number;
+  interactionPrompts: InteractionPromptSettings;
+  achievements: string[];
+  dailyQuests: DailyQuestState;
 };

@@ -1,0 +1,111 @@
+/* ==================================================================
+   Motion & Feedback Layer（统一动效与交互反馈层）
+   追加于文件末尾，允许被更具体的选择器覆盖。
+   ================================================================== */
+:root {
+  --dur-fast: 0.15s;
+  --dur-base: 0.25s;
+  --dur-slow: 0.42s;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/* 所有可点元素：统一过渡底座 + hover 提亮 + 按压回缩 */
+.app-root button,
+.app-root [role="button"] {
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    filter var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+
+.app-root button:hover:not(:disabled),
+.app-root [role="button"]:hover {
+  filter: brightness(1.05) saturate(1.02);
+}
+
+.app-root button:active:not(:disabled),
+.app-root [role="button"]:active {
+  transform: scale(0.97);
+}
+
+.app-root button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 输入控件：聚焦光环 */
+.app-root textarea:focus,
+.app-root input:focus,
+.app-root select:focus {
+  border-color: color-mix(in srgb, var(--accent), transparent 30%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent), transparent 82%);
+  transition:
+    box-shadow var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+/* 全局通知：入场弹落 + 退场淡出（配合 App.vue 的 <transition name="toast">） */
+.toast.toast-enter-active {
+  animation: toast-in var(--dur-slow) var(--ease-spring) both;
+}
+
+.toast.toast-leave-active {
+  transition: opacity var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
+
+.toast.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -10px);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -14px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* 系统开启"减弱动效"时：取消装饰动画与过渡 */
+@media (prefers-reduced-motion: reduce) {
+
+  .app-root *,
+  .pet-light-root *,
+  .app-root *::before,
+  .app-root *::after,
+  .pet-light-root *::before,
+  .pet-light-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 桌宠页「桌面游戏」卡片 */
+.pet-arcade-lab .panel-header {
+  align-items: flex-start;
+}
+
+.pet-arcade-intro {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.pet-arcade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
