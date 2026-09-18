@@ -16,8 +16,8 @@ module.exports = function createWindows(ctx) {
   // 气泡（290×104）与悬停浮层（280×158）是装饰性小窗：它们本就反复出现、消失，
   // 「没出现」是完全正常的状态。把 440px 宽的说明页塞进这么小的窗只会被裁成乱码，
   // 反而比空白更糟。这两类窗口失败就安静地不显示 —— 窗口被 dismiss() 销毁后
-  // 下次播报会重新创建，届时服务器若已恢复就自然好了。说明页留给真正需要读它的
-  // 面板窗口（main / bootstrap / pet）。
+  // 下次播报会重新创建，届时服务器若已恢复就自然好了。
+  // 说明页只渲染到能读它的窗口：main（1120×790）与 bootstrap。
   const DECORATIVE_VIEWS = new Set(['bubble', 'hover']);
   // 判断加载成功与否只能靠自己记标志位，实测（失败加载的事件顺序）：
   //   did-fail-load(79ms) → dom-ready → did-finish-load(87ms) → ready-to-show(90ms)
@@ -36,7 +36,7 @@ module.exports = function createWindows(ctx) {
   function showLoadFailure(win, view, reason) {
     const hint = ctx.app.isPackaged
       ? '应用自带的前端资源没能加载，建议重新安装。'
-      : `开发服务器没有响应（${ctx.DEV_SERVER_URL}）。先在项目里运行 npm run dev，再关掉这个窗口重新双击桌宠。`;
+      : `开发服务器没有响应（${ctx.DEV_SERVER_URL}）。先在项目里运行 npm run dev，再关掉这个窗口重新双击桌宠；桌宠没出现的话，重启一下应用。`;
     const page = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>忍了吧 · 加载失败</title>
 <style>html,body{margin:0;height:100%;display:flex;align-items:center;justify-content:center;background:#f8f9f5;color:#304738;font-family:"PingFang SC","Microsoft YaHei",sans-serif}main{max-width:440px;padding:26px 30px;border:1px solid #dce4d8;border-radius:14px;background:#fff;box-shadow:0 2px 10px #1b35221a}h1{margin:0 0 12px;font-size:17px}p{margin:0 0 8px;font-size:13px;line-height:1.7;color:#5c7360}code{padding:1px 6px;border-radius:5px;background:#eef2e9;font-size:12px;word-break:break-all}</style>
 </head><body><main><h1>这个窗口没能加载内容</h1><p>${hint}</p><p>视图 <code>${escapeHtml(view)}</code></p><p>原始错误 <code>${escapeHtml(reason)}</code></p></main></body></html>`;
@@ -69,6 +69,10 @@ module.exports = function createWindows(ctx) {
         }
         console.error('Renderer load:', error.message);
         if (DECORATIVE_VIEWS.has(view)) return;
+        // 桌宠窗口是透明的、尺寸由用户设定（默认 128），说明页塞进去同样读不清 ——
+        // 与其显示一张糊掉的卡片，不如把解释放到能读它的详情面板里。
+        // （`npm run electron` 只启动 Electron、不启动 Vite，所以这个场景很常见。）
+        if (view === 'pet') { showMainWindow(); return; }
         showLoadFailure(win, view, error.message);
       });
     };
@@ -102,14 +106,15 @@ module.exports = function createWindows(ctx) {
       const win = new ctx.BrowserWindow({ width: pet.size, height: pet.size, show: false, frame: false, transparent: true, backgroundColor: '#00000000', hasShadow: false, resizable: false, maximizable: false, minimizable: false, fullscreenable: false, alwaysOnTop: pet.onTop, skipTaskbar: true, focusable: false, title: '忍了吧 · 桌宠', webPreferences: webPreferences() });
       ctx.petWindow = win;
       win.on('closed', () => { ctx.petWindow = null; });
-      win.once('ready-to-show', () => { if (ctx.store.state.settings.pet.visible) win.showInactive(); });
+      win.once('ready-to-show', () => { if (ctx.store.state.settings.pet.visible && !win.__loadFailed) win.showInactive(); });
       loadRenderer(win, 'pet');
     }
     const area = ctx.screen.getPrimaryDisplay().workArea;
     const pos = clampPosition(pet.x ?? area.x + area.width - pet.size - 36, pet.y ?? area.y + area.height - pet.size - 36, pet.size);
     ctx.petWindow.setBounds({ ...pos, width: pet.size, height: pet.size });
     ctx.petWindow.setAlwaysOnTop(pet.onTop);
-    if (!ctx.petWindow.webContents.isLoading()) ctx.petWindow.showInactive();
+    // 加载失败时别把一个空的透明窗摆在桌面上 —— 它既没用也挡不住任何东西，还容易被误当成幽灵窗。
+    if (!ctx.petWindow.webContents.isLoading() && !ctx.petWindow.__loadFailed) ctx.petWindow.showInactive();
   }
   function showBubble() {
     if (!alive(ctx.petWindow)) return;
