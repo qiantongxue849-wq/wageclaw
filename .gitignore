@@ -80,3 +80,7 @@ playwright-report/
 # QA 与本地测试产物
 qa-shots/
 qa-user-data/
+.electron-dev-data/
+
+# Generated shared desktop domain logic
+electron/generated/

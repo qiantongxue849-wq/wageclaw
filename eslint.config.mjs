@@ -18,7 +18,8 @@ export default tseslint.config(
       "coverage/**",
       "qa-shots/**",
       "qa-user-data/**",
-      "design/**"
+      "design/**",
+      "electron/generated/**"
     ]
   },
   js.configs.recommended,

@@ -1,3 +1,5 @@
+> 历史文档：以下描述属于轻量化改造前的版本。当前功能与架构以 README.md 和 docs/ARCHITECTURE.md 为准。
+
 # WageClaw 小游戏方案
 
 > 2026-08-30 V2 体验方案（`docs/GAMES_UX_OPTIMIZATION_V2.md`）落地后的现行结构。

@@ -1,7 +1,4 @@
 {
-  "supabaseUrl": "",
-  "supabaseAnonKey": "",
-  "localTestAuth": true,
   "updateUrl": "",
   "updateChannel": "latest"
 }

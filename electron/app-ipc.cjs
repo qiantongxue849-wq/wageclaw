@@ -1,188 +1,62 @@
-/**
- * IPC 通道注册：渲染进程可触达的全部主进程能力。
- * 加固原则：入参一律校验/夹取；窗口类 send 通道校验 event.sender；
- * 涉及屏幕导航的值走 allowlist，防止任意字符串进入导航广播。
- */
-const fsPromises = require("node:fs/promises");
-
-const VALID_SCREENS = new Set(["converter", "mall", "pet", "settings"]);
-
-module.exports = function registerIpcHandlers(ctx) {
-  const { ipcMain, screen, dialog } = ctx;
-  const { authService, updateService } = ctx;
-
-  ipcMain.handle("wageclaw:auth:get-session", () => authService.getSession());
-  ipcMain.handle("wageclaw:auth:sign-up", async (_, payload) => {
-    const result = await authService.signUp(payload && typeof payload === "object" ? payload : {});
-    if (result.authenticated) ctx.startAuthenticatedShell();
-    return result;
+const fs = require('node:fs/promises');
+module.exports = function registerIpc(ctx) {
+  const alive = win => win && !win.isDestroyed();
+  function trusted(event) { return [ctx.mainWindow, ctx.petWindow, ctx.bubbleWindow, ctx.hoverWindow, ctx.bootstrapWindow].some(win => alive(win) && win.webContents === event.sender); }
+  function handle(channel, callback) {
+    ctx.ipcMain.handle(channel, (event, payload) => { if (!trusted(event)) throw new Error('Untrusted sender'); return callback(event, payload); });
+  }
+  const mainOnly = event => { if (!alive(ctx.mainWindow) || event.sender !== ctx.mainWindow.webContents) throw new Error('Panel only'); };
+  handle('pet:bootstrap', (event, payload) => {
+    if (event.sender !== ctx.bootstrapWindow?.webContents || JSON.stringify(payload).length > 20 * 1024 * 1024) throw new Error('Invalid migration');
+    ctx.store.bootstrap(payload); ctx.service.start();
+    if (!ctx.store.state.settings.configured || ctx.store.recovery) ctx.showMainWindow();
+    const boot = ctx.bootstrapWindow; ctx.bootstrapWindow = null; setImmediate(() => boot?.destroy());
+    return ctx.service.snapshot();
   });
-  ipcMain.handle("wageclaw:auth:sign-in", async (_, payload) => {
-    const result = await authService.signIn(payload && typeof payload === "object" ? payload : {});
-    if (result.authenticated) ctx.startAuthenticatedShell();
-    return result;
+  handle('pet:get', () => ctx.service.snapshot());
+  handle('pet:save', (event, value) => { mainOnly(event); return ctx.service.apply(value, { closeAfterOnboarding: true }); });
+  handle('pet:reset', event => { mainOnly(event); return ctx.service.reset(); });
+  handle('pet:quiet', (_, mode) => { if (!['hour', 'today', 'resume'].includes(mode)) return; return ctx.service.quiet(mode); });
+  handle('pet:manual', () => ctx.service.manual());
+  handle('pet:dismiss', () => ctx.service.dismiss());
+  handle('pet:hover', (_, hovered) => ctx.service.hoverBubble(hovered === true));
+  handle('pet:hovercard', (event, payload) => {
+    const fromPet = alive(ctx.petWindow) && event.sender === ctx.petWindow.webContents;
+    const fromCard = alive(ctx.hoverWindow) && event.sender === ctx.hoverWindow.webContents;
+    if (!fromPet && !fromCard) return;
+    if (payload?.show !== false) { ctx.showHover(); return; }
+    const delay = Number.isFinite(payload?.delay) ? Math.max(0, Math.min(2000, payload.delay)) : 0;
+    ctx.hideHover(delay);
   });
-  ipcMain.handle("wageclaw:auth:sign-out", async () => {
-    const result = await authService.signOut();
-    ctx.stopAuthenticatedShell();
-    return result;
+  handle('pet:busy', (event, busy) => { mainOnly(event); ctx.service.setPanelBusy(busy === true); });
+  handle('lite:open-main', (_, screen) => ctx.showMainWindow(screen === 'settings' ? screen : 'home'));
+  handle('pet:menu', () => ctx.showPetMenu());
+  handle('pet:hit', (event, interactive) => {
+    if (alive(ctx.petWindow) && event.sender === ctx.petWindow.webContents) ctx.petWindow.setIgnoreMouseEvents(interactive !== true, { forward: true });
   });
-  ipcMain.handle("wageclaw:auth:password-reset", (_, email) => {
-    return authService.requestPasswordReset(typeof email === "string" ? email : "");
-  });
-
-  ipcMain.handle("wageclaw:update:get-state", () => updateService.getState());
-  ipcMain.handle("wageclaw:update:check", () => updateService.checkForUpdates());
-  ipcMain.handle("wageclaw:update:download-install", () => updateService.downloadAndInstall());
-
-  ipcMain.handle("wageclaw:focus-screen", (_, targetScreen) => {
-    if (typeof targetScreen !== "string" || !VALID_SCREENS.has(targetScreen)) {
-      return { ok: false };
-    }
-    ctx.showMainWindow(targetScreen);
-    return { ok: true, screen: targetScreen };
-  });
-
-  ipcMain.handle("wageclaw:export-backup", async (_, contents) => {
-    if (typeof contents !== "string" || contents.length === 0 || contents.length > 20 * 1024 * 1024) {
-      return { ok: false, message: "备份内容无效" };
-    }
-    const result = await dialog.showSaveDialog({
-      title: "导出 WageClaw 备份",
-      defaultPath: `wageclaw-backup-${new Date().toISOString().slice(0, 10)}.json`,
-      filters: [{ name: "JSON", extensions: ["json"] }]
-    });
-    if (result.canceled || !result.filePath) {
-      return { ok: false, canceled: true };
-    }
-    await fsPromises.writeFile(result.filePath, contents, "utf-8");
-    return { ok: true, filePath: result.filePath };
-  });
-
-  ipcMain.handle("wageclaw:open-main-panel", () => {
-    ctx.showMainWindow("converter");
-    return { ok: true };
-  });
-
-  ipcMain.handle("wageclaw:toggle-pet", (_, enabled) => {
-    const visible = ctx.togglePetWindow(Boolean(enabled));
-    return { ok: true, visible };
-  });
-
-  ipcMain.handle("wageclaw:pet-command", (_, payload) => {
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-      return { ok: false };
-    }
-    ctx.sendPetCommandToMain(payload);
-    return { ok: true };
-  });
-
-  // 悬浮窗按内容自适应尺寸：夹取到合理区间，防止异常尺寸把窗口变没
-  ipcMain.handle("wageclaw:pet-resize", (_, payload) => {
-    const size = payload && typeof payload === "object" ? payload : {};
-    const width = clampNumber(size.width, 120, 800, 200);
-    const height = clampNumber(size.height, 120, 900, 320);
-    if (ctx.petWindow && !ctx.petWindow.isDestroyed()) {
-      ctx.petWindow.setSize(width, height);
-    }
-    return { ok: true, width, height };
-  });
-
-  ipcMain.on("wageclaw:pet-hit-test", (event, interactive) => {
-    if (!ctx.petWindow || ctx.petWindow.isDestroyed() || event.sender !== ctx.petWindow.webContents) return;
-    ctx.petWindow.setIgnoreMouseEvents(!interactive, { forward: true });
-  });
-
-  ipcMain.on("wageclaw:pet-drag-start", (event, payload = {}) => {
-    if (!ctx.petWindow || ctx.petWindow.isDestroyed() || event.sender !== ctx.petWindow.webContents) return;
-    ctx.clearPetMotionTimers();
-    const [windowX, windowY] = ctx.petWindow.getPosition();
-    ctx.petWindowDrag = {
-      windowX,
-      windowY,
-      screenX: Number(payload.screenX) || 0,
-      screenY: Number(payload.screenY) || 0
-    };
-  });
-
-  ipcMain.on("wageclaw:pet-drag", (event, payload = {}) => {
-    if (!ctx.petWindow || ctx.petWindow.isDestroyed() || event.sender !== ctx.petWindow.webContents) return;
-    if (ctx.petWindowDrag && Number.isFinite(Number(payload.screenX)) && Number.isFinite(Number(payload.screenY))) {
-      const x = ctx.petWindowDrag.windowX + Math.round(Number(payload.screenX) - ctx.petWindowDrag.screenX);
-      const y = ctx.petWindowDrag.windowY + Math.round(Number(payload.screenY) - ctx.petWindowDrag.screenY);
-      ctx.petWindow.setPosition(x, y, false);
-      return;
-    }
-
-    const pos = ctx.petWindow.getPosition();
-    ctx.petWindow.setPosition(pos[0] + (Number(payload.dx) || 0), pos[1] + (Number(payload.dy) || 0), false);
-  });
-
-  ipcMain.on("wageclaw:pet-drag-end", (event) => {
-    if (!ctx.petWindow || ctx.petWindow.isDestroyed() || event.sender !== ctx.petWindow.webContents) return;
-    ctx.petWindowDrag = null;
-  });
-
-  ipcMain.handle("wageclaw:show-pet", () => {
-    if (!ctx.appAuthenticated) return { ok: false, visible: false };
-    if (!ctx.petWindow || ctx.petWindow.isDestroyed()) {
-      ctx.petWindow = ctx.createPetWindow();
-    }
-    ctx.petWindow.setSize(240, 340);
-    const { workArea } = screen.getPrimaryDisplay();
-    ctx.petWindow.setPosition(
-      workArea.x + workArea.width - 260,
-      workArea.y + workArea.height - 360
-    );
-    ctx.petWindow.show();
-    return { ok: true };
-  });
-
-  ipcMain.handle("wageclaw:trigger-blackout", (_, payload) => {
-    ctx.triggerDesktopBlackout(payload && typeof payload === "object" ? payload : {});
-    return { ok: true };
-  });
-
-  ipcMain.handle("wageclaw:pet-ricochet", () => {
-    const visible = ctx.triggerPetRicochet();
-    return { ok: true, visible };
-  });
-
-  ipcMain.handle("wageclaw:pet-storm", () => {
-    const visible = ctx.triggerPetStorm();
-    return { ok: true, visible };
-  });
-
-  ipcMain.handle("wageclaw:pet-nuke", () => {
-    const visible = ctx.triggerPetNuke();
-    return { ok: true, visible };
-  });
-
-  ipcMain.on("wageclaw:close-main-window", () => {
-    if (ctx.mainWindow && !ctx.mainWindow.isDestroyed()) {
-      ctx.mainWindow.close();
+  ctx.ipcMain.on('pet:drag', (event, payload) => {
+    if (alive(ctx.petWindow) && event.sender === ctx.petWindow.webContents && ['start', 'move', 'end'].includes(payload?.kind)) {
+      try { ctx.dragPet(payload.kind, payload); } catch (error) { console.error('Drag save:', error.message); }
     }
   });
-
-  ipcMain.on("wageclaw:minimize-main-window", () => {
-    if (ctx.mainWindow && !ctx.mainWindow.isDestroyed()) {
-      ctx.mainWindow.minimize();
-    }
+  handle('lite:export', async event => {
+    mainOnly(event);
+    const result = await ctx.dialog.showSaveDialog(ctx.mainWindow, { title: '导出忍了吧备份', defaultPath: `wageclaw-backup-${new Date().toISOString().slice(0, 10)}.json`, filters: [{ name: 'JSON', extensions: ['json'] }] });
+    if (result.canceled || !result.filePath) return { ok: false, canceled: true };
+    await fs.writeFile(result.filePath, ctx.store.export(), 'utf8'); return { ok: true };
   });
-
-  ipcMain.on("wageclaw:maximize-main-window", () => {
-    if (ctx.mainWindow && !ctx.mainWindow.isDestroyed()) {
-      if (ctx.mainWindow.isMaximized()) {
-        ctx.mainWindow.unmaximize();
-      } else {
-        ctx.mainWindow.maximize();
-      }
-    }
+  handle('pet:import', async event => {
+    mainOnly(event);
+    const result = await ctx.dialog.showOpenDialog(ctx.mainWindow, { title: '导入忍了吧备份', filters: [{ name: 'JSON', extensions: ['json'] }], properties: ['openFile'] });
+    if (result.canceled) return null;
+    const file = result.filePaths[0];
+    if ((await fs.stat(file)).size > 20 * 1024 * 1024) throw new Error('备份文件过大。');
+    const contents = await fs.readFile(file, 'utf8');
+    const confirm = await ctx.dialog.showMessageBox(ctx.mainWindow, { type: 'question', buttons: ['取消', '导入并备份现有数据'], defaultId: 0, cancelId: 0, message: '用备份中的工资和日期替换当前设置？', detail: '现有完整数据会先备份，导入失败不会删除原存档。' });
+    if (confirm.response !== 1) return null;
+    ctx.store.import(contents); return ctx.service.imported();
   });
+  handle('lite:update-state', () => ctx.updateService.getState());
+  handle('lite:update-check', event => { mainOnly(event); return ctx.updateService.checkForUpdates(); });
+  handle('lite:update-install', event => { mainOnly(event); return ctx.updateService.downloadAndInstall(); });
 };
-
-function clampNumber(value, min, max, fallback) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return fallback;
-  return Math.min(max, Math.max(min, Math.round(num)));
-}
