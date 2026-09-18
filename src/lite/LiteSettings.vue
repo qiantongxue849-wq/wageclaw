@@ -23,7 +23,7 @@ function submit() {
   value.payday = String(value.payday ?? '') === '' ? null : Number(value.payday);
   value.bonusAmount = String(value.bonusAmount ?? '') === '' ? null : Number(value.bonusAmount);
   value.salary = Number(value.salary);
-  if (value.bonusDate !== props.settings.bonusDate) value.bonusReceived = false;
+  if (value.bonusDate !== props.settings.bonusDate) value.bonusReceivedAt = '';
   error.value = validateSettings(value);
   if (!error.value) emit('save', value);
 }
@@ -125,19 +125,19 @@ onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
             <legend>给未来留一点盼头</legend>
             <div class="form-grid">
               <label>
-                春节放假开始
-                <input v-model="draft.springStart" type="date" min="1900-01-01" max="2200-12-31" />
+                春节放假开始（月-日）
+                <input v-model="draft.springStart" maxlength="5" placeholder="02-04" aria-label="春节放假开始" />
               </label>
               <label>
-                春节放假结束（选填）
-                <input v-model="draft.springEnd" type="date" :min="draft.springStart || '1900-01-01'" max="2200-12-31" />
+                春节放假结束（月-日，选填）
+                <input v-model="draft.springEnd" maxlength="5" placeholder="02-10" aria-label="春节放假结束" />
               </label>
             </div>
-            <p class="field-help">按你公司的实际安排填写。只填开始日期时，仅将当天记为休息日。</p>
+            <p class="field-help">按你公司的实际安排填写，每年自动重复。只填开始日期时，仅将当天记为休息日。</p>
             <div class="form-grid">
               <label>
-                年终奖预计发放日期
-                <input v-model="draft.bonusDate" type="date" min="1900-01-01" max="2200-12-31" />
+                年终奖预计发放日期（月-日）
+                <input v-model="draft.bonusDate" maxlength="5" placeholder="02-03" aria-label="年终奖预计发放日期" />
               </label>
               <label>
                 预计金额（元，选填）
@@ -145,10 +145,10 @@ onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
               </label>
             </div>
             <label v-if="draft.bonusDate" class="switch-row">
-              <span>年终奖已收到</span>
-              <input v-model="draft.bonusReceived" type="checkbox" />
+              <span>年终奖已收到（本轮）</span>
+              <input :checked="Boolean(draft.bonusReceivedAt)" type="checkbox" @change="draft.bonusReceivedAt = ($event.target as HTMLInputElement).checked ? dateKey(new Date()) : ''" />
             </label>
-            <p class="field-help">预计奖金不计入已赚收入，以实际发放为准。</p>
+            <p class="field-help">预计奖金不计入已赚收入，以实际发放为准；「已收到」标记只在本轮发放周期内有效。</p>
           </fieldset>
           <fieldset :disabled="recovery">
             <legend>临时上班与休息</legend>

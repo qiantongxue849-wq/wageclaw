@@ -166,7 +166,59 @@ try {
   assert.equal(hoverWindows().length, 0, '鼠标移开后浮层应被销毁');
   console.log(`悬停浮层：${rows} 行内容与格式正确，移入创建、移开 900ms 后销毁。`);
 
-  console.log('Pet features: style switching, ten-stage evolution, summer shift and the hover card all passed.');
+  // —— 5. 春节与年终奖按「月-日」每年重复 ——
+  // 详情面板从第 1 节起就一直开着，直接复用，不要再 openPanel（已存在时只会聚焦）。
+  const sheet = panel;
+  await sheet.getByRole('button', { name: '设置', exact: true }).click();
+  const form = sheet.getByRole('dialog');
+  await form.waitFor();
+  // 旧版带年份的写法现在应当被拒绝，避免用户以为还支持完整日期。
+  await form.getByLabel('春节放假开始', { exact: true }).fill('2027-02-04');
+  await form.getByRole('button', { name: '保存设置' }).click();
+  assert.match(await form.getByRole('alert').textContent(), /月-日/, '带年份的完整日期应被拒绝');
+  await form.getByLabel('春节放假开始', { exact: true }).fill('02-04');
+  await form.getByLabel('春节放假结束', { exact: true }).fill('02-10');
+  await form.getByLabel('年终奖预计发放日期', { exact: true }).fill('02-03');
+  await form.getByRole('button', { name: '保存设置' }).click();
+  await sheet.getByRole('dialog').waitFor({ state: 'hidden' });
+  const saved = await readSettings();
+  assert.equal(saved.springStart, '02-04', '春节开始日期未按「月-日」保存');
+  assert.equal(saved.springEnd, '02-10', '春节结束日期未按「月-日」保存');
+  assert.equal(saved.bonusDate, '02-03', '年终奖日期未按「月-日」保存');
+
+  // 固定面板时钟并重载，让卡片按假时间重新计算。
+  const cardsAt = async iso => {
+    await sheet.clock.setFixedTime(new Date(iso));
+    await sheet.reload();
+    await sheet.locator('.spring-card').waitFor();
+    return {
+      spring: (await sheet.locator('.spring-card h3').textContent()).trim(),
+      springDays: (await sheet.locator('.spring-card .event-number strong').textContent().catch(() => '')).trim(),
+      bonus: (await sheet.locator('.bonus-card h3').textContent()).trim()
+    };
+  };
+  const eve = await cardsAt('2027-02-03T12:00:00+08:00');
+  assert.equal(eve.springDays, '1', '除夕前一天应倒数 1 天');
+  assert.equal(eve.bonus, '预计今天发放');
+  const holiday = await cardsAt('2027-02-05T12:00:00+08:00');
+  assert.equal(holiday.spring, '春节假期中');
+  assert.equal(holiday.springDays, '6', '假期第 2 天应剩 6 天');
+
+  // 标记「已收到」后，下一年发放日当天不能再沿用这个标记。
+  await sheet.locator('.bonus-card').getByRole('button', { name: '标记已收到' }).click();
+  await sheet.waitForFunction(() => globalThis.document.querySelector('.bonus-card h3')?.textContent?.trim() === '年终奖已收到');
+  assert.ok((await readSettings()).bonusReceivedAt, '「已收到」标记没有落库');
+
+  const nextYear = await cardsAt('2028-02-03T12:00:00+08:00');
+  assert.equal(nextYear.springDays, '1', '春节假期没有按每年重复');
+  assert.equal(nextYear.bonus, '预计今天发放', '去年的「已收到」标记不应跨年生效');
+  await sheet.screenshot({ path: 'qa-shots/features-recurring-dates.png', fullPage: true });
+  const after = await cardsAt('2027-02-11T12:00:00+08:00');
+  assert.equal(after.springDays, '358', '假期结束后应滚到下一年的倒数');
+  assert.equal(after.spring, '离回家，又近了一天');
+  console.log('月-日重复：旧式完整日期被拒绝；春节与年终奖跨年重新倒数，「已收到」标记不跨年。');
+
+  console.log('Pet features: style switching, ten-stage evolution, summer shift, the hover card and yearly recurring dates all passed.');
 } finally {
   await app.close();
 }

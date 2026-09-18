@@ -24,11 +24,14 @@ export interface LiteSettings {
   workweek: number[];
   overrides: Record<string, boolean>;
   payday: number | null;
+  /** 春节假期起止，格式 MM-DD，每年重复；只填开始日期时仅当天休息。 */
   springStart: string;
   springEnd: string;
+  /** 年终奖预计发放日，格式 MM-DD，每年重复。 */
   bonusDate: string;
   bonusAmount: number | null;
-  bonusReceived: boolean;
+  /** 标记「本轮已收到」的日期（YYYY-MM-DD，空字符串表示未标记）。按发放周期自然失效。 */
+  bonusReceivedAt: string;
   privacy: boolean;
   theme: 'light' | 'dark';
   pet: { visible: boolean; onTop: boolean; size: 100 | 128 | 156; style: PetStyle; x: number | null; y: number | null };
@@ -39,8 +42,8 @@ export interface LiteSettings {
 export function defaults(): LiteSettings {
   return { version: 2, configured: false, salary: 0, startTime: '08:30', endTime: '17:30',
     summerFrom: '05-01', summerTo: '10-01', summerStartTime: '08:30', summerEndTime: '18:00',
-    workweek: [1, 2, 3, 4, 5], overrides: {}, payday: null, springStart: '2027-02-04', springEnd: '',
-    bonusDate: '2027-02-03', bonusAmount: null, bonusReceived: false, privacy: false,
+    workweek: [1, 2, 3, 4, 5], overrides: {}, payday: null, springStart: '02-04', springEnd: '',
+    bonusDate: '02-03', bonusAmount: null, bonusReceivedAt: '', privacy: false,
     theme: 'light', pet: { visible: true, onTop: true, size: 128, style: 'capybaraZen', x: null, y: null },
     broadcast: { enabled: true, pauseUntil: 0, quietDate: '' }, autoStart: false };
 }
@@ -66,6 +69,39 @@ export function parseMonthDay(value: unknown): string {
   const probe = new Date(2024, month - 1, day);
   return probe.getMonth() === month - 1 && probe.getDate() === day ? value : '';
 }
+/**
+ * 兼容旧档：早期版本把春节与年终奖存成带年份的完整日期，
+ * 这里统一收敛成每年重复的「月-日」，取不到有效值就返回空。
+ */
+export function migrateMonthDay(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const text = value.trim();
+  return parseMonthDay(/^\d{4}-\d{2}-\d{2}$/.test(text) ? text.slice(5) : text);
+}
+/** 某个「月-日」在指定年份的日期；平年的 2 月 29 日顺延到 2 月 28 日。 */
+function monthDayIn(year: number, monthDay: string): Date {
+  const [month, day] = monthDay.split('-').map(Number);
+  const lastDay = new Date(year, month, 0).getDate();
+  return new Date(year, month - 1, Math.min(day, lastDay));
+}
+/** 今天或之后最近一次出现的「月-日」。 */
+export function nextMonthDay(now: Date, value: string): Date | null {
+  const monthDay = parseMonthDay(value);
+  if (!monthDay) return null;
+  const thisYear = monthDayIn(now.getFullYear(), monthDay);
+  return dayGap(now, thisYear) >= 0 ? thisYear : monthDayIn(now.getFullYear() + 1, monthDay);
+}
+/** 今天或之前最近一次出现过的「月-日」，用于判断当前所处的年度周期。 */
+export function previousMonthDay(now: Date, value: string): Date | null {
+  const monthDay = parseMonthDay(value);
+  if (!monthDay) return null;
+  const thisYear = monthDayIn(now.getFullYear(), monthDay);
+  return dayGap(now, thisYear) <= 0 ? thisYear : monthDayIn(now.getFullYear() - 1, monthDay);
+}
+/** 月-日 key 是否落在 [from, to] 区间内（含端点，支持跨年区间）。 */
+export function inMonthDayRange(key: string, from: string, to: string): boolean {
+  return from <= to ? key >= from && key <= to : key >= from || key <= to;
+}
 export function clockMinutes(value: string): number {
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return NaN;
   const [hour, minute] = value.split(':').map(Number);
@@ -78,9 +114,7 @@ export function activeShift(date: Date, s: LiteSettings): Shift {
   const regular: Shift = { startTime: s.startTime, endTime: s.endTime, summer: false };
   if (!from || !to) return regular;
   const key = dateKey(date).slice(5);
-  // 起止跨年时（如 11-01 ~ 03-31）取并集。
-  const inside = from <= to ? key >= from && key <= to : key >= from || key <= to;
-  if (!inside) return regular;
+  if (!inMonthDayRange(key, from, to)) return regular;
   return { startTime: s.summerStartTime, endTime: s.summerEndTime, summer: true };
 }
 export function validateSettings(s: LiteSettings): string {
@@ -92,7 +126,7 @@ export function validateSettings(s: LiteSettings): string {
   if (!s.workweek.length) return '请至少选择一个每周工作日。';
   if (s.payday !== null && (!Number.isInteger(s.payday) || s.payday < 1 || s.payday > 31)) return '发薪日请填写 1～31，或留空。';
   for (const value of [s.springStart, s.springEnd, s.bonusDate]) {
-    if (value && !parseDate(value)) return '请填写有效日期（1900～2200 年）。';
+    if (value && !parseMonthDay(value)) return '请填写有效日期，格式为 月-日（如 02-04）。';
   }
   if (s.springEnd && (!s.springStart || s.springEnd < s.springStart)) return '春节假期结束日期不能早于开始日期。';
   if (s.bonusAmount !== null && (!Number.isFinite(s.bonusAmount) || s.bonusAmount < 0 || s.bonusAmount > 100000000)) return '请填写有效的预计奖金金额，或留空。';
@@ -122,10 +156,13 @@ export function sanitizeSettings(raw: unknown): LiteSettings {
     for (const [key, value] of Object.entries(r.overrides)) if (parseDate(key) && typeof value === 'boolean') s.overrides[key] = value;
   }
   if (typeof r.payday === 'number' && Number.isInteger(r.payday) && r.payday >= 1 && r.payday <= 31) s.payday = r.payday;
-  for (const key of ['springStart', 'springEnd', 'bonusDate'] as const) if (parseDate(r[key])) s[key] = r[key] as string;
+  // 春节与年终奖按「月-日」每年重复；旧档的完整日期在这里收敛成月-日。
+  for (const key of ['springStart', 'springEnd', 'bonusDate'] as const) s[key] = migrateMonthDay(r[key]);
   if (!s.springStart || s.springEnd < s.springStart) s.springEnd = '';
   if (typeof r.bonusAmount === 'number' && Number.isFinite(r.bonusAmount) && r.bonusAmount >= 0 && r.bonusAmount <= 100000000) s.bonusAmount = r.bonusAmount;
-  for (const key of ['privacy', 'bonusReceived', 'autoStart'] as const) s[key] = r[key] === true;
+  // 旧档只有布尔标记，无法判断属于哪一轮发放周期，直接作废，由用户重新标记。
+  s.bonusReceivedAt = parseDate(r.bonusReceivedAt) ? r.bonusReceivedAt as string : '';
+  for (const key of ['privacy', 'autoStart'] as const) s[key] = r[key] === true;
   const pet = r.pet && typeof r.pet === 'object' ? r.pet as Record<string, unknown> : {};
   s.pet.visible = pet.visible !== false;
   s.pet.onTop = typeof pet.onTop === 'boolean' ? pet.onTop : typeof r.miniOnTop === 'boolean' ? r.miniOnTop : true;

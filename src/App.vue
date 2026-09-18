@@ -4,7 +4,7 @@ import { useLite } from './lite/useLite';
 import LiteSettings from './lite/LiteSettings.vue';
 const app = reactive(useLite());
 const dateLabel = computed(() => app.now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }));
-const springText = computed(() => ({ unset: '留一个回家的盼头', started: '春节假期开始了', active: '春节假期中', ended: '这次假期已结束', upcoming: '距离我的春节放假' })[app.spring.state]);
+const springText = computed(() => ({ unset: '留一个回家的盼头', started: '春节假期开始了', active: '春节假期中', upcoming: '距离我的春节放假' })[app.spring.state]);
 const bonusText = computed(() => ({ unset: '留一个收获的盼头', received: '年终奖已收到', today: '预计今天发放', past: '预计日期已到', upcoming: '距离预计发放' })[app.bonus.state]);
 </script>
 
@@ -118,7 +118,7 @@ const bonusText = computed(() => ({ unset: '留一个收获的盼头', received:
                 {{ app.spring.state === 'unset' ? '设置你的春节假期' : '调整假期日期' }}
                 <span>↗</span>
               </button>
-              <footer>{{ app.settings.springStart ? `${app.settings.springStart.replaceAll('-', '.')} 起 · 我的放假安排` : '按公司的实际放假日期倒数' }}</footer>
+              <footer>{{ app.settings.springStart ? `每年 ${app.settings.springStart.replace('-', '.')} 起 · 我的放假安排` : '按公司的实际放假日期倒数' }}</footer>
             </article>
             <article class="event-card bonus-card">
               <span class="event-icon" aria-hidden="true">✧</span>
@@ -133,10 +133,10 @@ const bonusText = computed(() => ({ unset: '留一个收获的盼头', received:
                 <span>↗</span>
               </button>
               <div v-else class="bonus-actions event-empty">
-                <button v-if="app.bonus.state !== 'received'" class="text-action" @click="app.patch({ bonusReceived: true })">标记已收到</button>
+                <button v-if="app.bonus.state !== 'received'" class="text-action" @click="app.markBonus(true)">标记已收到</button>
                 <button class="text-action" @click="app.settingsOpen = true">调整日期 ↗</button>
               </div>
-              <footer>{{ app.settings.bonusDate ? `${app.settings.bonusDate.replaceAll('-', '.')} · ${app.settings.bonusAmount === null ? '以实际发放为准' : `预计 ${app.money(app.settings.bonusAmount)}`}` : '不确定也没关系，等消息到了再填' }}</footer>
+              <footer>{{ app.settings.bonusDate ? `每年 ${app.settings.bonusDate.replace('-', '.')} · ${app.settings.bonusAmount === null ? '以实际发放为准' : `预计 ${app.money(app.settings.bonusAmount)}`}` : '不确定也没关系，等消息到了再填' }}</footer>
             </article>
           </div>
         </section>

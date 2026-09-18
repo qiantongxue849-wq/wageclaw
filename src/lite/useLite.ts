@@ -46,6 +46,8 @@ export function useLite() {
     } catch { notice.value = '未能保存设置，请检查本机存储空间。'; return false; }
   }
   function patch(values: Partial<LiteSettings>) { return save({ ...settings.value, ...values }); }
+  // 「已收到」只在本轮发放周期内有效，因此记录标记当天而不是布尔值。
+  function markBonus(received: boolean) { return patch({ bonusReceivedAt: received ? dateKey(new Date()) : '' }); }
   function storage(event: StorageEvent) {
     if (event.key !== loaded.key) return;
     const incoming = loadSettings(localStorage);
@@ -99,5 +101,5 @@ export function useLite() {
     window.removeEventListener('storage', storage);
     cleanups.forEach(cleanup => cleanup());
   });
-  return { settings, settingsOpen, notice, recovery, now, day, desktop, income, shift, holidays, spring, bonus, payday, calendarKnown, offLabel, money, save, patch, reset, exportBackup, importBackup };
+  return { settings, settingsOpen, notice, recovery, now, day, desktop, income, shift, holidays, spring, bonus, payday, calendarKnown, offLabel, money, save, patch, markBonus, reset, exportBackup, importBackup };
 }

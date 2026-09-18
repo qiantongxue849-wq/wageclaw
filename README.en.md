@@ -6,7 +6,7 @@ The lightweight app provides today's and this month's estimated earnings, an off
 
 Start with `npm install`, `npm run dev`, then `npm run electron`. Run `npm run check` for lint, type checks, domain tests and a production build. Set `WAGECLAW_DEV_SERVER_URL` if the development server is not on port 5173.
 
-Earnings are estimates based on monthly salary and scheduled working days. Shifts are a single continuous block: lunch breaks count as working time and never pause accrual. They are not bank deposits. The app calculates from the current time, so closing or reopening it does not lose progress. Expected bonuses remain separate.
+Earnings are estimates based on monthly salary and scheduled working days. Shifts are a single continuous block: lunch breaks count as working time and never pause accrual. They are not bank deposits. The app calculates from the current time, so closing or reopening it does not lose progress. Spring Festival leave and the expected bonus date are stored as month-day and repeat every year, so the countdown rolls over instead of freezing after the date. The "received" mark on a bonus only lasts for that payout cycle (30 days from the payout date), so it never leaks into the next year. Expected bonuses remain separate.
 
 Only verified 2026 mainland China holiday arrangements are bundled; unknown years fall back to personal workweek settings with a notice. Legacy archives remain intact and are not converted into earned income.
 

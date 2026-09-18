@@ -3,7 +3,7 @@ import { defaults, dateKey } from '../src/lite/model';
 import { autoReport, candidates, freshDelivery, manualReport, normalizeDelivery, recordDelivery, nextWake } from '../src/lite/broadcast';
 const at = (time: string) => new Date(`2026-09-15T${time}:00`);
 // 固定为 09:00—18:00 且关闭夏季作息，与出厂默认解耦。
-const s = () => ({ ...defaults(), configured: true, salary: 18000, springStart: '2027-02-01', bonusDate: '2027-01-29', startTime: '09:00', endTime: '18:00', summerFrom: '', summerTo: '' });
+const s = () => ({ ...defaults(), configured: true, salary: 18000, springStart: '02-01', bonusDate: '01-29', startTime: '09:00', endTime: '18:00', summerFrom: '', summerTo: '' });
 describe('pet broadcast scheduler', () => {
   it('rotates meaningful topics without inventing settings or leaking money', () => {
     const settings = s();

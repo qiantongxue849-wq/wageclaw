@@ -1,4 +1,4 @@
-import { PET_STAGE_COUNT, activeShift, dateKey, dayGap, parseDate, clockMinutes, type LiteSettings } from './model';
+import { PET_STAGE_COUNT, activeShift, dateKey, dayGap, inMonthDayRange, nextMonthDay, parseDate, parseMonthDay, previousMonthDay, clockMinutes, type LiteSettings } from './model';
 
 export const HOLIDAY_SOURCE = 'https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html';
 export interface Holiday { name: string; start: string; end: string }
@@ -17,8 +17,8 @@ export const calendars: Record<number, { source: string; holidays: Holiday[]; ma
 export function isWorkday(date: Date, s: LiteSettings): boolean {
   const key = dateKey(date);
   if (typeof s.overrides[key] === 'boolean') return s.overrides[key];
-  // Only the explicit start day is known if no end date was provided.
-  if (s.springStart && key >= s.springStart && key <= (s.springEnd || s.springStart)) return false;
+  // 春节假期按「月-日」每年重复；只填开始日期时，仅把当天记为休息日。
+  if (s.springStart && inMonthDayRange(key.slice(5), s.springStart, s.springEnd || s.springStart)) return false;
   const calendar = calendars[date.getFullYear()];
   if (calendar?.makeup.includes(key)) return true;
   if (calendar?.holidays.some(h => key >= h.start && key <= h.end)) return false;
@@ -70,22 +70,42 @@ export function nextHoliday(now: Date) {
   }
   return null;
 }
+/**
+ * 春节假期倒计时。日期存成「月-日」，每年重复，假期结束后自动滚到下一次，
+ * 不会像早期版本那样停在「已结束」。
+ */
 export function springCountdown(now: Date, s: LiteSettings) {
-  const start = parseDate(s.springStart);
-  if (!start) return { state: 'unset', days: 0 };
-  const days = dayGap(now, start);
-  if (days > 0) return { state: 'upcoming', days };
-  if (!s.springEnd) return { state: 'started', days: 0 };
-  const end = parseDate(s.springEnd);
-  if (!end) return { state: 'started', days: 0 };
-  const remaining = dayGap(now, end) + 1;
-  return { state: remaining > 0 ? 'active' : 'ended', days: Math.max(0, remaining) };
+  const start = parseMonthDay(s.springStart);
+  const startDate = start ? nextMonthDay(now, start) : null;
+  if (!start || !startDate) return { state: 'unset', days: 0 };
+  const end = parseMonthDay(s.springEnd);
+  const month = dateKey(now).slice(5);
+  // 假期进行中：今天落在起止区间内（含端点）。
+  if (end && inMonthDayRange(month, start, end)) {
+    const endDate = nextMonthDay(now, end);
+    return { state: 'active', days: Math.max(0, endDate ? dayGap(now, endDate) + 1 : 1) };
+  }
+  // 只填开始日期时，当天算「假期开始」，第二天起滚到下一年的倒数。
+  if (!end && month === start) return { state: 'started', days: 0 };
+  return { state: 'upcoming', days: dayGap(now, startDate) };
 }
+/** 发放日之后仍保留「已到/已收到」提示的天数，超过后进入下一年的倒数。 */
+export const BONUS_GRACE_DAYS = 30;
+/**
+ * 年终奖倒计时。发放日同样每年重复；「已收到」标记只在本轮发放周期内有效，
+ * 因此不需要用户每年手动清除，也不会在下一年发放日当天误报「已收到」。
+ */
 export function bonusCountdown(now: Date, s: LiteSettings) {
-  const date = parseDate(s.bonusDate);
-  if (!date) return { state: 'unset', days: 0 };
-  const days = dayGap(now, date);
-  return { state: s.bonusReceived ? 'received' : days > 0 ? 'upcoming' : days === 0 ? 'today' : 'past', days: Math.max(0, days) };
+  const date = parseMonthDay(s.bonusDate);
+  const cycle = date ? previousMonthDay(now, date) : null;
+  const next = date ? nextMonthDay(now, date) : null;
+  if (!cycle || !next) return { state: 'unset', days: 0 };
+  const since = dayGap(cycle, now);
+  const marked = parseDate(s.bonusReceivedAt);
+  if (marked && since <= BONUS_GRACE_DAYS && dayGap(cycle, marked) >= 0 && dayGap(marked, now) >= 0) return { state: 'received', days: 0 };
+  if (since === 0) return { state: 'today', days: 0 };
+  if (since <= BONUS_GRACE_DAYS) return { state: 'past', days: 0 };
+  return { state: 'upcoming', days: dayGap(now, next) };
 }
 export function paydayCountdown(now: Date, payday: number | null) {
   if (!payday) return null;

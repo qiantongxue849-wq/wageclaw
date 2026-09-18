@@ -24,8 +24,8 @@ try {
   app.on('window', page => page.on('pageerror', error => errors.push(error.message)));
   let main = await findWindow(app, 'main');
   await main.getByLabel('月薪', { exact: true }).fill('18000');
-  await main.getByLabel('春节放假开始', { exact: true }).fill('2027-02-01');
-  await main.getByLabel('年终奖预计发放日期', { exact: true }).fill('2027-01-29');
+  await main.getByLabel('春节放假开始', { exact: true }).fill('02-01');
+  await main.getByLabel('年终奖预计发放日期', { exact: true }).fill('01-29');
   const closed = main.waitForEvent('close');
   await main.getByRole('button', { name: '开始我的倒计时' }).click();
   await closed;

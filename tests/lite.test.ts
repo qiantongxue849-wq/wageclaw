@@ -49,7 +49,7 @@ describe('lightweight income and work calendar', () => {
     expect(isWorkday(at('2026-09-19T12:00:00'), s)).toBe(false);
     expect(isWorkday(at('2026-09-20T12:00:00'), s)).toBe(true);
     expect(isWorkday(at('2026-09-25T12:00:00'), s)).toBe(false);
-    s.springStart = '2026-09-20'; s.springEnd = '2026-09-21';
+    s.springStart = '09-20'; s.springEnd = '09-21';
     expect(isWorkday(at('2026-09-20T12:00:00'), s)).toBe(false);
     s.overrides['2026-09-20'] = true;
     expect(isWorkday(at('2026-09-20T12:00:00'), s)).toBe(true);
@@ -66,11 +66,13 @@ describe('lightweight income and work calendar', () => {
     const none = earnings(at('2026-09-30T23:00:00'), s);
     expect(none.today).toBe(0); expect(none.monthly).toBe(0); expect(none.workdays).toBe(0);
   });
-  it('does not project an end date for personal leave', () => {
-    const s = { ...settings(), springStart: '2026-09-15' };
+  it('does not project an end date for personal leave and rolls it to next year', () => {
+    const s = { ...settings(), springStart: '09-15' };
     expect(isWorkday(at('2026-09-15T12:00:00'), s)).toBe(false);
     expect(isWorkday(at('2026-09-16T12:00:00'), s)).toBe(true);
-    expect(springCountdown(at('2026-09-16T12:00:00'), s).state).toBe('started');
+    // 只填开始日期时，当天是「假期开始」，第二天起滚到下一年的同一天。
+    expect(springCountdown(at('2026-09-15T12:00:00'), s)).toEqual({ state: 'started', days: 0 });
+    expect(springCountdown(at('2026-09-16T12:00:00'), s)).toEqual({ state: 'upcoming', days: 364 });
   });
 });
 describe('date boundaries and anticipated events', () => {
@@ -96,19 +98,72 @@ describe('date boundaries and anticipated events', () => {
     expect(paydayCountdown(at('2026-09-15T12:00:00'), null)).toBeNull();
   });
   it('does not turn an expected bonus into received income', () => {
-    const s = { ...settings(), bonusDate: '2026-09-15', bonusAmount: 50000 };
+    const s = { ...settings(), bonusDate: '09-15', bonusAmount: 50000 };
     expect(bonusCountdown(at('2026-09-14T12:00:00'), s)).toEqual({ state: 'upcoming', days: 1 });
     expect(bonusCountdown(at('2026-09-15T23:59:00'), s).state).toBe('today');
     expect(bonusCountdown(at('2026-09-16T12:00:00'), s).state).toBe('past');
-    expect(s.bonusReceived).toBe(false);
+    expect(s.bonusReceivedAt).toBe('');
     expect(earnings(at('2026-09-15T12:00:00'), s)).toEqual(earnings(at('2026-09-15T12:00:00'), settings()));
-    expect(bonusCountdown(at('2026-09-16T12:00:00'), { ...s, bonusReceived: true }).state).toBe('received');
+    expect(bonusCountdown(at('2026-09-16T12:00:00'), { ...s, bonusReceivedAt: '2026-09-16' }).state).toBe('received');
   });
   it('tracks personal leave independently of the public holiday', () => {
-    const s = { ...settings(), springStart: '2027-02-01', springEnd: '2027-02-10' };
+    const s = { ...settings(), springStart: '02-01', springEnd: '02-10' };
     expect(springCountdown(at('2027-01-31T12:00:00'), s)).toEqual({ state: 'upcoming', days: 1 });
     expect(springCountdown(at('2027-02-01T12:00:00'), s)).toEqual({ state: 'active', days: 10 });
-    expect(springCountdown(at('2027-02-11T12:00:00'), s).state).toBe('ended');
+    expect(springCountdown(at('2027-02-11T12:00:00'), s)).toEqual({ state: 'upcoming', days: 355 });
+  });
+});
+describe('yearly recurring leave and bonus dates', () => {
+  it('rolls the spring leave to the next year instead of freezing after the holiday', () => {
+    const s = { ...settings(), springStart: '02-04', springEnd: '02-10' };
+    expect(springCountdown(at('2027-01-30T12:00:00'), s)).toEqual({ state: 'upcoming', days: 5 });
+    expect(springCountdown(at('2027-02-04T12:00:00'), s)).toEqual({ state: 'active', days: 7 });
+    expect(springCountdown(at('2027-02-10T12:00:00'), s)).toEqual({ state: 'active', days: 1 });
+    // 假期结束后直接滚到下一年的同一天，而不是永久停在「已结束」。
+    expect(springCountdown(at('2027-02-11T12:00:00'), s)).toEqual({ state: 'upcoming', days: 358 });
+    expect(springCountdown(at('2028-02-03T12:00:00'), s)).toEqual({ state: 'upcoming', days: 1 });
+  });
+  it('keeps the leave a rest day on the same month-day every year', () => {
+    const s = { ...settings(), springStart: '02-04', springEnd: '02-10' };
+    for (const year of [2027, 2028, 2029]) {
+      expect(isWorkday(at(`${year}-02-04T12:00:00`), s)).toBe(false);
+      expect(isWorkday(at(`${year}-02-10T12:00:00`), s)).toBe(false);
+    }
+    // 假期之外的日子照常按每周排班判断（2027-02-11 是周四）。
+    expect(isWorkday(at('2027-02-11T12:00:00'), s)).toBe(true);
+    // 显式覆盖仍然优先于每年重复的假期。
+    s.overrides['2028-02-04'] = true;
+    expect(isWorkday(at('2028-02-04T12:00:00'), s)).toBe(true);
+  });
+  it('repeats the bonus date every year and expires last year mark', () => {
+    const s = { ...settings(), bonusDate: '02-03', bonusReceivedAt: '2027-02-03' };
+    expect(bonusCountdown(at('2027-02-03T12:00:00'), s)).toEqual({ state: 'received', days: 0 });
+    expect(bonusCountdown(at('2027-03-05T12:00:00'), s)).toEqual({ state: 'received', days: 0 });
+    // 宽限期一过就进入下一年的倒数，去年的标记不再生效。
+    expect(bonusCountdown(at('2027-03-06T12:00:00'), s)).toEqual({ state: 'upcoming', days: 334 });
+    expect(bonusCountdown(at('2027-04-01T12:00:00'), s).days).toBe(308);
+    // 下一年发放日当天不会沿用去年的「已收到」。
+    expect(bonusCountdown(at('2028-02-03T12:00:00'), s)).toEqual({ state: 'today', days: 0 });
+  });
+  it('keeps the mark-received window open for a month after the payout date', () => {
+    const s = { ...settings(), bonusDate: '02-03', bonusReceivedAt: '' };
+    expect(bonusCountdown(at('2027-02-03T12:00:00'), s)).toEqual({ state: 'today', days: 0 });
+    expect(bonusCountdown(at('2027-02-04T12:00:00'), s)).toEqual({ state: 'past', days: 0 });
+    expect(bonusCountdown(at('2027-03-05T12:00:00'), s)).toEqual({ state: 'past', days: 0 });
+    expect(bonusCountdown(at('2027-03-06T12:00:00'), s).state).toBe('upcoming');
+  });
+  it('accepts month-day input and migrates legacy full dates', () => {
+    const base = { ...defaults(), configured: true, salary: 22000 };
+    expect(validateSettings({ ...base, springStart: '02-04', springEnd: '02-10', bonusDate: '02-03' })).toBe('');
+    expect(validateSettings({ ...base, springStart: '2027-02-04' })).toContain('月-日');
+    expect(validateSettings({ ...base, springStart: '02-30' })).toContain('月-日');
+    expect(validateSettings({ ...base, springStart: '02-10', springEnd: '02-04' })).toContain('春节');
+    expect(sanitizeSettings({ ...base, springStart: '2027-02-04', springEnd: '2027-02-10', bonusDate: '2028-02-03' }))
+      .toMatchObject({ springStart: '02-04', springEnd: '02-10', bonusDate: '02-03' });
+    expect(sanitizeSettings({ ...base, springStart: '13-01', bonusDate: 'nope' })).toMatchObject({ springStart: '', bonusDate: '' });
+    // 旧的布尔标记无法判断属于哪一轮，迁移时直接作废。
+    expect(sanitizeSettings({ ...base, bonusReceived: true }).bonusReceivedAt).toBe('');
+    expect(sanitizeSettings({ ...base, bonusReceivedAt: '2027-02-03' }).bonusReceivedAt).toBe('2027-02-03');
   });
 });
 describe('seasonal shift and shipped defaults', () => {
@@ -117,7 +172,7 @@ describe('seasonal shift and shipped defaults', () => {
       configured: false, salary: 0,
       startTime: '08:30', endTime: '17:30',
       summerFrom: '05-01', summerTo: '10-01', summerStartTime: '08:30', summerEndTime: '18:00',
-      springStart: '2027-02-04', springEnd: '', bonusDate: '2027-02-03', bonusAmount: null, bonusReceived: false
+      springStart: '02-04', springEnd: '', bonusDate: '02-03', bonusAmount: null, bonusReceivedAt: ''
     });
   });
   it('switches between regular and summer shifts by month-day, endpoints included', () => {
@@ -267,7 +322,7 @@ describe('safe local storage migration', () => {
     const storage = new MemoryStorage(); storage.getItem = () => { throw new Error('Storage blocked'); };
     expect(loadSettings(storage).recovery).toBe(true);
     expect(validateSettings({ ...settings(), endTime: '08:00' })).toContain('跨夜');
-    expect(validateSettings({ ...settings(), springEnd: '2026-01-01' })).not.toBe('');
+    expect(validateSettings({ ...settings(), springEnd: '01-01' })).not.toBe('');
     expect(sanitizeSettings({ salary: Infinity, bonusAmount: NaN, workweek: [9], startTime: '99:99' })).toMatchObject({ salary: 0, bonusAmount: null, workweek: [1, 2, 3, 4, 5], startTime: defaults().startTime });
   });
 });
