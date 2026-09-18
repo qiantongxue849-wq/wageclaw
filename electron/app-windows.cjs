@@ -13,6 +13,26 @@ module.exports = function createWindows(ctx) {
   const RETRYABLE_LOAD_ERRORS = new Set(['ERR_CONNECTION_REFUSED', 'ERR_CONNECTION_RESET', 'ERR_CONNECTION_FAILED', 'ERR_CONNECTION_CLOSED', 'ERR_CONNECTION_TIMED_OUT', 'ERR_EMPTY_RESPONSE', 'ERR_ADDRESS_UNREACHABLE', 'ERR_NAME_NOT_RESOLVED']);
   const DEV_LOAD_ATTEMPTS = 5;
   const DEV_LOAD_RETRY_MS = 700;
+  // 气泡（290×104）与悬停浮层（280×158）是装饰性小窗：它们本就反复出现、消失，
+  // 「没出现」是完全正常的状态。把 440px 宽的说明页塞进这么小的窗只会被裁成乱码，
+  // 反而比空白更糟。这两类窗口失败就安静地不显示 —— 窗口被 dismiss() 销毁后
+  // 下次播报会重新创建，届时服务器若已恢复就自然好了。说明页留给真正需要读它的
+  // 面板窗口（main / bootstrap / pet）。
+  const DECORATIVE_VIEWS = new Set(['bubble', 'hover']);
+  // 判断加载成功与否只能靠自己记标志位，实测（失败加载的事件顺序）：
+  //   did-fail-load(79ms) → dom-ready → did-finish-load(87ms) → ready-to-show(90ms)
+  // 两个坑：`did-finish-load` 在失败时**同样会触发**，不能当成功信号；
+  // `webContents.getURL()` 在失败时返回的仍是**请求的 URL**，不是 chrome-error://。
+  // 只有 `did-fail-load` 可靠，且它先于 ready-to-show，记标志位不存在竞态。
+  function trackLoadFailure(win) {
+    win.webContents.on('did-fail-load', (event, code, _description, _url, isMainFrame) => {
+      // 新版 Electron 把参数收进了事件对象，两处都兜住。
+      const errorCode = code ?? event?.errorCode;
+      const mainFrame = isMainFrame ?? event?.isMainFrame ?? true;
+      // -3 是 ERR_ABORTED：正常导航被新导航取代，不是失败。
+      if (mainFrame && errorCode !== -3) win.__loadFailed = true;
+    });
+  }
   function showLoadFailure(win, view, reason) {
     const hint = ctx.app.isPackaged
       ? '应用自带的前端资源没能加载，建议重新安装。'
@@ -23,6 +43,7 @@ module.exports = function createWindows(ctx) {
     win.webContents.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(page)}`).catch(() => undefined);
   }
   function loadRenderer(win, view) {
+    trackLoadFailure(win);
     win.webContents.setWindowOpenHandler(({ url }) => {
       if (url === 'https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html') void ctx.shell.openExternal(url);
       return { action: 'deny' };
@@ -47,6 +68,7 @@ module.exports = function createWindows(ctx) {
           return;
         }
         console.error('Renderer load:', error.message);
+        if (DECORATIVE_VIEWS.has(view)) return;
         showLoadFailure(win, view, error.message);
       });
     };
@@ -100,11 +122,11 @@ module.exports = function createWindows(ctx) {
       const win = new ctx.BrowserWindow({ width, height, show: false, frame: false, transparent: true, backgroundColor: '#00000000', hasShadow: false, resizable: false, alwaysOnTop: ctx.store.state.settings.pet.onTop, skipTaskbar: true, focusable: false, webPreferences: webPreferences() });
       ctx.bubbleWindow = win;
       win.on('closed', () => { ctx.bubbleWindow = null; });
-      win.once('ready-to-show', () => { if (ctx.service.snapshot().bubble) win.showInactive(); });
+      win.once('ready-to-show', () => { if (ctx.service.snapshot().bubble && !win.__loadFailed) win.showInactive(); });
       loadRenderer(win, 'bubble');
     }
     ctx.bubbleWindow.setPosition(Math.round(x), Math.round(y));
-    if (!ctx.bubbleWindow.webContents.isLoading()) ctx.bubbleWindow.showInactive();
+    if (!ctx.bubbleWindow.webContents.isLoading() && !ctx.bubbleWindow.__loadFailed) ctx.bubbleWindow.showInactive();
     // 气泡和悬停浮层都在桌宠上方，气泡出现时把浮层挪到下方避让。
     if (alive(ctx.hoverWindow)) showHover();
   }
@@ -131,12 +153,12 @@ module.exports = function createWindows(ctx) {
       const win = new ctx.BrowserWindow({ width: HOVER_WIDTH, height: HOVER_HEIGHT, show: false, frame: false, transparent: true, backgroundColor: '#00000000', hasShadow: false, resizable: false, maximizable: false, minimizable: false, fullscreenable: false, alwaysOnTop: ctx.store.state.settings.pet.onTop, skipTaskbar: true, focusable: false, title: '忍了吧 · 今日', webPreferences: webPreferences() });
       ctx.hoverWindow = win;
       win.on('closed', () => { ctx.hoverWindow = null; });
-      win.once('ready-to-show', () => { if (ctx.hoverWindow === win && ctx.store.state.settings.pet.visible) win.showInactive(); });
+      win.once('ready-to-show', () => { if (ctx.hoverWindow === win && ctx.store.state.settings.pet.visible && !win.__loadFailed) win.showInactive(); });
       loadRenderer(win, 'hover');
     }
     ctx.hoverWindow.setPosition(Math.round(x), Math.round(y));
     ctx.hoverWindow.setAlwaysOnTop(ctx.store.state.settings.pet.onTop);
-    if (!ctx.hoverWindow.webContents.isLoading()) ctx.hoverWindow.showInactive();
+    if (!ctx.hoverWindow.webContents.isLoading() && !ctx.hoverWindow.__loadFailed) ctx.hoverWindow.showInactive();
   }
   // 延迟销毁给鼠标从桌宠移到浮层留出时间；期间重新进入会取消。
   function hideHover(delay = 0) {
