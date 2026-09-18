@@ -67,7 +67,7 @@ WAGECLAW_QA_ELECTRON=1 WAGECLAW_QA_URL=http://127.0.0.1:5174 node scripts/verify
 
 端口按开发服务实际输出调整。受限环境（容器、沙箱）里追加 `WAGECLAW_QA_NO_SANDBOX=1`，脚本会给 Electron 补上 `--no-sandbox`。
 
-**受限环境注意**：`npm run check` 把四步串在一条命令里，会被环境 SIGKILL（Exit 137，日志停在 typecheck 之后）。**逐条分开跑** `npm run lint` / `npm run typecheck` / `npm test` / `npm run build`，四步都 Exit 0 —— 这是环境计账问题，不是代码问题。
+**注意超时**：`npm run check` 和 `git commit`（触发 husky pre-commit 的 `lint && typecheck && test`）都是链式 npm 命令，四步串起来常超过 120s，会被运行环境掐断并留下 **Exit 137 (SIGTERM)**，日志只到前半段。这不是代码问题 —— **给这次命令显式加长超时（300s）重跑即可**，不要因此改代码，也不要加 `--no-verify` 跳过钩子。
 
 **注意退出码**：三个脚本末尾都会启动真实 Chrome，Chrome 自身的 code-sign clone / RLZ 清理写入在受限环境里会被拦截，导致进程退出码非 0。要判断成败请看 stdout 末尾的结论行，不要只看退出码。
 
