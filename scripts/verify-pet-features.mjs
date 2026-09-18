@@ -149,6 +149,9 @@ try {
   await pet.mouse.move(body.x, body.y);
   const hover = await waitForWindow('view=hover', { exclude: before, timeout: 8000 });
   await hover.waitForLoadState('domcontentloaded');
+  // 生产包里 HoverView 是懒加载 chunk，Vue 挂载发生在 DOMContentLoaded 之后；
+  // 直接数会数到 0（五行其实是模板里的静态节点，不是数据驱动的）。
+  await hover.locator('.hover-row').first().waitFor({ state: 'visible', timeout: 8000 });
 
   const rows = await hover.locator('.hover-row').count();
   const labels = (await hover.locator('.hover-label').allTextContents()).map(text => text.trim());

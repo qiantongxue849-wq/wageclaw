@@ -152,6 +152,25 @@ WAGECLAW_QA_URL=http://127.0.0.1:5173 WAGECLAW_QA_NO_SANDBOX=1 node scripts/veri
 - 随机间隔由 60～120 分钟改为 10～20 分钟；每日合计上限 5 → 32，普通播报 3 → 30，最小间隔 20 → 10 分钟。
 - 复刻调度循环模拟全天：32 条跑满，普通播报 30 条，相邻间隔 10.6～19.8 分钟。收工节点前后 15 分钟自动让位，因此末段存在两处较长间隔。
 
+### 生产包端到端验证（不只验开发服务器）
+
+此前所有端到端验证都跑在 Vite 开发服务器上。开发服务器走的是源码模块图，**打包产物是另一条路径**（预构建、代码分割、懒加载 chunk），两者出问题的方式并不一样。补了一轮：`npm run build` 后用 `vite preview --host 127.0.0.1 --port 4173` 起静态服务，把四个 QA 脚本的 `WAGECLAW_QA_URL` 指向它重跑。
+
+**结果**：`verify-pet.mjs`、`verify-lite.mjs`、`verify-pet-motion.mjs` 直接通过；`verify-pet-features.mjs` **失败**在悬停浮层那一段 —— `rows` 为 0，期望 5。
+
+**定性：测试的竞态，不是产品缺陷。** `HoverView.vue` 的五行是模板里的静态节点，只要 Vue 挂载就一定存在；数到 0 说明断言跑在挂载之前。原因在生产包里 `HoverView` 是懒加载 chunk（`HoverView-*.js`，2.69 kB），`domcontentloaded` 之后才去取这个 chunk 并挂载，而开发服务器下模块图不同、时序恰好赶上了。原脚本只等 `domcontentloaded` 就立刻 `.count()`，属于「靠时序侥幸通过」。
+
+**修法**：等首个 `.hover-row` 可见再数。
+
+```js
+await hover.waitForLoadState('domcontentloaded');
+// 生产包里 HoverView 是懒加载 chunk，Vue 挂载发生在 DOMContentLoaded 之后
+await hover.locator('.hover-row').first().waitFor({ state: 'visible', timeout: 8000 });
+const rows = await hover.locator('.hover-row').count();
+```
+
+修完生产包与开发服务器**两侧都通过**。这条值得记：**只等 `domcontentloaded` 就做元素计数，是端到端脚本里最容易埋下的假通过**；用 Playwright 定位器自带的自动等待（`waitFor` / `expect`）而不是裸 `count()`。
+
 ### 验证结果
 
 - `npm run check` 通过：lint、类型检查、**54 项测试**、生产构建。
