@@ -130,13 +130,22 @@ WAGECLAW_QA_ELECTRON=1 WAGECLAW_QA_URL=http://127.0.0.1:5174 node scripts/verify
 
 - `loadRenderer` 的 `loadURL` 失败分支不再只打一行日志，而是渲染一张说明页：写明开发服务器地址、让用户先 `npm run dev`、并给出「关掉这个窗口重新双击桌宠」的恢复动作；打包版则提示重新安装。原来只有一个空白窗，属于哑失败。
 - 顺带修掉 `will-navigate` 的**无条件 `preventDefault()`**：它把渲染层发起的所有导航都拦掉了，包括 Vite 的 `location.reload()`，导致开发时整页刷新被静默阻止、页面卡在「导航中」。改为只拦非同源导航。
+- 开发模式下失败前先**静默重试**（5 次 × 700ms）：`npm run dev` 常常比 Electron 慢几秒，窗口先到就会撞上连接被拒，这时自愈比报错更合适。只对连接类错误重试（`ERR_CONNECTION_REFUSED` / `RESET` / `FAILED` / `CLOSED` / `TIMED_OUT` / `EMPTY_RESPONSE` / `ADDRESS_UNREACHABLE` / `NAME_NOT_RESOLVED`），其它错误（如 `ERR_ABORTED`）重试只会打转，直接落到说明页。打包版不重试。
 
 **验证**（临时脚本，验完即删）：
 
 - 死端口实例：窗口内容由空变为「这个窗口没能加载内容 … 先在项目里运行 npm run dev」。
 - 真实双击流程：服务器在 → 引导完成桌宠渲染 → 杀掉服务器 → 双击桌宠 → 新建的 `view=main` 窗口显示上述提示，不再是白屏。
+- 重试策略：先确认 `loadURL` 拒绝时错误对象带 `code` / `errno` / `url`，实测 `code === 'ERR_CONNECTION_REFUSED'`、`errno === -102`（重试集合就是按这个字段匹配的；万一字段缺失，`has(undefined)` 为假会直接走说明页，退化成修复前的行为，不会更糟）。再跑两个时序：服务器比窗口晚 1.5 秒上线 → 窗口标题变成 `RECOVERED`、地址停在开发服务器，**没有**走到说明页；服务器全程不上线 → 重试耗尽后正常落到说明页（标题「忍了吧 · 加载失败」）。两个场景都通过。
 - 导航边界：修复前 `location.reload()` 被拦（window 标记存活），修复后刷新成功（标记被清掉）；同时 `location.href = 'https://example.com/'` 仍被拦住，窗口 URL 停留在本机 —— 没有开出跳外站的口子。
-- 回归：`verify-pet.mjs`（含真实双击开面板 + 20 轮开关面板，每轮都等 `today-income` 出现）、`verify-pet-features.mjs`、`verify-pet-motion.mjs`、`verify-lite.mjs` 全部通过；lint 通过。
+- 回归：`verify-pet.mjs`（含真实双击开面板 + 20 轮开关面板，每轮都等 `today-income` 出现）、`verify-pet-features.mjs`（5 段全过）、`verify-pet-motion.mjs`、`verify-lite.mjs` 全部通过；lint、类型检查、54 项测试通过。
+
+**在受限环境里跑 QA 脚本**：Chromium 的进程沙箱在外层沙箱内会初始化失败，Electron 随后以 `FATAL: GPU process isn't usable. Goodbye.` 崩溃（退出信号 SIGTRAP），表现为 Playwright 报 `Process failed to launch!` 或 `Target page, context or browser has been closed`。这时给四个脚本加环境变量即可：
+
+```bash
+WAGECLAW_QA_URL=http://127.0.0.1:5173 WAGECLAW_QA_NO_SANDBOX=1 node scripts/verify-pet.mjs
+```
+
 
 ### 播报提速
 

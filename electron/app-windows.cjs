@@ -8,6 +8,11 @@ module.exports = function createWindows(ctx) {
   // 加载失败时 Chromium 会停在自己的错误页，表现为「窗口打开了但一片空白」。
   // 这里换成一句能自救的提示，别让这种情况变成哑失败。
   const escapeHtml = text => String(text).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+  // 开发时 Vite 常常比 Electron 慢几秒（尤其刚 npm run dev），窗口先到就会撞上连接被拒。
+  // 这类错误值得静默重试；其它错误（如 ERR_ABORTED）重试只会打转，直接报出来。
+  const RETRYABLE_LOAD_ERRORS = new Set(['ERR_CONNECTION_REFUSED', 'ERR_CONNECTION_RESET', 'ERR_CONNECTION_FAILED', 'ERR_CONNECTION_CLOSED', 'ERR_CONNECTION_TIMED_OUT', 'ERR_EMPTY_RESPONSE', 'ERR_ADDRESS_UNREACHABLE', 'ERR_NAME_NOT_RESOLVED']);
+  const DEV_LOAD_ATTEMPTS = 5;
+  const DEV_LOAD_RETRY_MS = 700;
   function showLoadFailure(win, view, reason) {
     const hint = ctx.app.isPackaged
       ? '应用自带的前端资源没能加载，建议重新安装。'
@@ -28,13 +33,24 @@ module.exports = function createWindows(ctx) {
       const sameOrigin = ctx.app.isPackaged ? url.startsWith('file://') : url.startsWith(ctx.DEV_SERVER_URL);
       if (!sameOrigin) event.preventDefault();
     });
-    const loading = ctx.app.isPackaged
-      ? win.loadFile(ctx.path.join(ctx.app.getAppPath(), 'dist', 'index.html'), { query: { view } })
-      : win.loadURL(`${ctx.DEV_SERVER_URL}?view=${view}`);
-    loading.catch(error => {
-      console.error('Renderer load:', error.message);
-      if (alive(win)) showLoadFailure(win, view, error.message);
-    });
+    const attempts = ctx.app.isPackaged ? 1 : DEV_LOAD_ATTEMPTS;
+    let attempt = 0;
+    const attemptLoad = () => {
+      attempt += 1;
+      const loading = ctx.app.isPackaged
+        ? win.loadFile(ctx.path.join(ctx.app.getAppPath(), 'dist', 'index.html'), { query: { view } })
+        : win.loadURL(`${ctx.DEV_SERVER_URL}?view=${view}`);
+      loading.catch(error => {
+        if (!alive(win)) return;
+        if (attempt < attempts && RETRYABLE_LOAD_ERRORS.has(error.code)) {
+          setTimeout(() => { if (alive(win)) attemptLoad(); }, DEV_LOAD_RETRY_MS);
+          return;
+        }
+        console.error('Renderer load:', error.message);
+        showLoadFailure(win, view, error.message);
+      });
+    };
+    attemptLoad();
   }
   const webPreferences = () => ({ preload: ctx.path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true });
   function createBootstrapWindow() {
