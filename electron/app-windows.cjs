@@ -5,16 +5,36 @@ module.exports = function createWindows(ctx) {
     const send = () => { if (alive(win)) win.webContents.send(channel, payload); };
     if (win.webContents.isLoading()) win.webContents.once('did-finish-load', send); else send();
   }
+  // 加载失败时 Chromium 会停在自己的错误页，表现为「窗口打开了但一片空白」。
+  // 这里换成一句能自救的提示，别让这种情况变成哑失败。
+  const escapeHtml = text => String(text).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+  function showLoadFailure(win, view, reason) {
+    const hint = ctx.app.isPackaged
+      ? '应用自带的前端资源没能加载，建议重新安装。'
+      : `开发服务器没有响应（${ctx.DEV_SERVER_URL}）。先在项目里运行 npm run dev，再关掉这个窗口重新双击桌宠。`;
+    const page = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>忍了吧 · 加载失败</title>
+<style>html,body{margin:0;height:100%;display:flex;align-items:center;justify-content:center;background:#f8f9f5;color:#304738;font-family:"PingFang SC","Microsoft YaHei",sans-serif}main{max-width:440px;padding:26px 30px;border:1px solid #dce4d8;border-radius:14px;background:#fff;box-shadow:0 2px 10px #1b35221a}h1{margin:0 0 12px;font-size:17px}p{margin:0 0 8px;font-size:13px;line-height:1.7;color:#5c7360}code{padding:1px 6px;border-radius:5px;background:#eef2e9;font-size:12px;word-break:break-all}</style>
+</head><body><main><h1>这个窗口没能加载内容</h1><p>${hint}</p><p>视图 <code>${escapeHtml(view)}</code></p><p>原始错误 <code>${escapeHtml(reason)}</code></p></main></body></html>`;
+    win.webContents.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(page)}`).catch(() => undefined);
+  }
   function loadRenderer(win, view) {
     win.webContents.setWindowOpenHandler(({ url }) => {
       if (url === 'https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html') void ctx.shell.openExternal(url);
       return { action: 'deny' };
     });
-    win.webContents.on('will-navigate', event => event.preventDefault());
+    // 只放行同源导航：既要拦住跳外站，也不能拦掉 Vite 的整页刷新
+    // （早期写成无条件 preventDefault，导致开发时 HMR 整页刷新被静默阻止、页面卡在「导航中」）。
+    win.webContents.on('will-navigate', (event, url) => {
+      const sameOrigin = ctx.app.isPackaged ? url.startsWith('file://') : url.startsWith(ctx.DEV_SERVER_URL);
+      if (!sameOrigin) event.preventDefault();
+    });
     const loading = ctx.app.isPackaged
       ? win.loadFile(ctx.path.join(ctx.app.getAppPath(), 'dist', 'index.html'), { query: { view } })
       : win.loadURL(`${ctx.DEV_SERVER_URL}?view=${view}`);
-    loading.catch(error => console.error('Renderer load:', error.message));
+    loading.catch(error => {
+      console.error('Renderer load:', error.message);
+      if (alive(win)) showLoadFailure(win, view, error.message);
+    });
   }
   const webPreferences = () => ({ preload: ctx.path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true });
   function createBootstrapWindow() {
