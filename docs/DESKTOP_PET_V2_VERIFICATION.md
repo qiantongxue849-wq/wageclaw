@@ -171,6 +171,30 @@ const rows = await hover.locator('.hover-row').count();
 
 修完生产包与开发服务器**两侧都通过**。这条值得记：**只等 `domcontentloaded` 就做元素计数，是端到端脚本里最容易埋下的假通过**；用 Playwright 定位器自带的自动等待（`waitFor` / `expect`）而不是裸 `count()`。
 
+### 打包版加载路径验证（`file://` 而不是 http）
+
+打包版和开发模式加载方式不同：开发模式是 `loadURL(DEV_SERVER_URL)`（http），打包版是 `loadFile(dist/index.html, { query: { view } })`（**`file://`**）。`file://` 是独立的一套限制，开发模式下**永远不会被走到**，所以单开一轮验证。
+
+先确认静态条件：`vite.config.ts` 里 `base: './'`，构建产物是 `<script type="module" crossorigin src="./assets/index-*.js">` —— 相对路径，可以脱离 http 根目录。
+
+再验运行时（临时探针，验完即删）：用与 `webPreferences` 一致的窗口 `loadFile` 四个视图，等 3 秒后读 DOM。
+
+| 视图 | 结果 |
+| :--- | :--- |
+| `pet` | 挂载成功（`#app` 527 字符），`canvas` 存在 |
+| `hover` | 挂载成功（735 字符），**`.hover-row` 为 5** |
+| `main` | 挂载成功（8122 字符） |
+| `bubble` | 挂载成功（375 字符） |
+
+**控制台与 `did-fail-load` 均为空**，只有 Electron 自带的 CSP 开发提示（该提示在打包后不再出现）。
+
+**为什么值得单独验**：这里有两个经典的 Electron + Vite 打包坑，都可能表现为「打包后白屏」——
+
+1. Vite 默认把资源写成绝对路径 `/assets/...`，在 `file://` 下会解析到文件系统根目录。本项目已用 `base: './'` 规避。
+2. `<script type="module" crossorigin>` 是 CORS 模式的请求，而 `file://` 页面 origin 为 `null`；**动态 `import()` 的懒加载 chunk 是另一套机制**，`HoverView-*.js` 正是动态 import 出来的。两个都实测通过。
+
+另外 `loadFile` 的 `query` 选项确认可用：`location.search` 为 `?view=pet`，`?view=` 路由在打包版下同样成立。`files` 配置包含 `dist/**/*` 与 `electron/**/*`，`app.getAppPath()` 下的 `dist/index.html` 会被打进包。
+
 ### 验证结果
 
 - `npm run check` 通过：lint、类型检查、**54 项测试**、生产构建。
