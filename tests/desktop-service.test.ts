@@ -37,3 +37,47 @@ describe('desktop runtime independently of the panel', () => {
     expect(service.snapshot().recovery).toBe(true); service.stop();
   });
 });
+
+describe('companion interactions', () => {
+  it('delivers report-specific motion and distinguishes expected from received bonuses', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-24T15:00:00'));
+    const { ctx, service } = setup();
+    ctx.store.state.settings.bonusDate = '09-24';
+    service.manual('income');
+    expect(ctx.sendWhenReady).toHaveBeenLastCalledWith(ctx.petWindow, 'pet:animate', 'celebrate');
+    vi.advanceTimersByTime(2100); service.manual('bonus');
+    expect(service.snapshot().bubble.text).toContain('预计今天');
+    expect(ctx.sendWhenReady).toHaveBeenLastCalledWith(ctx.petWindow, 'pet:animate', 'notice');
+    service.apply({ ...ctx.store.state.settings, bonusReceivedAt: '2026-09-24' });
+    expect(service.snapshot().bubble.id).toBe('bonus-received');
+    expect(ctx.sendWhenReady).toHaveBeenLastCalledWith(ctx.petWindow, 'pet:animate', 'celebrate');
+    service.stop(); expect(vi.getTimerCount()).toBe(0);
+  });
+  it('suppresses random idle motion in quiet mode but allows explicit interactions', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-24T15:00:00'));
+    const { ctx, service } = setup();
+    ctx.store.state.settings.broadcast.enabled = false;
+    service.start(); vi.advanceTimersByTime(180000);
+    expect(ctx.sendWhenReady.mock.calls.filter(call => call[1] === 'pet:animate')).toHaveLength(0);
+    service.interact('pat');
+    expect(ctx.sendWhenReady).toHaveBeenLastCalledWith(ctx.petWindow, 'pet:animate', 'play');
+    service.stop(); expect(vi.getTimerCount()).toBe(0);
+  });
+  it('animates without altering earnings settings, throttles repeats and respects system lock', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-24T15:00:00'));
+    const { ctx, service } = setup();
+    const salary = ctx.store.state.settings.salary;
+    service.interact('stretch');
+    expect(ctx.sendWhenReady).toHaveBeenCalledWith(ctx.petWindow, 'pet:animate', 'stretch');
+    expect(service.snapshot().bubble.text).toContain('肩膀');
+    expect(ctx.store.state.settings.salary).toBe(salary);
+    expect(ctx.store.state.settings.pet).toMatchObject({ bondDate: '2026-09-24', bondCount: 1 });
+    service.interact('pat'); expect(ctx.store.state.settings.pet.bondCount).toBe(1);
+    service.interact('pat'); expect(ctx.showBubble).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(1000);
+    service.systemPause('lock', true); service.interact('pat');
+    expect(service.snapshot().bubble).toBeNull();
+    expect(ctx.showBubble).toHaveBeenCalledTimes(1);
+    service.stop(); expect(vi.getTimerCount()).toBe(0);
+  });
+});

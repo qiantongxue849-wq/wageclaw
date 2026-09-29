@@ -1,0 +1,8 @@
+TRUE TRANSPARENT RGBA sprite sheet with EXACTLY 24 sprites in FOUR COLUMNS and SIX ROWS, portrait 2:3. Think 4x6 equal square panels, each character occupies only the middle 65% of its cell; large empty gutters and at least64px transparent outside border. NO text, panel borders, backgrounds, labels. The reference is a little dark armored turquoise magical creature, preserve its exact design, all ornaments horns crown metal cape crystals. Camera and body position stay fixed. Exactly SIX rows of FOUR complete characters each.
+Row 1 four poses: original neutral, half blink, full blink, eyes reopened.
+Row 2 four poses: claw starting to rise, claw at chest, claw gently touches cheek, happy narrow eyes while touching cheek.
+Row 3 four poses: original neutral, eyes look left, eyes look right, eyes open wider.
+Row 4 four poses: claw starting to rise, claw raised chest height, claw waves with fingers open, proud full greeting with same claw.
+Row 5 four poses: original neutral, eyelids drooping, eyes half closed, eyes nearly closed.
+Row 6 four poses: eyes fully closed, head bows slightly, armored fingers unclench, both claws stretch gently outward with closed eyes.
+Do not omit any row. Draw 24 complete isolated full-body poses, 4 per row. Real articulated anatomy, existing arms fingers eyelids, not bitmap transforms. Keep every costume part and ornament, no extra limbs. Do not add new effects.

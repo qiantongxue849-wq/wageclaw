@@ -186,9 +186,9 @@ onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
             <label class="switch-row"><span>桌宠置顶</span><input v-model="draft.pet.onTop" type="checkbox" /></label>
             <label>桌宠大小<select v-model.number="draft.pet.size"><option :value="100">小</option><option :value="128">中</option><option :value="156">大</option></select></label>
             <label>桌宠形象<select v-model="draft.pet.style" aria-label="桌宠形象"><option v-for="item in PET_STYLES" :key="item" :value="item">{{ PET_STYLE_LABELS[item] }}</option></select></label>
-            <p class="field-help">每个形象有十阶形态，按当天上班到下班的时间平均推进；上班前是 Lv.1，下班时到 Lv.10，第二天重新开始。</p>
+            <p class="field-help">五组形象，每组十种模样。每天一上班从第一种开始。互动 20 次，或上班后每满一小时，都会换成下一种。也可以在详情页里固定一种。</p>
             <label class="switch-row"><span>自动气泡播报</span><input v-model="draft.broadcast.enabled" type="checkbox" /></label>
-            <p class="field-help">工作时每隔十几分钟说一句，每天最多 32 条；两条之间至少间隔 10 分钟。默认静音，休息日不打扰。</p>
+            <p class="field-help">工作时约 25～45 分钟说一句，每天最多 12 条日常播报，另有临近下班和收工提醒。默认静音，休息日不打扰。</p>
             <div class="data-actions"><button class="secondary-button" type="button" @click="draft.broadcast.pauseUntil = Date.now() + 3600000">暂停一小时</button><button class="secondary-button" type="button" @click="draft.broadcast.quietDate = dateKey(new Date())">今天安静</button><button class="text-action" type="button" @click="draft.broadcast.pauseUntil = 0; draft.broadcast.quietDate = ''">恢复播报</button></div>
             <p class="field-help">{{ draft.broadcast.quietDate === dateKey(new Date()) ? '今天安静（保存后生效）' : draft.broadcast.pauseUntil > Date.now() ? '已选择暂停一小时（保存后生效）' : '按设置自动播报' }}</p>
             <label v-if="desktop" class="switch-row"><span>开机自启（安装版生效）</span><input v-model="draft.autoStart" type="checkbox" /></label>

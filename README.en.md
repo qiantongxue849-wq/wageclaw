@@ -12,4 +12,4 @@ Only verified 2026 mainland China holiday arrangements are bundled; unknown year
 
 The desktop host owns scheduling and atomic file storage; closing the detail panel destroys its window while the pet continues running. Current platform validation and measured limitations are recorded in [V2 verification](docs/DESKTOP_PET_V2_VERIFICATION.md).
 
-See [README.md](README.md), [Architecture](docs/ARCHITECTURE.md), and [Implementation record](docs/LIGHTWEIGHT_IMPLEMENTATION.md) for details. Previous game, pet and authentication documents are historical references only.
+See [README.md](README.md), [Architecture](docs/ARCHITECTURE.md), and [Implementation record](docs/LIGHTWEIGHT_IMPLEMENTATION.md) for details. The full game, progression and authentication materials remain on the `vue` branch.

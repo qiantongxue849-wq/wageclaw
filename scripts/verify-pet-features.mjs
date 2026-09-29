@@ -101,26 +101,30 @@ try {
   await pet.screenshot({ path: 'qa-shots/features-pet.png' });
   console.log(`形象切换：${styles.length} 套全部渲染出互不相同的画面，且标题同步更新。`);
 
-  // —— 2. 十阶进化（固定时钟后重载，让 onMounted 读到假时间）——
-  const stageAt = async iso => {
+  // —— 2. 十种模样随互动变化（固定时钟后重载，让 onMounted 读到假时间）——
+  const stageAt = async (iso, count) => {
+    const day = iso.slice(0, 10);
+    await writeSettings({ ...seed, pet: { ...seed.pet, form: null, motion: 'classic', bondDate: day, bondCount: count } });
     await pet.clock.setFixedTime(new Date(iso));
     await pet.reload();
     await pet.waitForFunction(() => /Lv\.\d+/.test(globalThis.document.querySelector('canvas')?.getAttribute('aria-label') || ''));
     return stageOf();
   };
-  assert.equal(await stageAt('2026-09-18T08:00:00+08:00'), 1, '上班前应为第 1 阶');
-  assert.equal(await stageAt('2026-09-18T09:00:00+08:00'), 1, '上班瞬间应为第 1 阶');
-  assert.equal(await stageAt('2026-09-18T13:30:00+08:00'), 6, '班次过半应为第 6 阶');
-  assert.equal(await stageAt('2026-09-18T17:59:00+08:00'), 10, '临近下班应为第 10 阶');
-  assert.equal(await stageAt('2026-09-18T20:00:00+08:00'), 10, '下班后应停在第 10 阶');
-  assert.equal(await stageAt('2026-09-19T12:00:00+08:00'), 1, '周六应停在第 1 阶');
-  console.log('十阶进化：上班前 / 上班 / 过半 / 临下班 / 下班后 / 周末六个时点全部符合预期。');
+  assert.equal(await stageAt('2026-09-18T08:00:00+08:00', 40), 1, '上班前应停在第 1 种');
+  assert.equal(await stageAt('2026-09-18T09:00:00+08:00', 0), 1, '刚上班应为第 1 种');
+  assert.equal(await stageAt('2026-09-18T09:59:00+08:00', 0), 1, '不满一小时且没有互动仍是第 1 种');
+  assert.equal(await stageAt('2026-09-18T10:00:00+08:00', 0), 2, '满一小时即使没点够也要换成第 2 种');
+  assert.equal(await stageAt('2026-09-18T10:00:00+08:00', 20), 3, '满一小时再加 20 次互动应为第 3 种');
+  assert.equal(await stageAt('2026-09-18T17:59:00+08:00', 0), 9, '上班 8 小时 59 分应为第 9 种');
+  assert.equal(await stageAt('2026-09-18T20:00:00+08:00', 0), 10, '下班后停在班次结束时的模样');
+  assert.equal(await stageAt('2026-09-19T12:00:00+08:00', 180), 1, '周六应停在第 1 种');
+  console.log('十种模样：上班前 / 刚上班 / 不满一小时 / 满一小时 / 小时加互动 / 临下班 / 下班后 / 周末全部符合预期。');
 
-  // —— 3. 夏季作息会改变同一时刻的阶段 ——
+  // —— 3. 夏季作息不改变模样，互动次数才改变 ——
   await writeSettings({ ...seed, summerFrom: '05-01', summerTo: '10-01', summerStartTime: '09:00', summerEndTime: '21:00' });
-  assert.equal(await stageAt('2026-09-18T17:00:00+08:00'), 7, '夏季下班更晚，同一时刻阶段应更靠前');
+  assert.equal(await stageAt('2026-09-18T17:00:00+08:00', 0), 9, '小时数按当班上班时刻计算');
   await writeSettings(seed);
-  console.log('夏季作息：同一时刻（17:00）常规班次为第 9 阶、夏季班次为第 7 阶。');
+  console.log('夏季作息不会单独改写互动规则；17:00 距 09:00 已满 8 小时，是第 9 种。');
 
   // —— 4. 悬停信息浮层 ——
   await stageAt('2026-09-18T14:38:42+08:00');

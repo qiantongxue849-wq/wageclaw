@@ -1,0 +1,11 @@
+Create a TRUE transparent RGBA game animation sprite sheet, PORTRAIT 2:3 format, EXACTLY FOUR columns and SIX rows (24 drawings). Equal square cells. Each FULL sprite occupies at most 70% of its cell width AND height, leave very generous clear gutters on all sides so no characters, props or decorations touch neighbours. No labels, text, grid lines or background. This is a real hand-authored pose sequence, NOT a moving or warping bitmap.
+Use the attached image as exact identity reference: keep the same character, camera, original colours, clothes, furniture and every prop. Fixed camera, fixed feet/base, identical scale and body position in all 24 cells. Only eyelids, jaw, ears and existing arms articulate; no extra limbs.
+ROW 1 (4 cells): neutral reference pose; eyelids soften and blink; head anatomically turns a little toward viewer; contented crescent eyes.
+ROW 2: near paw begins lifting; paw at chest; paw touches cheek; peak affectionate cheek rub, happy squint.
+ROW 3: neutral reference pose; ears perk; eye half opens; eyes clearly open and head looks up.
+ROW 4: paw lifts toward chest; raised paw greeting; open paw greeting; joyful SMALL open-mouth smile with paw raised.
+ROW 5: neutral reference pose; eyelids droop; jaw cracks open; small clear yawn with mouth interior visible.
+ROW 6: broader yawn; full soft yawn head slightly back; front arms extend gently; peak relaxed arm stretch and yawn.
+Keep grounded props/furniture completely stationary. If holding an object, hold it with one paw and move only the free paw; return reference pose between animation groups. No people, hands from outside frame, particles or new effects. Preserve the reference's polished painterly 3D style and crisp clean transparent edges.
+IDENTITY: Cow tuxedo sunglasses and yellow bubble tea with straw. Move glasses up slightly to reveal blink, keep drink present.
+For this cow only: keep stern humorous eyebrows, animate existing split HOOVES not human fingers. Do not invent pawpads. White mouth stick/straw stays held at side of mouth when yawning, cup stays upright. In final stretch raise only free hoof if holding something. EXTRA wide gutters and margins top/bottom, full props inside each cell, character height <=65% cell.

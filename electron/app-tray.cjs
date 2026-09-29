@@ -9,6 +9,8 @@ module.exports = function createTrayModule(ctx) {
     }));
     return ctx.Menu.buildFromTemplate([
       { label: '查看详情（双击桌宠）', click: () => ctx.showMainWindow() },
+      { label: '摸摸它', click: () => ctx.service.interact('pat') },
+      { label: '一起伸个懒腰', click: () => ctx.service.interact('stretch') },
       { label: '立即播报', click: () => ctx.service.manual() },
       { label: '切换形象', submenu: styleItems },
       { type: 'separator' },

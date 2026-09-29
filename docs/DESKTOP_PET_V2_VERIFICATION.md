@@ -270,3 +270,53 @@ const rows = await hover.locator('.hover-row').count();
 - 五套形象与十阶素材在 Windows 缩放下的表现。
 - 悬停浮层在多显示器边缘的避让（逻辑已实现，仅单屏实测）。
 - 十阶切换的逐阶视觉连续性（自动化只断言画面互不相同与阶数正确，未逐阶人工过目）。
+
+## 2026-09-19：Electron 41.10.7 升级后的完整回归
+
+**背景**：`electron` 从 41.2.1 升到 41.10.7（修 `GHSA-h7rp-cf8h-j98x` context isolation bypass 等 5 条 advisories）。此前所有验证都是在 41.2.1 上做的 —— **换运行时版本属于会改变底层行为的事件，旧版本的绿灯不作数**，因此三条路径全部重跑。
+
+**过程插曲**：升级途中 `npm install` 被中断（沙箱拒绝重命名 `node_modules/electron`），留下一个只有包元数据、**没有 `dist/` 与 `path.txt`** 的目录。旧进程因为二进制已加载进内存仍能正常运行，直到被杀掉才暴露 `Electron failed to install correctly`。GitHub 不可达（`000`），改用国内镜像重装：
+
+```sh
+ELECTRON_MIRROR=https://registry.npmmirror.com/-/binary/electron/ node node_modules/electron/install.js
+```
+
+19 秒完成，`electron --version` 为 `v41.10.7`。**没有退回缓存里的 41.2.1** —— 否则安全升级就白做了。
+
+### 验证矩阵
+
+| 层次 | 命令 / 方式 | 结果 |
+| :--- | :--- | :--- |
+| 静态检查 | `npm run lint`、`npm run typecheck` | 通过 |
+| 单元测试 | `npm run test`（4 文件 **54 项**） | 通过 |
+| 端到端（开发服务器） | 4 个脚本 @ `127.0.0.1:5173` | 通过 |
+| 端到端（打包产物） | 4 个脚本 @ `vite preview` `4173` | 通过 |
+| 打包版 `file://` | 临时探针 `loadFile` 四视图 | 通过 |
+
+### 关键证据：零行为漂移
+
+`file://` 下四个视图的挂载结果与 41.2.1 时期**逐字一致**，控制台与 `did-fail-load` 均为空：
+
+| 视图 | 协议 | `#app` innerHTML | 悬停行数 | canvas |
+| :--- | :--- | ---: | ---: | :--- |
+| `pet` | `file:` | 527 | 0 | 有 |
+| `hover` | `file:` | 735 | 5 | – |
+| `main` | `file:` | 8122 | 0 | – |
+| `bubble` | `file:` | 375 | 0 | – |
+
+数字对得上，才算「没有行为漂移」。`HoverView` 的 5 行是模板静态节点，只要挂载发生就一定存在。
+
+### 覆盖到的行为
+
+形象切换 5 套、十阶进化 6 个时点、夏季作息（17:00 常规第 9 阶 / 夏季第 7 阶）、悬停浮层 5 行、月-日重复跨年、引导流程、单击/双击、非聚焦气泡、隐私与安静态、20 次面板建销循环、无面板重启、30 秒指标采样、暗色/窄屏布局、校验、导出、重置与坏档恢复、动效有限性与减少动效。
+
+### 顺带确认：启动会自动迁移存档
+
+实测真实存档（`~/Library/Application Support/wageclaw-electron/wageclaw-desktop-v2.json`）在应用启动时被迁移并落盘：旧档的 `bonusReceived` 布尔消失、`bonusReceivedAt` 出现，同时补上 `summerFrom` / `summerTo` / `summerStartTime` / `summerEndTime`。
+
+值得记一笔的是**补的值**：旧版没有夏季规则，迁移把 `summerFrom` / `summerTo` 填成**空字符串（= 不启用）**，而不是 `defaults()` 里的 `05-01` / `10-01`。这是对的 —— 凭空给老用户加一条作息规则会改变他的工时计算。
+
+### 本次未验证
+
+- Windows 与 Linux 平台（本机只有 macOS arm64 二进制）。
+- `electron-builder` 实际出包（`npm run dist:mac` 在工具沙箱里因写 asar 被拒而失败，属环境限制，非项目缺陷）。

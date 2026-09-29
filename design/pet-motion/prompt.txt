@@ -1,0 +1,23 @@
+Use case: stylized-concept, production 2D animation sprite sheet.
+Input reference: the supplied existing capybara desktop-pet artwork. Preserve its identity, materials, coloring, golden-brown round pear-shaped small body, tiny rounded ears, dark brown muzzle pointing three-quarter right, tiny paws resting on ground, and two green sprout leaves on the head. This is not a redesign.
+Create ONE precisely laid out transparent sprite sheet, 4 columns x 4 rows, sixteen equal square cells, exactly sixteen full capybaras, read left-to-right then top-to-bottom. The canvas must be square; every cell has the same dimensions. No grid lines, separators, labels, numbers, extra objects, motion lines, text, white matte, checkerboard, or backgrounds. Genuine transparent alpha.
+All frames are of the SAME character in the SAME camera position at the SAME scale, aligned to the SAME ground baseline and body center within each cell. Fixed soft lighting, consistent fur brush texture, same paws, same silhouette except anatomical changes required by action. Ample transparent margin, no overlap into neighbouring cells.
+Animate a gentle response to being petted using real redrawn character expression/anatomy, NOT whole-image squash, stretch, translation, zoom or rotation. The torso and grounded paws remain fixed in position and volume. Eyes actually open and close, ears flex slightly, muzzle and head actually turn a little, sprout leaves gently bend with delayed follow-through. No human hand.
+Motion sequence, exactly 16 successive frames:
+1 relaxed closed eyelids, reference rest pose;
+2 eyelids beginning to open;
+3 eyes open half way, ears lift slightly;
+4 eyes fully open with small dark pupils, noticing the viewer;
+5 head begins a very small turn toward viewer, muzzle changes perspective;
+6 head turns a little further and near ear flexes;
+7 head at maximum gentle turn, affectionate half-lidded look;
+8 hold that head angle with eyes softly closing;
+9 blink closed at same angle;
+10 eyes reopen half way, slight content smile;
+11 head begins returning, leaves trail the head motion;
+12 head halfway back, eyes becoming relaxed;
+13 nearly back to reference angle, eyelids settling closed;
+14 back to original head angle, leaves settling;
+15 almost identical to frame 1;
+16 EXACT rest pose as frame 1 for a seamless return.
+Make neighbouring poses exceptionally consistent in proportions and texture, with very small incremental motion. This is a technical animation asset, not a contact sheet of different designs. The body must not morph or change size between frames.

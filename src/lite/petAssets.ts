@@ -6,10 +6,10 @@ const SHEET_CELL = 288;
 
 /** 四个形象各有 2880×288 的十阶合图，按格裁切。 */
 const sheets: Partial<Record<PetStyle, () => Promise<string>>> = {
-  capybaraZen: () => import('../assets/pet-sheets/capybara-zen-sheet.png').then(asset => asset.default),
-  lazyCat: () => import('../assets/pet-sheets/lazy-cat-sheet.png').then(asset => asset.default),
-  lazyDog: () => import('../assets/pet-sheets/lazy-dog-sheet.png').then(asset => asset.default),
-  honestCow: () => import('../assets/pet-sheets/honest-cow-sheet.png').then(asset => asset.default)
+  capybaraZen: () => import('../assets/pet-light/capybara-zen.webp').then(asset => asset.default),
+  lazyCat: () => import('../assets/pet-light/lazy-cat.webp').then(asset => asset.default),
+  lazyDog: () => import('../assets/pet-light/lazy-dog.webp').then(asset => asset.default),
+  honestCow: () => import('../assets/pet-light/honest-cow.webp').then(asset => asset.default)
 };
 
 /** 怨气团是十张独立图。 */
@@ -47,9 +47,11 @@ export async function petFrame(style: PetStyle, stage: number): Promise<PetFrame
   return { url: await loader(), sx: 0 };
 }
 
-/** 某个形象的全部十阶地址，用于切换后静默预热。 */
-export async function petStyleUrls(style: PetStyle): Promise<string[]> {
-  const sheet = sheets[style];
-  if (sheet) return [await sheet()];
-  return Promise.all(rageBlobStages.map(load => load()));
-}
+/** Small first-form thumbnails; selecting a pet loads only its own artwork. */
+export const petThumbs = {
+  capybaraZen: new URL('../assets/pet-light/capybara-zen-thumb.webp', import.meta.url).href,
+  lazyCat: new URL('../assets/pet-light/lazy-cat-thumb.webp', import.meta.url).href,
+  lazyDog: new URL('../assets/pet-light/lazy-dog-thumb.webp', import.meta.url).href,
+  honestCow: new URL('../assets/pet-light/honest-cow-thumb.webp', import.meta.url).href,
+  rageBlob: new URL('../assets/pet-light/rage-blob-thumb.webp', import.meta.url).href,
+};

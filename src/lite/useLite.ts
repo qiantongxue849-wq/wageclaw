@@ -1,6 +1,6 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { activeShift, dateKey, type LiteSettings, sanitizeSettings } from './model';
-import { bonusCountdown, calendars, duration, earnings, monthWorkdays, nextHoliday, paydayCountdown, springCountdown } from './calendar';
+import { bonusCountdown, calendars, duration, earnings, mergePetBond, monthWorkdays, nextHoliday, paydayCountdown, springCountdown } from './calendar';
 import { backupContents, loadSettings, resetSettings } from './storage';
 
 export function useLite() {
@@ -33,17 +33,20 @@ export function useLite() {
     if (!document.hidden) timer = setInterval(refresh, 1000);
   }
   function accept(snapshot: import('./desktop').DesktopSnapshot) {
-    if (JSON.stringify(settings.value) !== JSON.stringify(snapshot.settings)) settings.value = snapshot.settings;
+    const merged = mergePetBond(settings.value, snapshot.settings);
+    if (JSON.stringify(settings.value) !== JSON.stringify(merged)) settings.value = merged;
     recovery.value = snapshot.recovery;
   }
   async function save(next: LiteSettings) {
     if (recovery.value) { notice.value = '请先导出备份并恢复默认设置。'; return false; }
+    const previous = settings.value;
+    const valid = sanitizeSettings(next);
+    settings.value = valid;
     try {
-      const valid = sanitizeSettings(next);
       if (desktop) accept(await desktop.saveSettings(JSON.parse(JSON.stringify(valid))));
-      else { localStorage.setItem(loaded.key, JSON.stringify(valid)); settings.value = valid; }
+      else localStorage.setItem(loaded.key, JSON.stringify(valid));
       return true;
-    } catch { notice.value = '未能保存设置，请检查本机存储空间。'; return false; }
+    } catch { settings.value = previous; notice.value = '未能保存设置，请检查本机存储空间。'; return false; }
   }
   function patch(values: Partial<LiteSettings>) { return save({ ...settings.value, ...values }); }
   // 「已收到」只在本轮发放周期内有效，因此记录标记当天而不是布尔值。

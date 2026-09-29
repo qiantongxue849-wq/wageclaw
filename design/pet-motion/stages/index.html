@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>桌宠逐帧动作检查</title>
+<style>body{margin:0;background:#eeeade;color:#293c36;font-family:system-ui,sans-serif;padding:36px}h1{margin:0 0 8px;font-size:26px}p{color:#63746c}nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:24px 0}button,select{background:#fff;border:1px solid #bdc9bd;border-radius:10px;padding:10px 14px;color:inherit;font:inherit;cursor:pointer}button:hover{background:#d5e8d7}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.card{border:1px solid #d3d9ce;border-radius:20px;background:#faf9f3;padding:16px;text-align:center}.art{height:260px;width:100%;display:flex;justify-content:center}.art canvas{max-width:288px}h2{font-size:18px}.status{font-size:13px;color:#6a786d;margin-top:16px}.actions{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}.actions button{font-size:13px;padding:8px}</style>
+<div id="app"></div>
+<script type="module">
+import { createApp,h,ref } from 'vue';
+import PetArtwork from '/src/lite/PetArtwork.vue';
+const characters=[['capybaraZen','卡皮巴拉'],['lazyCat','懒猫'],['lazyDog','懒狗'],['honestCow','老实牛'],['rageBlob','怨气团']];
+const actions=[['play','摸摸'],['notice','留意'],['celebrate','开心'],['stretch','伸展'],['sleep','困了']];
+createApp({setup(){const stage=ref(2),pets=[];return()=>h('main',[
+ h('h1','每个等级，都有自己的动作'),h('p','这里使用正式应用的播放器与素材。切换等级后，点击下方动作查看眼睛、嘴和肢体变化。'),
+ h('nav',[h('label','形象等级 '),h('select',{value:stage.value,'aria-label':'形象等级',onChange:e=>stage.value=Number(e.target.value)},Array.from({length:10},(_,i)=>h('option',{value:i+1},`第 ${i+1} 级`))),...actions.map(([a,label])=>h('button',{onClick:()=>pets.forEach(p=>p?.play(a))},`全部${label}`))]),
+ h('div',{class:'cards'},characters.map(([style,name],i)=>h('section',{class:'card'},[h('h2',name),h('div',{class:'art'},[h(PetArtwork,{style,stage:stage.value,animated:true,transitions:true,ref:p=>pets[i]=p})]),h('div',{class:'actions'},actions.map(([a,label])=>h('button',{onClick:()=>pets[i]?.play(a)},label)))]))),h('p',{class:'status'},'第 1 级沿用原动作素材；第 2–10 级使用各自重绘的动作图集。')
+]);}}).mount('#app');
+</script></html>

@@ -21,8 +21,8 @@ describe('pet broadcast scheduler', () => {
     const next = recordDelivery(now, d, (report || manualReport(now, settings)), () => 0);
     expect(next.total).toBe(1); expect(next.ordinary).toBe(1);
     expect(autoReport(at('13:05'), settings, next, false)).toBeNull();
-    expect(next.nextAt).toBe(at('13:10').getTime());
-    expect(autoReport(at('13:00'), settings, { ...d, ordinary: 30 }, false)).toBeNull();
+    expect(next.nextAt).toBe(at('13:25').getTime());
+    expect(autoReport(at('13:00'), settings, { ...d, ordinary: 12 }, false)).toBeNull();
   });
   it('sends each close-of-day event once and never sends expired events', () => {
     const settings = s(), now = at('17:30');
@@ -33,7 +33,7 @@ describe('pet broadcast scheduler', () => {
     expect(autoReport(at('17:31'), settings, normalizeDelivery(JSON.parse(JSON.stringify(saved)), at('17:31')), false)).toBeNull();
     expect(autoReport(at('18:00'), settings, saved, false)?.id).toBe('end');
     expect(autoReport(at('18:03'), settings, initial, false)).toBeNull();
-    expect(autoReport(at('18:00'), settings, { ...initial, total: 32 }, false)).toBeNull();
+    expect(autoReport(at('18:00'), settings, { ...initial, total: 14 }, false)).toBeNull();
   });
   it('honors pause, quiet mode, hidden pet, lock and rest days', () => {
     const now = at('18:00'), settings = s(), d = freshDelivery(now);

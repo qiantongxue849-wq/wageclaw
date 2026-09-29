@@ -1,4 +1,4 @@
-import { PET_STAGE_COUNT, activeShift, dateKey, dayGap, inMonthDayRange, nextMonthDay, parseDate, parseMonthDay, previousMonthDay, clockMinutes, type LiteSettings } from './model';
+import { INTERACTIONS_PER_STAGE, MAX_BOND_COUNT, PET_STAGE_COUNT, activeShift, dateKey, dayGap, inMonthDayRange, nextMonthDay, parseDate, parseMonthDay, previousMonthDay, clockMinutes, type LiteSettings } from './model';
 
 export const HOLIDAY_SOURCE = 'https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html';
 export interface Holiday { name: string; start: string; end: string }
@@ -43,17 +43,57 @@ export function earnings(now: Date, s: LiteSettings, days = monthWorkdays(now, s
 export function duration(seconds: number): string {
   return [Math.floor(seconds / 3600), Math.floor(seconds % 3600 / 60), seconds % 60].map(v => String(v).padStart(2, '0')).join(':');
 }
+/** 当天班次的上班时刻。休息日没有班次，返回 null。 */
+function shiftStart(now: Date, s: LiteSettings): Date | null {
+  if (!isWorkday(now, s)) return null;
+  const start = new Date(now);
+  start.setHours(0, clockMinutes(activeShift(now, s).startTime), 0, 0);
+  return start;
+}
+/** 今天、并且已经上班之后，才算数的互动次数。 */
+function bondCount(now: Date, s: LiteSettings): number {
+  const start = shiftStart(now, s);
+  if (!start || now < start || s.pet.bondDate !== dateKey(now)) return 0;
+  return s.pet.bondCount;
+}
+/** 从上班时刻起，每满一小时进一档；下班后不再继续加。 */
+function hourSteps(now: Date, s: LiteSettings): number {
+  const start = shiftStart(now, s);
+  if (!start || now < start) return 0;
+  const end = new Date(now);
+  end.setHours(0, clockMinutes(activeShift(now, s).endTime), 0, 0);
+  const until = Math.min(now.getTime(), end.getTime());
+  return Math.max(0, Math.floor((until - start.getTime()) / 3600000));
+}
 /**
- * 当天班次进度平均切成十阶：上班前 Lv.1，下班时刻 Lv.10，休息日回到 Lv.1。
- * 只用当天作息，不累计历史，所以每天自然重置。
+ * 每种桌宠 10 种模样。每天一上班是第 1 种。
+ * 两种条件都会再进一档：累计 20 次互动，或上班后又满一小时。两者相加，最高第 10 种。
+ * 休息日和上班前固定第 1 种。下班后小时不再增加，停在当时的模样，第二天重新开始。
  */
 export function petStage(now: Date, s: LiteSettings): number {
-  if (!isWorkday(now, s)) return 1;
-  const shift = activeShift(now, s);
-  const start = new Date(now); start.setHours(0, clockMinutes(shift.startTime), 0, 0);
-  const end = new Date(now); end.setHours(0, clockMinutes(shift.endTime), 0, 0);
-  const progress = Math.min(1, Math.max(0, (now.getTime() - start.getTime()) / (end.getTime() - start.getTime())));
-  return Math.max(1, Math.min(PET_STAGE_COUNT, Math.floor(progress * PET_STAGE_COUNT) + 1));
+  const steps = hourSteps(now, s) + Math.floor(bondCount(now, s) / INTERACTIONS_PER_STAGE);
+  return Math.max(1, Math.min(PET_STAGE_COUNT, 1 + steps));
+}
+/**
+ * 主进程若还是旧版本，快照里没有 bondCount，不能把界面上已经加上的次数清掉。
+ * 新快照自己带了次数时，以它为准（包括恢复默认后的 0）。
+ */
+export function mergePetBond(local: LiteSettings, incoming: LiteSettings): LiteSettings {
+  const pet = incoming.pet;
+  if (!pet || typeof pet.bondCount === 'number') return incoming;
+  const count = local.pet?.bondDate === dateKey(new Date()) ? local.pet.bondCount : 0;
+  if (!count) return incoming;
+  return { ...incoming, pet: { ...pet, bondDate: dateKey(new Date()), bondCount: count } };
+}
+/** 记一次陪伴。上班前、休息日、以及已经到第 10 种时，原样返回。 */
+export function recordPetInteraction(now: Date, s: LiteSettings): LiteSettings {
+  const start = shiftStart(now, s);
+  if (!start || now < start) return s;
+  const key = dateKey(now);
+  const count = s.pet.bondDate === key ? s.pet.bondCount : 0;
+  const next = Math.min(MAX_BOND_COUNT, count + 1);
+  if (s.pet.bondDate === key && s.pet.bondCount === next) return s;
+  return { ...s, pet: { ...s.pet, bondDate: key, bondCount: next } };
 }
 export function nextHoliday(now: Date) {
   const key = dateKey(now);

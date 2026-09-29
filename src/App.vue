@@ -1,8 +1,30 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useLite } from './lite/useLite';
 import LiteSettings from './lite/LiteSettings.vue';
+import CompanionPanel from './lite/CompanionPanel.vue';
+import BreakCorner from './lite/BreakCorner.vue';
+import { dateKey, type LiteSettings as Settings } from './lite/model';
 const app = reactive(useLite());
+const savingPet = ref(false);
+let queuedPet: Settings['pet'] | null = null;
+async function savePet(pet: Settings['pet']) {
+  queuedPet = pet;
+  if (savingPet.value) return;
+  savingPet.value = true;
+  try {
+    while (queuedPet) {
+      const next = queuedPet;
+      queuedPet = null;
+      await app.patch({ pet: next });
+    }
+  } finally { savingPet.value = false; }
+}
+async function toggleQuiet() {
+  const b = app.settings.broadcast;
+  const quiet = !b.enabled || b.quietDate === dateKey(app.now) || b.pauseUntil > app.now.getTime();
+  await app.patch({ broadcast: { ...b, enabled: true, pauseUntil: 0, quietDate: quiet ? '' : dateKey(app.now) } });
+}
 const dateLabel = computed(() => app.now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }));
 const springText = computed(() => ({ unset: '留一个回家的盼头', started: '春节假期开始了', active: '春节假期中', upcoming: '距离我的春节放假' })[app.spring.state]);
 const bonusText = computed(() => ({ unset: '留一个收获的盼头', received: '年终奖已收到', today: '预计今天发放', past: '预计日期已到', upcoming: '距离预计发放' })[app.bonus.state]);
@@ -16,7 +38,7 @@ const bonusText = computed(() => ({ unset: '留一个收获的盼头', received:
           <span class="brand-mark">忍</span>
           <strong>
             忍了吧
-            <span>每一天，都有盼头</span>
+            <span>给忙碌的日子，留一点松弛</span>
           </strong>
         </a>
         <nav class="header-actions" aria-label="页面操作">
@@ -45,13 +67,14 @@ const bonusText = computed(() => ({ unset: '留一个收获的盼头', received:
         <section class="greeting">
           <div>
             <p class="eyebrow">{{ dateLabel }}</p>
-            <h1>{{ app.income.status === 'after' && app.settings.configured ? '今天辛苦了，时间归你了。' : app.income.status === 'rest' && app.settings.configured ? '今天，安心休息。' : '每一分钟，都在靠近好日子。' }}</h1>
+            <h1>{{ app.income.status === 'after' && app.settings.configured ? '今天辛苦了，时间归你了。' : app.income.status === 'rest' && app.settings.configured ? '今天，安心休息。' : app.income.status === 'working' && app.income.progress > .7 ? '再坚持一小会，今天就归你了。' : '慢慢来，好日子正在靠近。' }}</h1>
           </div>
           <span class="quiet-tag">
             <i class="status-dot"></i>
             {{ app.settings.configured ? '按自己的节奏来' : '从你的作息开始' }}
           </span>
         </section>
+        <div class="dashboard-layout"><div class="dashboard-main">
         <section class="hero-grid" aria-label="今日收入与下班时间">
           <article class="earnings-card">
             <div class="card-top">
@@ -80,7 +103,7 @@ const bonusText = computed(() => ({ unset: '留一个收获的盼头', received:
             <p class="clock-caption">{{ !app.settings.configured ? '填好工资和作息，让盼头开始。' : app.income.status === 'after' ? '剩下的时间，留给自己的生活。' : app.income.status === 'rest' ? '慢一点也没关系。' : `${app.shift.startTime} — ${app.shift.endTime}${app.shift.summer ? ' · 夏季作息' : ''} · 今天也有终点` }}</p>
             <footer class="shift-footer">
               <div>
-                <span>今日班次进度</span>
+                <span>今天已经走过</span>
                 <strong>{{ app.settings.configured ? Math.round(app.income.progress * 100) : 0 }}%</strong>
               </div>
               <div class="progress-track" role="progressbar" aria-label="今日班次进度" :aria-valuenow="Math.round(app.income.progress * 100)" aria-valuemin="0" aria-valuemax="100">
@@ -140,6 +163,8 @@ const bonusText = computed(() => ({ unset: '留一个收获的盼头', received:
             </article>
           </div>
         </section>
+        <BreakCorner />
+        </div><CompanionPanel :settings="app.settings" :now="app.now" :saving="savingPet" @pet="savePet" @quiet="toggleQuiet" /></div>
         <footer class="page-footer">
           <span>收入按月薪与排班估算，午休照常计入工时，不代表实际到账。</span>
           <span v-if="!app.calendarKnown">本年调休资料缺失，暂按个人排班估算。</span>

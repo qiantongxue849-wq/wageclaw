@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { PET_STAGE_COUNT, PET_STYLES, activeShift, defaults, dayGap, parseDate, sanitizeSettings, validateSettings } from '../src/lite/model';
-import { bonusCountdown, earnings, isWorkday, monthWorkdays, nextHoliday, paydayCountdown, petStage, springCountdown } from '../src/lite/calendar';
+import { INTERACTIONS_PER_STAGE, MAX_BOND_COUNT, PET_STAGE_COUNT, PET_STYLES, activeShift, dateKey, defaults, dayGap, parseDate, sanitizeSettings, validateSettings } from '../src/lite/model';
+import { bonusCountdown, earnings, isWorkday, mergePetBond, monthWorkdays, nextHoliday, paydayCountdown, petStage, recordPetInteraction, springCountdown } from '../src/lite/calendar';
 import { autoReport, candidates, freshDelivery, manualReport, nextWake, normalizeDelivery, randomDue, recordDelivery } from '../src/lite/broadcast';
 import { backupContents, LITE_KEY, loadSettings, OLD_KEY, resetSettings } from '../src/lite/storage';
 // 固定为 09:00—18:00 且关闭夏季作息，与出厂默认解耦。
@@ -235,27 +235,41 @@ describe('pet style and daily evolution', () => {
     expect(PET_STAGE_COUNT).toBe(10);
     expect(defaults().pet.style).toBe('capybaraZen');
   });
-  it('splits the shift into ten stages from clock-in to clock-out', () => {
-    const s = { ...defaults(), configured: true, salary: 22000, summerFrom: '', summerTo: '', startTime: '09:00', endTime: '19:00' };
-    const stage = (time: string) => petStage(at(`2026-09-15T${time}:00`), s);
-    expect(stage('08:00')).toBe(1);
-    expect(stage('09:00')).toBe(1);
-    expect(stage('09:59')).toBe(1);
-    expect(stage('10:00')).toBe(2);
-    expect(stage('14:00')).toBe(6);
-    expect(stage('17:59')).toBe(9);
-    expect(stage('18:00')).toBe(10);
-    expect(stage('23:00')).toBe(10);
+  it('advances one form per work hour and another every twenty interactions', () => {
+    const base = { ...defaults(), configured: true, salary: 22000, summerFrom: '', summerTo: '', startTime: '09:00', endTime: '18:00' };
+    const withCount = (count: number) => ({ ...base, pet: { ...base.pet, bondDate: '2026-09-15', bondCount: count } });
+    expect(INTERACTIONS_PER_STAGE).toBe(20);
+    expect(petStage(at('2026-09-15T08:59:00'), withCount(40))).toBe(1);
+    expect(petStage(at('2026-09-15T09:00:00'), base)).toBe(1);
+    expect(petStage(at('2026-09-15T09:59:00'), base)).toBe(1);
+    expect(petStage(at('2026-09-15T10:00:00'), base)).toBe(2);
+    expect(petStage(at('2026-09-15T10:00:00'), withCount(19))).toBe(2);
+    expect(petStage(at('2026-09-15T10:00:00'), withCount(20))).toBe(3);
+    expect(petStage(at('2026-09-15T12:00:00'), base)).toBe(4);
+    expect(petStage(at('2026-09-15T18:00:00'), base)).toBe(10);
+    expect(petStage(at('2026-09-15T20:00:00'), base)).toBe(10);
+    expect(petStage(at('2026-09-16T09:00:00'), withCount(MAX_BOND_COUNT))).toBe(1);
+    expect(petStage(at('2026-09-16T10:00:00'), withCount(MAX_BOND_COUNT))).toBe(2);
+    let settings = withCount(MAX_BOND_COUNT - 1);
+    settings = recordPetInteraction(at('2026-09-15T10:00:00'), settings);
+    expect(settings.pet.bondCount).toBe(MAX_BOND_COUNT);
+    expect(recordPetInteraction(at('2026-09-15T10:00:00'), settings)).toBe(settings);
+    expect(sanitizeSettings({ pet: { bondDate: '2026-09-15', bondCount: 20 } }).pet.bondCount).toBe(20);
+    expect(sanitizeSettings({ pet: { bondDate: '2026-09-15', bondCount: MAX_BOND_COUNT + 1 } }).pet.bondCount).toBe(0);
   });
-  it('returns to level 1 on rest days so the evolution resets daily', () => {
-    const s = { ...defaults(), configured: true, salary: 22000 };
+  it('keeps a locally counted form when an older snapshot has no bond field', () => {
+    const today = dateKey(new Date());
+    const local = { ...defaults(), pet: { ...defaults().pet, bondDate: today, bondCount: 3 } };
+    const stale = { ...defaults(), pet: { ...defaults().pet } };
+    delete (stale.pet as { bondCount?: number }).bondCount;
+    expect(mergePetBond(local, stale).pet.bondCount).toBe(3);
+    expect(mergePetBond(local, { ...defaults(), pet: { ...defaults().pet, bondDate: today, bondCount: 0 } }).pet.bondCount).toBe(0);
+  });
+  it('stays on the first form on rest days and ignores interactions then', () => {
+    const s = { ...defaults(), configured: true, salary: 22000, pet: { ...defaults().pet, bondDate: '2026-09-19', bondCount: 6 } };
     expect(petStage(at('2026-09-19T14:00:00'), s)).toBe(1);
     expect(petStage(at('2026-10-05T14:00:00'), s)).toBe(1);
-  });
-  it('keeps the stage within 1..10 for a one-minute shift', () => {
-    const s = { ...defaults(), configured: true, salary: 22000, summerFrom: '', summerTo: '', startTime: '09:00', endTime: '09:01' };
-    expect(petStage(at('2026-09-15T09:00:00'), s)).toBe(1);
-    expect(petStage(at('2026-09-15T09:01:00'), s)).toBe(10);
+    expect(recordPetInteraction(at('2026-09-19T14:00:00'), s)).toBe(s);
   });
   it('sanitizes a stored style and rejects unknown ones', () => {
     expect(sanitizeSettings({ ...defaults(), pet: { ...defaults().pet, style: 'lazyCat' } }).pet.style).toBe('lazyCat');
@@ -270,10 +284,10 @@ describe('pet style and daily evolution', () => {
   });
 });
 describe('broadcast cadence', () => {
-  it('schedules the next report 10 to 20 minutes out', () => {
+  it('schedules the next report 25 to 45 minutes out', () => {
     const now = at('2026-09-15T13:00:00');
-    expect(randomDue(now, () => 0)).toBe(now.getTime() + 10 * 60000);
-    expect(randomDue(now, () => 1)).toBe(now.getTime() + 20 * 60000);
+    expect(randomDue(now, () => 0)).toBe(now.getTime() + 25 * 60000);
+    expect(randomDue(now, () => 1)).toBe(now.getTime() + 45 * 60000);
   });
   it('keeps reporting through the lunch break instead of going quiet', () => {
     const s = settings(), now = at('2026-09-15T12:30:00');

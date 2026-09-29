@@ -12,12 +12,12 @@
 
 `?view=hover` 是悬停信息卡，同样按需创建：鼠标进入桌宠可点击像素区时建窗，离开 320ms 后销毁；浮层自身可悬停，移入时取消销毁。定位优先桌宠上方，气泡占位时让到下方。它只读快照，不参与调度。
 
-桌宠形象由 `pet.style` 决定，五套可选；每套 10 阶，由 `petStage()` 按当天班次进度十等分驱动（休息日固定第 1 阶）。`petAssets.ts` 把合图切片（`{url, sx}`）与独立图（`{url, cell}`）两种素材归一成同一 `PetFrame`，Canvas 侧无需分支。
+桌宠形象由 `pet.style` 决定，五套可选；每套 10 种模样。`petStage()` 在上班后把两档进度相加：每 20 次互动一档，从上班时刻起每满一小时再一档，上限第 10 种。休息日和上班前固定第 1 种，下班后小时不再增加。`petAssets.ts` 把合图切片（`{url, sx}`）与独立图（`{url, cell}`）两种素材归一成同一 `PetFrame`，Canvas 侧无需分支。
 
 ## 领域与存储
 
 - `src/lite/model.ts`：版本 2 配置、排班与桌宠／播报偏好清洗；`activeShift` 决定某天用常规还是夏季作息。
-- `src/lite/calendar.ts`：收入、工作日历、发薪与假期纯函数；`petStage()` 输出 1–10 阶。
+- `src/lite/calendar.ts`：收入、工作日历、发薪与假期纯函数；`petStage()` 按当天互动次数和上班后的整小时数输出 1–10 种模样，`recordPetInteraction()` 记下一次陪伴。
 - `src/lite/broadcast.ts`：候选内容、每日配额、冷却、关键节点与下次调度。随机间隔 10–20 分钟，每日上限 32 条、两条之间至少 10 分钟，收工节点前后 15 分钟让位。
 - `src/lite/petAssets.ts`：五套形象的素材寻址与阶段夹取，输出统一帧描述。
 - `scripts/build-core.mjs`：将领域逻辑编译成主进程可用的 CommonJS，构建和测试前自动执行。输出不手工修改。

@@ -17,7 +17,10 @@ module.exports = function registerIpc(ctx) {
   handle('pet:save', (event, value) => { mainOnly(event); return ctx.service.apply(value, { closeAfterOnboarding: true }); });
   handle('pet:reset', event => { mainOnly(event); return ctx.service.reset(); });
   handle('pet:quiet', (_, mode) => { if (!['hour', 'today', 'resume'].includes(mode)) return; return ctx.service.quiet(mode); });
-  handle('pet:manual', () => ctx.service.manual());
+  // 界面已经记过这一次互动，这里只负责气泡和动作，避免次数加两次。
+  handle('pet:interact', (_, action) => { if (['pat', 'stretch'].includes(action)) ctx.service.interact(action, false); });
+  handle('pet:bond', (_, payload) => ctx.service.setPetBond(payload?.bondDate, payload?.bondCount));
+  handle('pet:manual', (_, topic) => ctx.service.manual(['income', 'offwork', 'holiday', 'spring', 'bonus'].includes(topic) ? topic : undefined, false));
   handle('pet:dismiss', () => ctx.service.dismiss());
   handle('pet:hover', (_, hovered) => ctx.service.hoverBubble(hovered === true));
   handle('pet:hovercard', (event, payload) => {

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { petStage } from './calendar';
-import { petFrame, petStyleUrls, type PetFrame } from './petAssets';
-import { PET_STYLE_LABELS, defaults, type PetStyle } from './model';
+import { usePetMotion } from './petMotion';
+import { mergePetBond, petStage, recordPetInteraction } from './calendar';
+import { petThumbs } from './petAssets';
+import { PET_STYLES, PET_STYLE_LABELS, defaults, type PetStyle } from './model';
 import { loadSettings } from './storage';
-import { manualReport } from './broadcast';
+import { manualReport, requestedReport, comfortReport, type ReportTopic } from './broadcast';
+import { reportAction } from './petReactions';
 import type { DesktopSnapshot } from './desktop';
 const desktop = window.wageclawLite;
 const view = new URLSearchParams(location.search).get('view');
@@ -17,80 +19,31 @@ const size = computed(() => state.value.settings.pet.size);
 const now = ref(new Date());
 const style = computed<PetStyle>(() => state.value.settings.pet.style);
 const styleLabel = computed(() => PET_STYLE_LABELS[style.value] || '桌宠');
-/** 十阶随当天班次进度推进，每 10% 换一阶。 */
-const stage = computed(() => petStage(now.value, state.value.settings));
+/** 固定形态优先；否则每天一上班从第 1 种开始，20 次互动或每满一小时再换。 */
+const authored = computed(() => state.value.settings.pet.motion === 'authored');
+const stage = computed(() => state.value.settings.pet.form ?? petStage(now.value, state.value.settings));
 let mask: Uint8ClampedArray | undefined;
-let motion: Animation | undefined;
-let activeAction: 'play' | 'sleep' | undefined;
+
 let clickTimer: ReturnType<typeof setTimeout> | undefined;
 let hideTimer: ReturnType<typeof setTimeout> | undefined;
 let stageTimer: ReturnType<typeof setInterval> | undefined;
 let lastInteractive = true;
 let start: { x: number; y: number; pointer: number } | null = null;
 let dragging = false, disposed = false, paused = false;
-let renderToken = 0;
-const loaded = new Map<string, HTMLImageElement>();
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const motion = usePetMotion(canvas, {
+  style: () => style.value, stage: () => stage.value, enabled: () => authored.value && !isBubble,
+  blocked: () => paused || disposed || dragging || isBubble,
+  drawn: pixels => { mask = pixels; }
+});
+const animate = motion.play;
+const stopMotion = motion.stop;
 const cleanup: Array<() => void> = [];
-function image(url: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = url; });
-}
-async function ensureImage(url: string) {
-  const cached = loaded.get(url);
-  if (cached) return cached;
-  try { const img = await image(url); loaded.set(url, img); return img; } catch { return null; }
-}
-function draw(img: HTMLImageElement, frame: PetFrame) {
-  const ctx = canvas.value?.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return;
-  // 合图按格裁切，独立图整张缩放；两者都归一到 288 见方。
-  const source = frame.cell || img.naturalWidth;
-  ctx.clearRect(0, 0, 288, 288);
-  ctx.drawImage(img, frame.sx, 0, source, source, 0, 0, 288, 288);
-  mask = ctx.getImageData(0, 0, 288, 288).data;
-}
-async function render() {
-  if (isBubble) return;
-  const token = ++renderToken;
-  const frame = await petFrame(style.value, stage.value);
-  if (token !== renderToken || disposed) return;
-  const img = await ensureImage(frame.url);
-  if (token !== renderToken || disposed || !img) return;
-  draw(img, frame);
-}
-/** 静默预热当前形象的全部形态，换阶时不必等加载。 */
-async function preload(value: PetStyle) {
-  try { for (const url of await petStyleUrls(value)) void ensureImage(url); } catch { /* Assets are optional. */ }
-}
-function stopMotion() {
-  motion?.cancel(); motion = undefined; activeAction = undefined;
-}
-function animate(action: 'play' | 'sleep') {
-  const target = canvas.value;
-  if (!target || !mask || paused || disposed || dragging || isBubble || document.hidden || reducedMotion.matches) return;
-  // Let a response settle before another click; idle movement never interrupts it.
-  if (motion && (activeAction === 'play' || action === 'sleep')) return;
-  const from = getComputedStyle(target).transform;
-  stopMotion();
-  const rest = 'translateY(0%) scale(1, 1)';
-  const poses = action === 'play' ? [
-    { offset: 0, transform: from === 'none' ? rest : from },
-    { offset: 0.18, transform: 'translateY(0%) scale(1.035, 0.96)' },
-    { offset: 0.43, transform: 'translateY(-2%) scale(0.985, 1.025)' },
-    { offset: 0.7, transform: 'translateY(0%) scale(1.012, 0.987)' },
-    { offset: 1, transform: rest },
-  ] : [
-    { offset: 0, transform: rest },
-    { offset: 0.45, transform: 'translateY(0%) scale(1.018, 0.975)' },
-    { offset: 1, transform: rest },
-  ];
-  // One intact image, a planted base, and finite compositor motion. No idle frame loop.
-  const next = target.animate(poses.map(pose => ({ ...pose, easing: 'cubic-bezier(.4, 0, .2, 1)' })), {
-    duration: action === 'play' ? 820 : 1800,
-    iterations: 1,
-  });
-  motion = next; activeAction = action;
-  next.onfinish = () => { if (motion === next) stopMotion(); };
+function syncStageClock() {
+  clearInterval(stageTimer); stageTimer = undefined;
+  now.value = new Date();
+  if (!isBubble && !paused && !disposed && !document.hidden && state.value.settings.pet.form === null) {
+    stageTimer = setInterval(() => { now.value = new Date(); }, 30000);
+  }
 }
 function hit(event: MouseEvent) {
   if (dragging) return true;
@@ -112,6 +65,7 @@ function move(event: PointerEvent) {
   if (!start) return;
   if (!dragging && Math.hypot(event.screenX - start.x, event.screenY - start.y) > 6) {
     dragging = true; clearTimeout(clickTimer); clickTimer = undefined;
+    stopMotion();
     desktop?.drag({ kind: 'start', x: start.x, y: start.y });
   }
   if (dragging) desktop?.drag({ kind: 'move', x: event.screenX, y: event.screenY });
@@ -126,48 +80,82 @@ function up() {
   if (canvas.value?.hasPointerCapture(start.pointer)) canvas.value.releasePointerCapture(start.pointer);
   start = null;
   if (dragging) { dragging = false; desktop?.drag({ kind: 'end' }); return; }
-  animate('play');
   if (clickTimer) { clearTimeout(clickTimer); clickTimer = undefined; openPanel(); }
   else clickTimer = setTimeout(() => { clickTimer = undefined; report(); }, 450);
 }
 function cancel() { start = null; if (dragging) desktop?.drag({ kind: 'end' }); dragging = false; clearTimeout(clickTimer); clickTimer = undefined; }
-function report() {
-  animate('play');
-  if (desktop) void desktop.report();
+function remember() {
+  const next = recordPetInteraction(now.value, state.value.settings);
+  if (next === state.value.settings) return;
+  state.value = { ...state.value, settings: next };
+  if (desktop) void desktop.setPetBond?.(next.pet.bondDate, next.pet.bondCount)?.catch(() => undefined);
   else {
-    state.value.bubble = manualReport(new Date(), state.value.settings, bubble.value?.topic);
+    try {
+      const current = loadSettings(localStorage);
+      if (!current.recovery) localStorage.setItem(current.key, JSON.stringify(next));
+    } catch { /* 预览页记不住时，这一次互动仍然会换上眼前的模样。 */ }
+  }
+}
+function report(topic?: ReportTopic) {
+  remember();
+  if (desktop) void desktop.report(topic);
+  else {
+    state.value.bubble = topic ? requestedReport(new Date(), state.value.settings, topic) : manualReport(new Date(), state.value.settings, bubble.value?.topic);
+    const action = reportAction(state.value.bubble); if (action) void animate(action);
     clearTimeout(hideTimer); hideTimer = setTimeout(() => { state.value.bubble = null; }, 8000);
   }
 }
+function choosePet(value: PetStyle) {
+  const current = loadSettings(localStorage);
+  if (current.recovery) return;
+  try {
+    const settings = { ...current.settings, pet: { ...current.settings.pet, style: value } };
+    localStorage.setItem(current.key, JSON.stringify(settings));
+    apply({ ...state.value, settings, bubble: null });
+  } catch { state.value.bubble = { id: 'save-error', topic: 'error', signature: 'save-error', priority: 4, text: '暂时无法保存，请检查本机存储空间。' }; }
+}
 function openPanel() { void desktop?.hoverCard(false, 0); if (desktop) void desktop.openMain(); else window.open('./', '_blank'); }
+function pat() {
+  remember();
+  if (desktop) void desktop.interact('pat');
+  else {
+    void animate('play'); state.value.bubble = comfortReport(style.value, 'pat');
+    clearTimeout(hideTimer); hideTimer = setTimeout(() => { state.value.bubble = null; }, 8000);
+  }
+}
+function stretch() {
+  remember();
+  animate('stretch');
+  if (desktop) void desktop.interact('stretch');
+  else { state.value.bubble = { id: 'stretch', topic: 'comfort', signature: 'stretch', priority: 4, text: '肩膀松一松，接下来的事慢慢来。' }; clearTimeout(hideTimer); hideTimer = setTimeout(() => { state.value.bubble = null; }, 8000); }
+}
 function dismiss() { if (desktop) void desktop.dismiss(); else state.value.bubble = null; }
 function menu(event: MouseEvent) { event.preventDefault(); void desktop?.hoverCard(false, 0); if (desktop) void desktop.petMenu(); else report(); }
 function apply(snapshot: DesktopSnapshot) {
-  const changedPrivacy = snapshot.settings.privacy !== state.value.settings.privacy;
-  state.value = snapshot;
+  const settings = mergePetBond(state.value.settings, snapshot.settings);
+  const changedPrivacy = settings.privacy !== state.value.settings.privacy;
+  state.value = { ...snapshot, settings };
   if (changedPrivacy && preview) state.value.bubble = null;
 }
-watch([style, stage], () => { void render(); });
-watch(style, value => { void preload(value); });
+watch(() => [state.value.settings.pet.form, authored.value], syncStageClock);
 onMounted(async () => {
   document.documentElement.classList.add(preview ? 'pet-preview-document' : 'pet-document');
   if (desktop) {
     cleanup.push(desktop.onSnapshot(apply));
     cleanup.push(desktop.onAnimate(animate));
-    cleanup.push(desktop.onPaused(value => { paused = value; if (paused) stopMotion(); }));
+    cleanup.push(desktop.onPaused(value => { paused = value; if (paused) stopMotion(); syncStageClock(); }));
     apply(await desktop.getSnapshot());
   }
   if (disposed) return;
-  await render();
-  void preload(style.value);
+  if (!isBubble) await motion.refresh(false);
   if (disposed) return;
-  // 形态每 10% 才跳一阶，30 秒校准一次足够，不必逐秒唤醒。
-  stageTimer = setInterval(() => { now.value = new Date(); }, 30000);
-  const visibility = () => { if (document.hidden) stopMotion(); };
-  const preference = () => { if (reducedMotion.matches) stopMotion(); };
-  document.addEventListener('visibilitychange', visibility);
-  reducedMotion.addEventListener('change', preference);
-  cleanup.push(() => document.removeEventListener('visibilitychange', visibility), () => reducedMotion.removeEventListener('change', preference));
+  // Fixed forms and hidden/paused windows need no stage polling.
+  syncStageClock();
+  document.addEventListener('visibilitychange', syncStageClock);
+  cleanup.push(() => document.removeEventListener('visibilitychange', syncStageClock));
+  const storage = () => { if (preview) apply({ ...state.value, settings: loadSettings(localStorage).settings }); };
+  window.addEventListener('storage', storage);
+  cleanup.push(() => window.removeEventListener('storage', storage));
   window.addEventListener('pointermove', move);
   window.addEventListener('mousemove', hover);
 });
@@ -186,9 +174,11 @@ onUnmounted(() => {
     </div>
     </div>
     <div v-if="!isBubble" class="pet-target" :style="{ width: `${size}px`, height: `${size}px` }">
-      <canvas ref="canvas" width="288" height="288" role="button" tabindex="0" :aria-label="`${styleLabel} Lv.${stage}：单击播报，双击打开详情`" @pointerdown="down" @pointerup="up" @pointercancel="cancel" @pointerleave="!dragging && interactive(false)" @contextmenu="menu" @keydown.enter="openPanel" @keydown.space.prevent="report"></canvas>
+      <canvas ref="canvas" width="288" height="288" role="button" tabindex="0" :aria-label="`${styleLabel} Lv.${stage}：单击播报，双击打开详情`" @pointerdown="down" @pointerup="up" @pointercancel="cancel" @pointerleave="!dragging && interactive(false)" @contextmenu="menu" @keydown.enter="openPanel" @keydown.s.prevent="stretch" @keydown.space.prevent="report()"></canvas>
     </div>
-    <footer v-if="preview" class="preview-controls"><button @click="report">听它说一句</button><button @click="openPanel">打开详情面板</button><span>{{ styleLabel }} Lv.{{ stage }} · 随今天的工作进度进化，不用喂养</span></footer>
+    <div v-if="preview" class="preview-pets" aria-label="已有的五组桌宠"><button v-for="pet in PET_STYLES" :key="pet" :aria-label="`选择${PET_STYLE_LABELS[pet]}`" :aria-pressed="pet === style" :disabled="state.recovery" @click="choosePet(pet)"><img :src="petThumbs[pet]" alt="" /><span>{{ PET_STYLE_LABELS[pet] }}</span></button></div>
+    <nav v-if="preview" class="companion-topics" aria-label="让搭子报个信"><button @click="report('income')">攒了多少</button><button @click="report('offwork')">多久下班</button><button @click="report('holiday')">多久放假</button><button @click="report('spring')">春节回家</button><button @click="report('bonus')">年终奖</button></nav>
+    <footer v-if="preview" class="preview-controls"><button @click="pat">摸摸它</button><button @click="report()">听它说一句</button><button @click="stretch">一起松口气</button><button @click="openPanel">打开详情面板</button><span>{{ styleLabel }} · {{ state.settings.pet.form ? '固定的第 ' + stage + ' 种模样' : '今天的第 ' + stage + ' 种模样' }} · 不用喂养，想起来就陪你玩</span></footer>
   </div>
 </template>
 <style>
@@ -214,4 +204,15 @@ onUnmounted(() => {
 .preview-controls span { width:100%; text-align:center; font-size:11px; color:#718371; padding-top:12px; }
 .pet-preview .speech-slot { width:290px; height:112px; flex-shrink:0; }
 .pet-preview .speech { margin-bottom:0; }
+</style>
+
+<style>
+.preview-pets { display:flex;gap:12px; }.preview-pets img { width:42px;height:42px;object-fit:contain;border-radius:12px;padding:4px; }.preview-pets button { border:1px solid transparent;background:none;border-radius:12px;padding:3px;color:#526657;cursor:pointer; }.preview-pets button[aria-pressed=true] { background:#dde6cd;border-color:#a5b896; }.preview-pets span { display:block;font-size:10px; }.preview-pets img { display:block; }.pet-preview-document body { background:#f6f5f0; }.pet-preview .preview-controls { margin-top:0; }
+</style>
+
+<style>
+.pet-preview .companion-topics { display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin:0;max-width:100%; }
+.pet-preview .companion-topics button { padding:8px 12px;border:1px solid #d7dfcf;border-radius:20px;background:#fffdf7;color:#5b7257;font:inherit;font-size:12px;cursor:pointer; }
+.pet-preview .companion-topics button:hover { border-color:#91a77e;background:#edf1e5; }
+.pet-preview .companion-topics button:focus-visible { outline:2px solid #6f9056;outline-offset:3px; }
 </style>

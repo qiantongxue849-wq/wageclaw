@@ -9,6 +9,10 @@ export const PET_STYLE_LABELS: Record<PetStyle, string> = {
 };
 /** 每个形象的形态总数。 */
 export const PET_STAGE_COUNT = 10;
+/** 同一模样要累计这么多次互动，才换成下一种。 */
+export const INTERACTIONS_PER_STAGE = 20;
+/** 第 10 种之后不再累加。 */
+export const MAX_BOND_COUNT = (PET_STAGE_COUNT - 1) * INTERACTIONS_PER_STAGE;
 
 export interface LiteSettings {
   version: 2;
@@ -34,7 +38,12 @@ export interface LiteSettings {
   bonusReceivedAt: string;
   privacy: boolean;
   theme: 'light' | 'dark';
-  pet: { visible: boolean; onTop: boolean; size: 100 | 128 | 156; style: PetStyle; x: number | null; y: number | null };
+  pet: {
+    visible: boolean; onTop: boolean; size: 100 | 128 | 156; style: PetStyle;
+    motion: 'authored' | 'classic'; form: number | null; x: number | null; y: number | null;
+    /** 今天已经记下的互动次数；日期不是今天时，形象计算会把它当作 0。 */
+    bondDate: string; bondCount: number;
+  };
   broadcast: { enabled: boolean; pauseUntil: number; quietDate: string };
   autoStart: boolean;
 }
@@ -44,7 +53,7 @@ export function defaults(): LiteSettings {
     summerFrom: '05-01', summerTo: '10-01', summerStartTime: '08:30', summerEndTime: '18:00',
     workweek: [1, 2, 3, 4, 5], overrides: {}, payday: null, springStart: '02-04', springEnd: '',
     bonusDate: '02-03', bonusAmount: null, bonusReceivedAt: '', privacy: false,
-    theme: 'light', pet: { visible: true, onTop: true, size: 128, style: 'capybaraZen', x: null, y: null },
+    theme: 'light', pet: { visible: true, onTop: true, size: 128, style: 'capybaraZen', motion: 'authored', form: null, x: null, y: null, bondDate: '', bondCount: 0 },
     broadcast: { enabled: true, pauseUntil: 0, quietDate: '' }, autoStart: false };
 }
 
@@ -167,6 +176,11 @@ export function sanitizeSettings(raw: unknown): LiteSettings {
   s.pet.visible = pet.visible !== false;
   s.pet.onTop = typeof pet.onTop === 'boolean' ? pet.onTop : typeof r.miniOnTop === 'boolean' ? r.miniOnTop : true;
   if ([100, 128, 156].includes(Number(pet.size))) s.pet.size = Number(pet.size) as 100 | 128 | 156;
+  if (typeof pet.form === 'number' && Number.isInteger(pet.form) && pet.form >= 1 && pet.form <= PET_STAGE_COUNT) s.pet.form = pet.form;
+  s.pet.bondDate = parseDate(pet.bondDate) ? pet.bondDate as string : '';
+  s.pet.bondCount = s.pet.bondDate && Number.isInteger(pet.bondCount) && (pet.bondCount as number) >= 0 && (pet.bondCount as number) <= MAX_BOND_COUNT ? pet.bondCount as number : 0;
+  // Keep an explicitly chosen legacy form; automatic companions adopt authored motion.
+  s.pet.motion = pet.motion === 'classic' || (pet.motion !== 'authored' && s.pet.form !== null) ? 'classic' : 'authored';
   // 旧版把形象偏好存在顶层 petStyle，这里一并沿用。
   const style = typeof pet.style === 'string' ? pet.style : r.petStyle;
   if (typeof style === 'string' && (PET_STYLES as string[]).includes(style)) s.pet.style = style as PetStyle;

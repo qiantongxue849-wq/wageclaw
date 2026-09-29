@@ -1,0 +1,22 @@
+Edit the supplied 4x4 capybara animation sprite sheet into a refined second version. This is an animation cleanup pass, NOT a redesign. Preserve the golden-brown pear-shaped capybara, tiny rounded ears and paws, wide brown muzzle, small green two-leaf sprout, soft painterly fur and warm gentle character.
+Deliver a precisely regular 4 columns x 4 rows grid, 16 complete frames, transparent RGBA background, no labels or separators. Each cell is square and identically sized with at least 9% empty margin on every side, including below the feet. Clean alpha edges, no colored fringe or isolated pixels.
+CRITICAL CONSISTENCY: same torso volume, identical tiny paws and planted foot contact, same fur clumps and highlights, same lighting/exposure, same body center and baseline in ALL sixteen frames. The torso and legs should look like an unchanged painting across the sequence. Only the expressive anatomical parts change: eyelids and pupil visibility, a very SMALL muzzle/head perspective adjustment, ear articulation and gentle leaf bending. No squash, no stretch, no movement of the whole torso, no enlarging eyes into bulging spheres, no changing face identity or sprout leaf count. Overall quality: polished cozy game character, delicate groomed fur, fine clean outlines, understated warm blush, moist small eye highlights, consistent 3/4 camera.
+Improve the previous sequence by making the head turn smaller, blinking faster than head movement, preserving the expression's softness, and returning to the exact starting appearance. Keep ALL frames visually coherent like a cleaned-up hand-animated sequence, no texture boiling.
+16 ordered frames read left to right, top to bottom:
+1 relaxed rest, closed gently curved eyelids;
+2 eyelids slightly lift, same head angle;
+3 soft half-open eyes, small dark pupils;
+4 warm open eyes noticing the viewer, not surprised;
+5 tiny muzzle turn toward viewer, at most 2 degrees;
+6 another tiny turn, near ear gently follows;
+7 settled attentive expression, head angle at most 5 degrees different from frame 1;
+8 eyelids close halfway, torso still unchanged;
+9 eyelids closed in a soft content blink;
+10 eyelids reopen halfway at same angle;
+11 small relaxed eyes reopen, subtle smile;
+12 eyelids begin relaxing as muzzle returns;
+13 head halfway back, leaves lag slightly;
+14 head at rest angle, eyelids almost closed;
+15 gently closed eyes and nearly original leaf pose;
+16 pixel-consistent starting rest pose, identical to frame 1.
+This is true sequential pose artwork for animation; keep the overall silhouette outside the face/head/sprout stable. Do not repeat identical open eye shapes when the eyelid pose should differ. Transparency is essential.
