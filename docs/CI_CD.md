@@ -4,6 +4,8 @@
 
 ## GitHub Releases（当前选择）
 
+已在本机配置 `origin` 的两个 push URL：Gitee 和 GitHub。日常在 `lite` 上完成开发后，`git push origin lite` 会依次同步两端，GitHub 接收到代码即运行流水线。无需再次手工添加远端或 push URL。
+
 使用现有公开仓库 `qiantongxue849-wq/wageclaw`，新增 `lite` 分支作为发布入口，保留原来的 `vue` 分支。GitHub Releases 存放安装包，更新目录固定为：
 
 `https://github.com/qiantongxue849-wq/wageclaw/releases/latest/download`

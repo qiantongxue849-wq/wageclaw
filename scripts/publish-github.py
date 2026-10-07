@@ -42,7 +42,13 @@ def publish(directory, repository, commit, command=gh):
     command(["release", "create", tag, *map(str, artifacts), "--repo", repository,
              "--draft", "--target", commit, "--title", f"WageClaw {version}",
              "--notes", f"Windows x64 desktop release {version}. Source commit: {commit}. Install the setup EXE; existing configured clients receive an update notification."])
-    release = command(["api", f"repos/{repository}/releases/tags/{tag}"])
+    # GitHub has not created the tag for a draft yet; the tag endpoint returns
+    # 404. Find the just-created draft through the authenticated release list.
+    releases = command(["api", f"repos/{repository}/releases?per_page=100"])
+    drafts = [item for item in releases if item["tag_name"] == tag and item["draft"]]
+    if len(drafts) != 1:
+        raise ValueError("Expected exactly one matching draft release")
+    release = drafts[0]
     assets = {asset["name"]: asset for asset in release["assets"]}
     if set(assets) != {artifact.name for artifact in artifacts}:
         raise ValueError("Draft release assets are incomplete")

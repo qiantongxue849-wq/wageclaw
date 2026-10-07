@@ -28,11 +28,11 @@ class GitHubPublishTest(unittest.TestCase):
         self.command = Mock(side_effect=self.reply)
 
     def reply(self, args, **_kwargs):
-        if args[0] == "api" and "/tags/" in args[1]:
+        if args[0] == "api" and "?per_page=100" in args[1]:
             assets = [{"name": file.name, "size": file.stat().st_size, "state": "uploaded", "digest": "sha256:" + hashlib.sha256(file.read_bytes()).hexdigest()} for file in self.root.iterdir()]
             if self.bad_digest:
                 assets[0]["digest"] = "bad"
-            return {"assets": assets}
+            return [{"tag_name": "unrelated", "draft": True, "assets": []}, {"tag_name": "desktop-v0.3.2", "draft": True, "assets": assets}]
         return None
 
     def publish(self):
@@ -53,6 +53,12 @@ class GitHubPublishTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.publish()
         self.assertEqual(self.command.call_count, 2)
+
+    def test_missing_draft_does_not_publish(self):
+        self.command.side_effect = [None, "", []]
+        with self.assertRaises(ValueError):
+            self.publish()
+        self.assertEqual(self.command.call_count, 3)
 
     def test_invalid_remote_asset_does_not_publish(self):
         self.bad_digest = True
