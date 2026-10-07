@@ -12,7 +12,7 @@
 - 新增「我的桌面搭子」：卡皮巴拉、怨气团、懒猫、懒狗、老实牛五组原有素材，每组十种形态。
 - 形态每天一上班从第一种开始。每种模样互动 20 次换下一种，上班后每满一小时也会自动换，也可以固定喜欢的一种。全部直接可选，设置同步到实际桌宠并持久保存。
 - 摸摸有不同性格的短句回应；伸懒腰有有限时长的连续动画。点击「听一句」依次查看收入、下班、假期等信息，隐私模式不显示工资金额。
-- 新增九格解压泡泡，可重复捏、重置、随时收起，不计分、不改变收入、不持久存储游玩次数。
+- 放空区可以打开十款不记分的小游戏，随时收起，不改变收入，不记录游玩次数。坦克大战是 MIT 协议的 TANK BATTLE 90；其余九款来自 MIT 协议的 GameBox（贪吃蛇、俄罗斯方块、扫雷、打砖块、打地鼠、四子棋、2048、数独、西洋跳棋）。九格解压泡泡已从详情页移除。
 - 桌宠右键菜单增加摸摸和伸懒腰；网页预览可直接切换五组伙伴，并与详情页同步。
 - 一键「今天想安静一点」，可恢复播报。自动日常播报调整为约 25～45 分钟一次，每天最多 12 条，另留 2 条给临近下班与收工；休息日不自动播报。
 - 绘制时清理旧合图裁切边缘的小型孤立串帧碎片，保留中心角色、连通肢体及中央装饰；不改动原图。
@@ -31,7 +31,8 @@
 
 - 设计稿：`design/afterwork/concept.html`、`design/afterwork/concept.png`（示例数据，原生 HTML 渲染；没有重画旧桌宠）
 - 主页面：`src/App.vue`、`src/lite/lite.css`
-- 陪伴区与泡泡：`src/lite/CompanionPanel.vue`、`src/lite/BreakCorner.vue`
+- 陪伴区与放空区：`src/lite/CompanionPanel.vue`、`src/lite/BreakCorner.vue`、`public/games/tank/`
+- 悬停卡与气泡插画：`src/lite/cardArt.ts`、`src/assets/ui/`、`src/lite/HoverView.vue`
 - 共用绘制与动画：`src/lite/PetArtwork.vue`、`src/lite/petDrawing.ts`、`src/lite/petMotion.ts`
 - 本机桌宠：`src/lite/PetView.vue`
 - `pet.form`：`null` 为随当天互动变化，整数 1～10 为固定形态，其它值在读取时回退为 `null`。`pet.bondDate` 与 `pet.bondCount` 记下今天的互动次数。
@@ -41,7 +42,7 @@
 
 - `npm run check`：lint、类型检查、59 项单元测试和生产构建。
 - `node scripts/verify-lite.mjs`：原有工资、倒计时、隐私、设置、备份恢复、深色和窄屏回归，1120×750 默认内容完整显示。
-- `node scripts/verify-afterwork.mjs`：五组伙伴、固定/自动形态、保存、有限动画、解压泡泡不影响工资、一键安静、隐私、深色/窄屏与跨标签同步。
+- `node scripts/verify-afterwork.mjs`：五组伙伴、固定/自动形态、保存、有限动画、小游戏不影响工资、一键安静、隐私、深色/窄屏与跨标签同步。
 - `WAGECLAW_QA_URL=http://127.0.0.1:5174 node scripts/verify-pet-features.mjs`：macOS Electron 的五套形象、六个班次时点、夏季作息、五行悬停卡及春节/年终奖跨年行为。
 - `node scripts/verify-companion-desktop.mjs`：从实际页面换装同步到桌宠，互动动作和气泡，重新打开后保留形态，已有悬停卡即时隐藏金额。
 - 截图：`qa-shots/afterwork-home.png`、`afterwork-dark.png`、`afterwork-mobile.png`、`companion-desktop.png`。

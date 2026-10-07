@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const { loadKey } = require('../electron/news-feed.cjs');
+const directory = path.resolve('electron/private');
+fs.mkdirSync(directory, { recursive: true });
+const key = loadKey({ resourcesPath: undefined });
+if (/[\r\n]/.test(key)) throw new Error('Invalid news API configuration');
+fs.writeFileSync(path.join(directory, 'news.env'), key ? `WAGECLAW_TIANAPI_KEY=${key}\n` : '', { mode: 0o600 });
+console.log(key ? '已准备本机热点配置（不输出密钥）。' : '未配置热点接口，安装版将仅播报本地内容。');

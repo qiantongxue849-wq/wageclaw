@@ -19,6 +19,7 @@ async function start() {
   } else {
     const { default: App } = await import('./App.vue');
     await import('./lite/lite.css');
+    await import('./lite/notebook.css');
     createApp(App).mount('#app');
   }
 }

@@ -1,0 +1,179 @@
+/* 陪伴手帐：沿用小窗尺寸，以信息分屏代替全页缩小。 */
+.lite-root,.notebook-games {
+  --paper:#fffcf5; --surface:#fffefa; --ink:#563f2d; --muted:#8b745f;
+  --line:#eadfce; --accent:#ac633d; --wash:#f7eddd; --hero:#f3e6d0;
+  --green:#68472f; --warm:#faf1e4; --rose:#f7e9df; --shade:#eee3d3;
+  --deep:#ead8ba; --on-deep:#563f2d; --on-deep-muted:#84694e;
+}
+.lite-root[data-theme=dark],.notebook-games[data-theme=dark] {
+  --paper:#29241f; --surface:#332d26; --ink:#f0e5d5; --muted:#c0ad97;
+  --line:#504338; --accent:#e2ac7e; --wash:#3b3127; --hero:#493928;
+  --green:#f0d4af; --warm:#3e3228; --rose:#44302a; --shade:#3a3027;
+  --deep:#493928; --on-deep:#f0e5d5; --on-deep-muted:#ceb99c;
+}
+.lite-root .brand-mark { background:var(--accent); }
+.lite-root .offwork-card:after,.lite-root .earnings-card:after { display:none; }
+.lite-root .offwork-card .progress-track { background:var(--line); }
+.lite-root .offwork-card .progress-track i { background:var(--accent); }
+.lite-root .earnings-card { background:var(--surface); border:1px solid var(--line); }
+.lite-root .companion-panel { background:var(--wash); }
+.lite-root .break-corner { border-color:var(--line); }
+.lite-root .companion-topics button:hover { border-color:var(--accent); }
+.lite-root .companion-topics button:focus-visible { outline-color:var(--accent); }
+.lite-root button { touch-action:manipulation; }
+
+.lite-root.is-pocket { font-size:12px; height:100dvh; min-height:0; overflow:hidden; }
+.lite-root.is-pocket .page-shell { height:100%; padding:0 9px; display:flex; flex-direction:column; }
+.lite-root.is-pocket .app-header { height:28px; min-height:28px; gap:8px; padding:0; }
+.lite-root.is-pocket.is-desktop .app-header { padding-right:132px; }
+.lite-root.is-pocket .brand { gap:5px; }
+.lite-root.is-pocket .brand-mark { width:16px; height:16px; border-radius:4px; font-size:10px; }
+.lite-root.is-pocket .brand strong { display:block; font-size:11px; white-space:nowrap; letter-spacing:0; }
+.lite-root.is-pocket .brand strong span { display:none; }
+.lite-root.is-pocket .header-actions { gap:3px; margin-left:auto; }
+.lite-root.is-pocket .header-actions .icon-button,.lite-root.is-pocket .settings-button { width:23px; min-width:23px; height:23px; padding:0; font-size:0; border:0; background:transparent; }
+.lite-root.is-pocket .header-actions svg { width:14px; height:14px; }
+.lite-root.is-pocket main { flex:1; min-height:0; display:flex; flex-direction:column; }
+.lite-root.is-pocket .dashboard-layout { flex:1; min-height:0; overflow:hidden; }
+.lite-root.is-pocket .dashboard-main { height:100%; min-height:0; gap:0; }
+.lite-root.is-pocket .pocket-nav { height:28px; min-height:28px; display:grid; grid-template-columns:repeat(4,1fr); gap:3px; padding:3px 0; border-top:1px solid var(--line); }
+.lite-root.is-pocket .pocket-nav>button { width:auto; height:22px; border:0; border-radius:5px; color:var(--muted); font-size:11px; background:transparent; }
+.lite-root.is-pocket .pocket-nav>button[aria-current=page] { color:var(--ink); background:var(--wash); font-weight:600; }
+.lite-root.is-pocket .notice { position:absolute; left:5px; right:5px; top:28px; z-index:9; margin:0; background:var(--surface); border:1px solid var(--line); box-shadow:0 4px 12px #563f2d20; font-size:11px; }
+.notebook-today { height:100%; flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; padding:4px 0 7px; }
+.notebook-hero { display:flex; align-items:center; justify-content:space-between; flex:1; min-height:0; gap:7px; }
+.notebook-pet { border:0; padding:0; background:transparent; display:flex; justify-content:center; align-items:center; border-radius:9px; min-height:0; flex-shrink:0; }
+.notebook-pet canvas { display:block; width:62px!important; height:62px!important; }
+.notebook-summary { display:flex; flex-direction:column; justify-content:center; min-width:0; }
+.notebook-label { color:var(--muted); font-size:9px; line-height:13px; letter-spacing:.1px; }
+.notebook-clock { display:block; font-family:"Segoe UI","Microsoft YaHei",sans-serif; font-size:36px; line-height:1.28; font-weight:650; letter-spacing:-1.2px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.notebook-seconds { font-size:23px; color:var(--muted); letter-spacing:-.7px; margin-left:1px; }
+.notebook-clock.words { font-size:21px; line-height:1.6; letter-spacing:0; font-weight:550; }
+.notebook-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; flex-shrink:0; }
+.notebook-stat { min-width:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:1px; height:43px; padding:6px 8px; background:var(--wash); border-radius:6px; }
+.notebook-stat>span { color:var(--muted); font-size:9px; white-space:nowrap; }
+.notebook-stat>strong { color:var(--ink); font-size:14px; line-height:18px; font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.notebook-next>strong { font-size:13px; font-weight:550; }
+.notebook-income.is-wide { flex-direction:column; align-items:flex-start; justify-content:center; gap:0; padding:3px 8px; }
+.notebook-income.is-wide>span { font-size:8px; line-height:11px; }
+.notebook-income.is-wide>strong { font-size:11px; line-height:13px; }
+
+/* 287×183：每一页都按内容区排版，列表通过分页管理。 */
+.notebook-hopes { height:100%; display:flex; flex-direction:column; padding:3px 0 5px; gap:4px; }
+.notebook-hopes-head { display:flex; justify-content:space-between; align-items:center; gap:4px; min-height:29px; }
+.hopes-month { display:flex; flex-direction:column; gap:1px; min-width:0; }
+.hopes-month>span { font-size:9px; color:var(--muted); }
+.hopes-month>strong { font-size:12px; font-weight:550; }
+.lite-root.is-pocket .notebook-hopes .day-basis { height:21px; padding:2px; flex-shrink:0; }
+.lite-root.is-pocket .notebook-hopes .day-basis button { font-size:10px; padding:0 4px; }
+.hopes-grid { display:grid; flex:1; min-height:0; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:4px; }
+.hopes-grid>div,.hopes-grid>button { min-width:0; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:2px; padding:3px 8px; background:var(--wash); border:1px solid var(--line); border-radius:7px; text-align:left; }
+.hopes-grid span { font-size:10px; color:var(--muted); display:flex; justify-content:space-between; }
+.hopes-grid strong { font-size:12px; line-height:1.25; font-weight:550; white-space:nowrap; }
+.hopes-grid small { font-size:10px; }
+.pocket-companion { display:flex; flex-direction:column; height:100%; min-height:0; padding:3px 0; gap:3px; }
+.buddy-main { display:grid; grid-template-columns:74px minmax(0,1fr); gap:6px; flex:1; min-height:0; }
+.buddy-portrait { border:0; border-radius:9px; padding:0; background:radial-gradient(ellipse,var(--hero),transparent 73%); align-self:center; }
+.buddy-portrait canvas { width:74px!important; height:74px!important; display:block; }
+.buddy-content { display:flex; flex-direction:column; justify-content:center; gap:3px; min-height:0; }
+.buddy-title { display:flex; align-items:center; justify-content:space-between; height:17px; }
+.buddy-title strong { font-size:12px; font-weight:550; }
+.buddy-title button { background:transparent; border:0; padding:0 4px; color:var(--accent); width:21px; height:17px; }
+.buddy-speech { margin:0; padding:4px 7px; background:var(--surface); border:1px solid var(--line); border-radius:8px 8px 8px 2px; font-size:10px; line-height:1.35; }
+.buddy-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
+.buddy-actions button { display:flex; align-items:center; justify-content:center; gap:3px; min-width:0; height:26px; padding:2px 3px; border:1px solid var(--line); border-radius:6px; background:var(--surface); font-size:9.5px; white-space:nowrap; transition:background .15s,border-color .15s; }
+.buddy-actions .pet-action-icon { width:18px; height:18px; }
+.buddy-actions button:hover { background:var(--wash); border-color:var(--accent); }
+.buddy-actions button:active { transform:translateY(1px); }
+.companion-actions>button,.wardrobe-label { display:inline-flex; align-items:center; justify-content:center; gap:5px; }
+.buddy-picker { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; height:34px; flex-shrink:0; }
+.buddy-picker button { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:0; padding:0 1px; min-width:0; border:1px solid transparent; border-radius:5px; background:transparent; }
+.buddy-picker button[aria-pressed=true] { border-color:var(--accent); background:var(--wash); }
+.buddy-picker img { width:24px; height:21px; object-fit:contain; }
+.buddy-picker span { font-size:9px; line-height:11px; white-space:nowrap; color:var(--muted); }
+.buddy-wardrobe-head { display:flex; align-items:center; justify-content:space-between; height:20px; flex-shrink:0; font-size:10px; }
+.buddy-wardrobe-head button { border:0; padding:2px 3px; background:transparent; }
+.buddy-wardrobe-head strong { font-size:11px; font-weight:500; }
+.buddy-wardrobe-head label { display:flex; align-items:center; gap:3px; }
+.buddy-wardrobe-head input { margin:0; width:12px; height:12px; accent-color:var(--accent); }
+.buddy-forms { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); grid-template-rows:1fr 1fr; gap:3px; flex:1; min-height:0; }
+.buddy-forms button { position:relative; padding:0; min-height:0; border:1px solid var(--line); background:var(--wash); border-radius:5px; display:flex; align-items:center; justify-content:center; }
+.buddy-forms button[aria-pressed=true] { border-color:var(--accent); }
+.buddy-forms canvas { width:32px!important; height:32px!important; display:block; }
+.buddy-forms span { position:absolute; right:2px; bottom:1px; font-size:9px; color:var(--muted); }
+.buddy-auto { height:19px; flex-shrink:0; border:0; border-radius:4px; background:transparent; font-size:10px; color:var(--muted); padding:0; }
+.buddy-auto[aria-pressed=true] { color:var(--accent); }
+.lite-root.is-pocket .break-corner { padding:4px 0; border:0; border-radius:0; background:transparent; }
+.lite-root.is-pocket .game-pack { display:grid; height:100%; grid-template-columns:1fr 1fr; grid-template-rows:repeat(5,minmax(0,1fr)); gap:3px 5px; overflow:hidden; align-content:stretch; padding:0; }
+.lite-root.is-pocket .game-pack button { padding:1px 6px; min-height:0; background:var(--wash); border:1px solid var(--line); border-radius:5px; display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:4px; }
+.lite-root.is-pocket .game-pack strong { font-size:11px; line-height:1.2; white-space:nowrap; }
+.lite-root.is-pocket .game-pack span { display:none; }
+.lite-root.is-pocket .game-pack .game-genre { display:block; font-size:9px; color:var(--muted); }
+.pocket-settings-backdrop { position:fixed; inset:0; z-index:20; background:var(--paper); }
+.pocket-settings { height:100%; display:flex; flex-direction:column; outline:0; }
+.pocket-settings-title { height:32px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 9px; -webkit-app-region:drag; }
+.lite-root.is-desktop .pocket-settings-title { padding-right:138px; }
+.pocket-settings-title strong { font-size:12px; white-space:nowrap; }
+.pocket-settings-title>button { width:22px; height:22px; border:0; padding:0; background:transparent; font-size:18px; }
+.pocket-settings form { display:flex; flex-direction:column; flex:1; min-height:0; }
+.pocket-settings-content { flex:1; min-height:0; padding:0 9px; }
+.settings-group { display:flex; justify-content:space-between; align-items:center; height:24px; margin-bottom:3px; border-bottom:1px solid var(--line); }
+.lite-root.is-pocket .settings-group select { border:0; padding:0; height:22px; background:transparent; font-size:11px; color:var(--ink); width:auto; max-width:190px; }
+.settings-group>span { font-size:10px; color:var(--muted); }
+.lite-root.is-pocket .pocket-settings fieldset { margin:0; padding:0; border:0; min-width:0; }
+.compact-fields { display:grid; grid-template-columns:1fr 1fr; gap:4px 8px; }
+.compact-fields label { display:flex; flex-direction:column; gap:2px; font-size:10px; min-width:0; line-height:13px; }
+.lite-root.is-pocket .pocket-settings input:not([type=checkbox]),.lite-root.is-pocket .pocket-settings select { width:100%; min-width:0; height:25px; padding:2px 5px; border:1px solid var(--line); border-radius:4px; background:var(--surface); color:var(--ink); font-size:11px; }
+.lite-root.is-pocket .pocket-settings .settings-group select { width:auto; height:22px; border:0; background:transparent; padding:0; }
+.pocket-settings input[type=checkbox] { width:13px; height:13px; margin:0; accent-color:var(--accent); flex-shrink:0; }
+.compact-help { font-size:10px; line-height:1.4; color:var(--muted); margin:5px 0 0; }
+.compact-switch { display:flex; align-items:center; justify-content:space-between; height:26px; gap:5px; font-size:11px; }
+.compact-toggles { display:grid; grid-template-columns:1fr 1fr; gap:5px 13px; }
+.compact-inline { display:flex; align-items:center; justify-content:space-between; font-size:11px; height:29px; }
+.lite-root.is-pocket .pocket-settings .compact-inline select { width:100px; }
+.compact-week { display:flex; align-items:center; justify-content:space-between; gap:3px; height:24px; margin-top:4px; font-size:10px; }
+.compact-week label { position:relative; }
+.compact-week label>span { display:flex; width:23px; height:22px; align-items:center; justify-content:center; border:1px solid var(--line); border-radius:4px; }
+.compact-week label input { position:absolute; opacity:0; inset:0; width:100%; height:100%; }
+.compact-week label.selected>span { color:var(--accent); background:var(--wash); border-color:var(--accent); }
+.compact-week label:focus-within>span { outline:2px solid var(--accent); outline-offset:0; }
+.compact-actions { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+.pocket-settings button { font-size:10px; border:1px solid var(--line); border-radius:4px; background:var(--wash); padding:3px 7px; }
+.compact-actions button { height:24px; }
+.pocket-settings-footer { display:flex; justify-content:space-between; align-items:center; height:29px; flex-shrink:0; border-top:1px solid var(--line); padding:3px 9px; }
+.pocket-settings-footer>button { height:23px; }
+.pocket-settings-footer .pocket-save { color:var(--paper); border-color:var(--accent); background:var(--accent); }
+.compact-override { display:grid; grid-template-columns:minmax(0,1fr) 54px 38px; gap:4px; }
+.compact-override>button { padding:2px; }
+.compact-override-list>div { height:22px; display:flex; justify-content:space-between; align-items:center; font-size:10px; }
+.compact-override-list button { border:0; background:transparent; padding:2px 4px; }
+.compact-list-pages { height:19px; display:flex; align-items:center; justify-content:center; gap:8px; font-size:9px; }
+.compact-list-pages button { padding:0 8px; height:18px; }
+.compact-feedback { position:absolute; top:59px; left:6px; right:6px; display:flex; align-items:center; gap:4px; padding:6px; background:var(--surface); border:1px solid var(--accent); border-radius:6px; font-size:11px; box-shadow:0 3px 12px #0002; }
+.compact-feedback span { flex:1; }
+.compact-feedback button { border:0; background:transparent; padding:0 3px; }
+.compact-reset { position:absolute; inset:32px 0 0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--paper); padding:15px; gap:8px; font-size:12px; text-align:center; }
+.compact-reset p { margin:0; }
+.compact-reset>div { display:flex; gap:10px; }
+.compact-update { margin:5px 0 0; font-size:10px; line-height:1.3; color:var(--muted); }
+.pocket-settings button:focus-visible,.pocket-settings input:focus-visible,.pocket-settings select:focus-visible { outline-offset:0; }
+
+/* 游戏占满内容窗口；标题栏为 Windows 原生控制按钮留出空间。 */
+.notebook-games { background:var(--paper); color:var(--ink); z-index:30; }
+.notebook-games>header { height:32px; min-height:32px; padding:0 7px; gap:8px; background:var(--paper); border-bottom:1px solid var(--line); -webkit-app-region:drag; }
+.notebook-games.is-desktop>header { padding-right:138px; }
+.lite-root.has-window-controls .app-header { padding-right:84px; }
+.lite-root.is-pocket.has-window-controls .app-header { padding-right:75px; }
+.lite-root.has-window-controls .pocket-settings-title,
+.lite-root.has-window-controls .settings-head { padding-right:84px; }
+.notebook-games.has-window-controls>header { padding-right:84px; }
+.notebook-games>header>button { border:0; border-radius:5px; padding:4px 6px; font-size:12px; color:var(--ink); background:var(--wash); flex-shrink:0; -webkit-app-region:no-drag; }
+.notebook-games .game-name { font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.notebook-games .game-key-hint { margin-left:auto; color:var(--muted); font-size:10px; }
+.notebook-games .game-frame { display:block; flex:1 1 0; width:100%; height:0; min-height:0; border:0; border-radius:0; margin:0; }
+.notebook-games .game-pack { background:var(--paper); padding:8px; }
+.notebook-games .game-pack button { color:var(--ink); background:var(--wash); border-color:var(--line); }
+.notebook-games .game-pack span { color:var(--muted); }
+.notebook-games button:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+@media(max-width:640px) { .notebook-games .game-key-hint { display:none; } .notebook-games>header { justify-content:flex-start; } }
+@media(min-height:260px) { .lite-root.is-pocket .notebook-pet canvas { width:90px!important; height:90px!important; } .notebook-clock { font-size:40px; } .notebook-seconds { font-size:26px; } }

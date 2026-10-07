@@ -12,6 +12,8 @@ npm
 # Build outputs
 release/
 dist/
+!public/games/arcade/dist/
+!public/games/arcade/dist/littlejs.min.js
 build/
 out/
 
@@ -70,6 +72,7 @@ playwright-report/
 
 # Local env files
 .env*
+electron/private/
 
 # TypeScript
 *.tsbuildinfo
@@ -81,6 +84,12 @@ playwright-report/
 qa-shots/
 qa-user-data/
 .electron-dev-data/
+output/research/
+.playwright-cli/
 
 # Generated shared desktop domain logic
 electron/generated/
+
+# Python release tooling
+__pycache__/
+*.pyc

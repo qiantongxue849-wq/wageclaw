@@ -13,11 +13,11 @@ module.exports = function createWindows(ctx) {
   const RETRYABLE_LOAD_ERRORS = new Set(['ERR_CONNECTION_REFUSED', 'ERR_CONNECTION_RESET', 'ERR_CONNECTION_FAILED', 'ERR_CONNECTION_CLOSED', 'ERR_CONNECTION_TIMED_OUT', 'ERR_EMPTY_RESPONSE', 'ERR_ADDRESS_UNREACHABLE', 'ERR_NAME_NOT_RESOLVED']);
   const DEV_LOAD_ATTEMPTS = 5;
   const DEV_LOAD_RETRY_MS = 700;
-  // 气泡（290×104）与悬停浮层（280×158）是装饰性小窗：它们本就反复出现、消失，
+  // 气泡与悬停浮层是按内容收紧的装饰性小窗：它们本就反复出现、消失，
   // 「没出现」是完全正常的状态。把 440px 宽的说明页塞进这么小的窗只会被裁成乱码，
   // 反而比空白更糟。这两类窗口失败就安静地不显示 —— 窗口被 dismiss() 销毁后
   // 下次播报会重新创建，届时服务器若已恢复就自然好了。
-  // 说明页只渲染到能读它的窗口：main（1120×790）与 bootstrap。
+  // 说明页只渲染到能读它的窗口：main（内容区 287×183，为上一版 573×365 的一半）与 bootstrap。
   const DECORATIVE_VIEWS = new Set(['bubble', 'hover']);
   // 判断加载成功与否只能靠自己记标志位，实测（失败加载的事件顺序）：
   //   did-fail-load(79ms) → dom-ready → did-finish-load(87ms) → ready-to-show(90ms)
@@ -58,6 +58,7 @@ module.exports = function createWindows(ctx) {
     let attempt = 0;
     const attemptLoad = () => {
       attempt += 1;
+      win.__loadFailed = false;
       const loading = ctx.app.isPackaged
         ? win.loadFile(ctx.path.join(ctx.app.getAppPath(), 'dist', 'index.html'), { query: { view } })
         : win.loadURL(`${ctx.DEV_SERVER_URL}?view=${view}`);
@@ -83,14 +84,39 @@ module.exports = function createWindows(ctx) {
     const win = new ctx.BrowserWindow({ show: false, width: 1, height: 1, webPreferences: webPreferences() });
     ctx.bootstrapWindow = win; loadRenderer(win, 'bootstrap'); return win;
   }
+  function captionColors(theme) {
+    return theme === 'dark'
+      ? { color: '#29241f', symbolColor: '#f0e5d5' }
+      : { color: '#fffcf5', symbolColor: '#563f2d' };
+  }
+  function syncCaption() {
+    const win = ctx.mainWindow;
+    if (process.platform !== 'win32' || !alive(win)) return;
+    const colors = captionColors(ctx.store?.state?.settings?.theme);
+    win.setBackgroundColor(colors.color);
+  }
   function showMainWindow(screen = 'home') {
     if (!alive(ctx.mainWindow)) {
-      const bounds = ctx.panelBounds || { width: 1120, height: 790 };
-      const win = new ctx.BrowserWindow({ ...bounds, minWidth: 390, minHeight: 540, show: false, title: '忍了吧 · 详情', backgroundColor: '#f8f9f5', autoHideMenuBar: true, icon: ctx.APP_ICON_PATH, webPreferences: webPreferences() });
+      const bounds = ctx.panelBounds || { width: 287, height: 183 };
+      const colors = captionColors(ctx.store?.state?.settings?.theme);
+      const win = new ctx.BrowserWindow({
+        width: bounds.width, height: bounds.height, ...(Number.isFinite(bounds.x) ? { x: bounds.x, y: bounds.y } : {}),
+        useContentSize: !ctx.panelBounds, minWidth: 280, minHeight: 176, show: false, title: '忍了吧 · 详情',
+        backgroundColor: colors.color, autoHideMenuBar: true, icon: ctx.APP_ICON_PATH,
+        ...(process.platform === 'win32' ? { titleBarStyle: 'hidden', titleBarOverlay: false } : {}),
+        webPreferences: webPreferences()
+      });
+      win.setMenu(null);
       ctx.mainWindow = win;
+      const sendWindowState = () => { if (alive(win)) win.webContents.send('lite:window-state', { maximized: win.isMaximized() }); };
+      win.on('maximize', sendWindowState);
+      win.on('unmaximize', sendWindowState);
+      // 重开沿用外框尺寸，避免 Windows DPI 取整使内容区逐次缩小；最大化时记住还原尺寸。
       win.on('close', () => { ctx.panelBounds = win.getNormalBounds(); });
       win.on('closed', () => { ctx.mainWindow = null; ctx.service.setPanelBusy(false); });
-      win.once('ready-to-show', () => { win.show(); win.focus(); });
+      const reveal = () => { if (alive(win)) { win.show(); win.focus(); } };
+      win.once('ready-to-show', reveal);
+      win.webContents.once('did-finish-load', reveal);
       loadRenderer(win, 'main');
     } else { if (ctx.mainWindow.isMinimized()) ctx.mainWindow.restore(); ctx.mainWindow.show(); ctx.mainWindow.focus(); }
     sendWhenReady(ctx.mainWindow, 'lite:navigate', screen);
@@ -116,13 +142,29 @@ module.exports = function createWindows(ctx) {
     // 加载失败时别把一个空的透明窗摆在桌面上 —— 它既没用也挡不住任何东西，还容易被误当成幽灵窗。
     if (!ctx.petWindow.webContents.isLoading() && !ctx.petWindow.__loadFailed) ctx.petWindow.showInactive();
   }
-  function showBubble() {
-    if (!alive(ctx.petWindow)) return;
+  let bubbleSize = { width: 260, height: 48 }, hoverSize = { width: 200, height: 112 };
+  function popupBounds(size) {
     const pet = ctx.petWindow.getBounds();
     const area = ctx.screen.getDisplayMatching(pet).workArea;
-    const width = 290, height = 104;
+    const width = Math.min(area.width, size.width), height = Math.min(area.height, size.height);
     const x = Math.max(area.x, Math.min(area.x + area.width - width, pet.x + pet.width / 2 - width / 2));
-    const y = pet.y - height - 8 >= area.y ? pet.y - height - 8 : Math.min(area.y + area.height - height, pet.y + pet.height + 8);
+    const above = pet.y - height - 8, below = pet.y + pet.height + 8;
+    const y = above >= area.y ? above : below + height <= area.y + area.height ? below : Math.max(area.y, Math.min(area.y + area.height - height, above));
+    return { x: Math.round(x), y: Math.round(y), width, height };
+  }
+  function resizePopup(sender, size) {
+    const win = [ctx.bubbleWindow, ctx.hoverWindow].find(w => alive(w) && w.webContents === sender);
+    if (!win || !alive(ctx.petWindow)) throw new Error('Popup only');
+    if (!Number.isFinite(size?.width) || !Number.isFinite(size?.height)) throw new Error('Invalid popup size');
+    const next = { width: Math.max(96, Math.min(292, Math.ceil(size.width))), height: Math.max(36, Math.min(200, Math.ceil(size.height))) };
+    if (win === ctx.bubbleWindow) bubbleSize = next; else hoverSize = next;
+    const bounds = popupBounds(next), previous = win.getBounds();
+    if (Object.keys(bounds).some(key => bounds[key] !== previous[key])) win.setBounds(bounds);
+  }
+  function showBubble() {
+    if (!alive(ctx.petWindow)) return;
+    const bounds = popupBounds(bubbleSize);
+    const { width, height } = bounds;
     if (!alive(ctx.bubbleWindow)) {
       const win = new ctx.BrowserWindow({ width, height, show: false, frame: false, transparent: true, backgroundColor: '#00000000', hasShadow: false, resizable: false, alwaysOnTop: ctx.store.state.settings.pet.onTop, skipTaskbar: true, focusable: false, webPreferences: webPreferences() });
       ctx.bubbleWindow = win;
@@ -130,12 +172,12 @@ module.exports = function createWindows(ctx) {
       win.once('ready-to-show', () => { if (ctx.service.snapshot().bubble && !win.__loadFailed) win.showInactive(); });
       loadRenderer(win, 'bubble');
     }
-    ctx.bubbleWindow.setPosition(Math.round(x), Math.round(y));
+    ctx.bubbleWindow.setBounds(bounds);
     if (!ctx.bubbleWindow.webContents.isLoading() && !ctx.bubbleWindow.__loadFailed) ctx.bubbleWindow.showInactive();
-    // 气泡和悬停浮层都在桌宠上方，气泡出现时把浮层挪到下方避让。
-    if (alive(ctx.hoverWindow)) showHover();
+    // 同一时间只留一个小窗。气泡优先，悬停卡先收起；鼠标若还在桌宠上，气泡关掉后再出现。
+    destroyHover();
   }
-  const HOVER_WIDTH = 280, HOVER_HEIGHT = 158;
+  let hoverHold = false;
   let hoverHideTimer = null;
   function destroyHover() {
     if (alive(ctx.hoverWindow)) ctx.hoverWindow.destroy();
@@ -144,32 +186,29 @@ module.exports = function createWindows(ctx) {
   function showHover() {
     clearTimeout(hoverHideTimer); hoverHideTimer = null;
     if (!alive(ctx.petWindow) || !ctx.store.state.settings.pet.visible) return;
-    const pet = ctx.petWindow.getBounds();
-    const area = ctx.screen.getDisplayMatching(pet).workArea;
-    const x = Math.max(area.x, Math.min(area.x + area.width - HOVER_WIDTH, Math.round(pet.x + pet.width / 2 - HOVER_WIDTH / 2)));
-    const above = pet.y - HOVER_HEIGHT - 8, below = pet.y + pet.height + 8;
-    // 没有气泡时优先在桌宠上方；有气泡时让位到下方。
-    const preferAbove = !ctx.service?.snapshot().bubble;
-    let y;
-    if (preferAbove && above >= area.y) y = above;
-    else if (below + HOVER_HEIGHT <= area.y + area.height) y = below;
-    else y = Math.max(area.y, Math.min(area.y + area.height - HOVER_HEIGHT, above));
+    hoverHold = true;
+    if (ctx.service?.snapshot().bubble) { destroyHover(); return; }
+    const bounds = popupBounds(hoverSize);
     if (!alive(ctx.hoverWindow)) {
-      const win = new ctx.BrowserWindow({ width: HOVER_WIDTH, height: HOVER_HEIGHT, show: false, frame: false, transparent: true, backgroundColor: '#00000000', hasShadow: false, resizable: false, maximizable: false, minimizable: false, fullscreenable: false, alwaysOnTop: ctx.store.state.settings.pet.onTop, skipTaskbar: true, focusable: false, title: '忍了吧 · 今日', webPreferences: webPreferences() });
+      const win = new ctx.BrowserWindow({ width: bounds.width, height: bounds.height, show: false, frame: false, transparent: true, backgroundColor: '#00000000', hasShadow: false, resizable: false, maximizable: false, minimizable: false, fullscreenable: false, alwaysOnTop: ctx.store.state.settings.pet.onTop, skipTaskbar: true, focusable: false, title: '忍了吧 · 今日', webPreferences: webPreferences() });
       ctx.hoverWindow = win;
       win.on('closed', () => { ctx.hoverWindow = null; });
       win.once('ready-to-show', () => { if (ctx.hoverWindow === win && ctx.store.state.settings.pet.visible && !win.__loadFailed) win.showInactive(); });
       loadRenderer(win, 'hover');
     }
-    ctx.hoverWindow.setPosition(Math.round(x), Math.round(y));
+    ctx.hoverWindow.setBounds(bounds);
     ctx.hoverWindow.setAlwaysOnTop(ctx.store.state.settings.pet.onTop);
     if (!ctx.hoverWindow.webContents.isLoading() && !ctx.hoverWindow.__loadFailed) ctx.hoverWindow.showInactive();
   }
   // 延迟销毁给鼠标从桌宠移到浮层留出时间；期间重新进入会取消。
   function hideHover(delay = 0) {
     clearTimeout(hoverHideTimer); hoverHideTimer = null;
-    if (!delay) { destroyHover(); return; }
-    hoverHideTimer = setTimeout(destroyHover, delay);
+    const finish = () => { hoverHold = false; destroyHover(); };
+    if (!delay) { finish(); return; }
+    hoverHideTimer = setTimeout(finish, delay);
+  }
+  function resumeHover() {
+    if (hoverHold && !ctx.service?.snapshot().bubble) showHover();
   }
   let drag = null;
   function dragPet(kind, payload) {
@@ -186,5 +225,5 @@ module.exports = function createWindows(ctx) {
       ctx.service.apply({ ...ctx.store.state.settings, pet: { ...ctx.store.state.settings.pet, x, y } });
     }
   }
-  return { sendWhenReady, loadRenderer, createBootstrapWindow, showMainWindow, syncPetWindow, showBubble, showHover, hideHover, dragPet };
+  return { sendWhenReady, loadRenderer, createBootstrapWindow, showMainWindow, syncPetWindow, syncCaption, showBubble, showHover, hideHover, resumeHover, resizePopup, dragPet };
 };

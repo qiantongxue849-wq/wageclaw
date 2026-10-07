@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#1c1f2b" />
+<title>坦克大战</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- TANK BATTLE 90 single-player demo. MIT. Copyright (c) 2026 phanngoc. https://github.com/phanngoc/tank-battle-90 -->
+  <div class="console" id="console">
+    <div class="brand-row">
+      <div class="brand">坦克大战</div>
+      <div class="net on" id="net">单人</div>
+    </div>
+
+    <div class="hud" id="hud">
+      <div class="hud-left">
+        <span class="hud-chip">关卡 <b id="hudStage">1</b></span>
+        <span class="hud-chip">敌坦 <b id="hudEnemies">20</b></span>
+      </div>
+      <div class="hud-players" id="hudPlayers"></div>
+    </div>
+
+    <div class="screen-bezel">
+      <div class="screen" id="screen">
+        <canvas id="game" width="416" height="416"></canvas>
+        <div class="overlay" id="overlay">
+          <div class="ov-title" id="ovTitle">坦克大战</div>
+          <div class="ov-sub" id="ovSub">方向键移动，空格开炮</div>
+          <button class="ov-btn" id="ovBtn" type="button">开始</button>
+          <div class="ov-hint">守住下面的基地，清掉 20 辆敌坦。闪烁的坦克会掉道具。</div>
+        </div>
+        <div class="mute" id="mute" title="开关声音">🔊</div>
+      </div>
+    </div>
+
+    <div class="deck">
+      <div class="dpad" id="dpad">
+        <button class="dbtn up" data-dir="0" type="button" aria-label="上">▲</button>
+        <button class="dbtn left" data-dir="3" type="button" aria-label="左">◀</button>
+        <div class="dcenter"></div>
+        <button class="dbtn right" data-dir="1" type="button" aria-label="右">▶</button>
+        <button class="dbtn down" data-dir="2" type="button" aria-label="下">▼</button>
+      </div>
+      <div class="actions">
+        <div class="sys-btns"><button class="sys" id="startBtn" type="button">开始</button></div>
+        <button class="fire" id="fireBtn" type="button">开炮</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+  <script src="demo.js"></script>
+</body>
+</html>

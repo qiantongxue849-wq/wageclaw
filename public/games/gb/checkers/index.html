@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Play Checkers — classic board game with jump captures and king promotion! Part of GameBox.">
+    <meta name="theme-color" content="#0f1117">
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../common.css">
+    <link rel="stylesheet" href="style.css">
+
+    <title>Checkers — GameBox</title>
+</head>
+<body>
+    <a href="#game" class="skip-link">Skip to game</a>
+    <a href="../" class="back-link" aria-label="Back to GameBox hub">← Back to GameBox</a>
+    <div class="game-shell checkers-shell" id="game">
+        <h1>Checkers</h1>
+        <div class="gb-selector" id="mode-selector" role="group" aria-label="Game mode">
+            <button class="gb-btn active" data-mode="ai">与电脑</button>
+            <button class="gb-btn" data-mode="pvp">双人对弈</button>
+        </div>
+        <p class="gb-status" id="status">🔴 Red's turn</p>
+        <div class="checkers-board" id="board"></div>
+        <button class="gb-btn gb-btn-solid" id="reset-btn">新一局</button>
+    </div>
+    <script src="script.js"></script>
+
+</body>
+</html>

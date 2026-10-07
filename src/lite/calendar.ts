@@ -24,6 +24,24 @@ export function isWorkday(date: Date, s: LiteSettings): boolean {
   if (calendar?.holidays.some(h => key >= h.start && key <= h.end)) return false;
   return s.workweek.includes(date.getDay());
 }
+/**
+ * 从 from 的次日数到 to（含）的工作日。同一天是 0。
+ * 周末、法定节假日、个人春节假期不算；调休上班日和排班里的工作日算。
+ */
+export function workdayGap(from: Date, to: Date, s: LiteSettings): number {
+  const gap = dayGap(from, to);
+  if (gap === 0) return 0;
+  if (gap < 0) return -workdayGap(to, from, s);
+  const cursor = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  cursor.setDate(cursor.getDate() + 1);
+  let count = 0;
+  while (dayGap(cursor, end) >= 0) {
+    if (isWorkday(cursor, s)) count += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
 export function monthWorkdays(date: Date, s: LiteSettings): number[] {
   const length = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   return Array.from({ length }, (_, i) => i + 1).filter(day => isWorkday(new Date(date.getFullYear(), date.getMonth(), day), s));

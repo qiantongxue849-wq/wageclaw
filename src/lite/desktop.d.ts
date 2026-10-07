@@ -11,6 +11,10 @@ export interface LiteDesktop {
   importBackup: () => Promise<DesktopSnapshot | null>;
   onSnapshot: (callback: (state: DesktopSnapshot) => void) => () => void;
   openMain: (screen?: string) => Promise<void>;
+  windowControls?: boolean;
+  getWindowState: () => Promise<{ maximized: boolean }>;
+  windowAction: (action: 'minimize' | 'toggle-maximize' | 'close') => Promise<void>;
+  onWindowState: (callback: (state: { maximized: boolean }) => void) => () => void;
   quiet: (mode: 'hour' | 'today' | 'resume') => Promise<DesktopSnapshot>;
   interact: (action: 'pat' | 'stretch') => Promise<void>;
   setPetBond: (bondDate: string, bondCount: number) => Promise<void>;
@@ -18,6 +22,7 @@ export interface LiteDesktop {
   dismiss: () => Promise<void>;
   hoverBubble: (hovered: boolean) => Promise<void>;
   hoverCard: (show: boolean, delay?: number) => Promise<void>;
+  fitPopup: (size: { width: number; height: number }) => Promise<void>;
   panelBusy: (busy: boolean) => Promise<void>;
   petMenu: () => Promise<void>;
   hitTest: (interactive: boolean) => Promise<void>;

@@ -3,6 +3,7 @@ import { loadPosePack, packName, poseClip } from './petMotionAssets';
 import { clampStage, petFrame } from './petAssets';
 import { drawPetFrame } from './petDrawing';
 import { drawPetTransition, transitionNames } from './petStageMotion';
+import { samplePose } from './petPosePlayback';
 import type { PetStyle } from './model';
 import type { PetAction } from './petReactions';
 export type { PetAction } from './petReactions';
@@ -22,7 +23,13 @@ export function usePetMotion(target: Ref<HTMLCanvasElement | undefined>, options
   drawn?: (pixels: Uint8ClampedArray) => void;
   failed?: (value: boolean) => void;
 }) {
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  let frameRequest: number | undefined;
+  let warmTimer: ReturnType<typeof setTimeout> | undefined;
+  let observer: IntersectionObserver | undefined;
+  let lastPublish = -Infinity;
+  // Read the alpha mask separately so the visible canvas can keep GPU-backed drawing.
+  const maskCanvas = options.drawn ? surface() : undefined;
+  const maskContext = maskCanvas?.getContext('2d', { willReadFrequently: true });
   let token = 0, disposed = false, mode: 'idle' | 'action' | 'transition' = 'idle';
   let pending: PetAction | undefined;
   let current: Form | undefined;
@@ -32,16 +39,21 @@ export function usePetMotion(target: Ref<HTMLCanvasElement | undefined>, options
   const wanted = () => key(options.style(), clampStage(options.stage()));
   const active = () => current && key(current.style, current.stage);
   const allowed = () => !disposed && !options.blocked?.() && !document.hidden && !preference.matches;
-  function publish() {
-    const ctx = target.value?.getContext('2d');
-    if (ctx && options.drawn) options.drawn(ctx.getImageData(0, 0, 288, 288).data);
+  function publish(force = false) {
+    if (!maskContext || !target.value || !options.drawn) return;
+    const now = performance.now();
+    if (!force && now - lastPublish < 80) return;
+    lastPublish = now;
+    maskContext.clearRect(0, 0, 288, 288);
+    maskContext.drawImage(target.value, 0, 0);
+    options.drawn(maskContext.getImageData(0, 0, 288, 288).data);
   }
   function still(form: Form) {
     const canvas = target.value, ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
     ctx.clearRect(0, 0, 288, 288); ctx.drawImage(form.canvas, 0, 0);
     Object.assign(canvas.dataset, { motion: 'classic', moving: 'false', transitioning: 'false', character: form.style, stage: String(form.stage) });
-    publish();
+    publish(true);
   }
   async function load(style: PetStyle, stage: number): Promise<Form> {
     const id = key(style, stage), saved = cache.get(id);
@@ -59,23 +71,38 @@ export function usePetMotion(target: Ref<HTMLCanvasElement | undefined>, options
     if (cache.size > 3 && oldest) cache.delete(oldest);
     return result;
   }
-  function cancel() { token++; clearTimeout(timer); timer = undefined; mode = 'idle'; }
-  // Finite wall-clock playback. No idle animation loop; delayed frames skip ahead.
+  function cancel() { token++; if (frameRequest !== undefined) cancelAnimationFrame(frameRequest); frameRequest = undefined; mode = 'idle'; }
+  function warmCurrent() {
+    clearTimeout(warmTimer);
+    if (!current || mode !== 'idle' || wanted() !== active() || !options.enabled() || !allowed() || !target.value?.getClientRects().length) return;
+    const form = current;
+    warmTimer = setTimeout(() => {
+      warmTimer = undefined;
+      if (current !== form || mode !== 'idle' || wanted() !== active() || !options.enabled() || !allowed() || !target.value?.getClientRects().length) return;
+      const names = new Set(['play', 'stretch'].map(action => packName(form.style, action as PetAction, form.stage)));
+      for (const name of names) void loadPosePack(name).catch(() => undefined);
+    }, 120);
+  }
+  // Only active gestures schedule frames; elapsed time also handles an occasional delayed paint.
   function run(duration: number, request: number, draw: (progress: number) => void, done: () => void) {
-    const start = performance.now();
-    function step() {
+    let start: number | undefined;
+    function step(now: number) {
+      frameRequest = undefined;
       if (disposed || request !== token) return;
-      const progress = Math.min(1, (performance.now() - start) / duration);
+      if (!allowed() || !target.value?.getClientRects().length) { stop(); return; }
+      start ??= now;
+      const progress = Math.min(1, (now - start) / duration);
       draw(progress); publish();
-      if (progress < 1) timer = setTimeout(step, 1000 / 30);
-      else { timer = undefined; done(); }
+      if (progress < 1) frameRequest = requestAnimationFrame(step);
+      else done();
     }
-    step();
+    frameRequest = requestAnimationFrame(step);
   }
   function finish() {
     mode = 'idle';
     if (current) still(current);
     if (wanted() !== active()) { void present(); return; }
+    warmCurrent();
     const next = pending; pending = undefined;
     if (next) void play(next);
   }
@@ -118,23 +145,41 @@ export function usePetMotion(target: Ref<HTMLCanvasElement | undefined>, options
       const clip = poseClip(form.style, action, form.stage), duration = clip.reduce((sum, [, ms]) => sum + ms, 0);
       const pose = surface(), poseCtx = pose.getContext('2d');
       if (!poseCtx) { finish(); return; }
-      mark('authored');
-      run(duration + 360, request, progress => {
-        const time = progress * (duration + 360), clipTime = Math.max(0, Math.min(duration, time - 180));
-        let at = 0, index = 0;
-        for (const [frame, ms] of clip) { index = frame; at += ms; if (clipTime < at) break; }
+      // Keep only three prepared poses per gesture, avoiding atlas cropping and scaling on every paint.
+      const poses = new Map<number, HTMLCanvasElement>();
+      function prepared(index: number) {
+        const saved = poses.get(index);
+        if (saved) { poses.delete(index); poses.set(index, saved); return saved; }
+        const image = surface(), context = image.getContext('2d');
         const f = pack.frames[index], s = pack.scale;
+        context?.drawImage(pack.image, f.sx, f.sy, f.sw, f.sh, (pack.originX ?? 144)-f.anchor*s, (pack.originY ?? 266)-f.ground*s, f.sw*s, f.sh*s);
+        poses.set(index, image);
+        const oldest = poses.keys().next().value;
+        if (poses.size > 3 && oldest !== undefined) poses.delete(oldest);
+        return image;
+      }
+      mark('authored');
+      const fade = 120, total = duration + fade * 2;
+      run(total, request, progress => {
+        const time = progress * total, clipTime = Math.max(0, Math.min(duration, time - fade));
+        const { from, to, mix: poseMix } = samplePose(clip, clipTime);
         poseCtx.clearRect(0, 0, 288, 288);
-        poseCtx.drawImage(pack.image, f.sx, f.sy, f.sw, f.sh, (pack.originX ?? 144)-f.anchor*s, (pack.originY ?? 266)-f.ground*s, f.sw*s, f.sh*s);
-        const mix = Math.max(0, Math.min(1, time/180, (duration+360-time)/180));
+        poseCtx.globalAlpha = 1 - poseMix; poseCtx.drawImage(prepared(from), 0, 0);
+        if (poseMix > 0) {
+          poseCtx.globalCompositeOperation = 'lighter'; poseCtx.globalAlpha = poseMix; poseCtx.drawImage(prepared(to), 0, 0);
+          poseCtx.globalCompositeOperation = 'source-over';
+        }
+        poseCtx.globalAlpha = 1;
+        const mix = Math.max(0, Math.min(1, time/fade, (total-time)/fade));
         ctx.clearRect(0, 0, 288, 288);
         ctx.globalAlpha = 1-mix; ctx.drawImage(form.canvas, 0, 0);
-        ctx.globalAlpha = mix; ctx.drawImage(pose, 0, 0); ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = mix; ctx.drawImage(pose, 0, 0);
+        ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
       }, finish);
     } catch { if (request === token) finish(); }
   }
   function stop(reset = true) {
-    cancel(); pending = undefined;
+    cancel(); clearTimeout(warmTimer); warmTimer = undefined; pending = undefined;
     if (reset && !disposed) { if (current) still(current); if (wanted() !== active()) void present(false); }
   }
   watch(() => [options.style(), clampStage(options.stage()), options.enabled()], (value, before) => {
@@ -144,7 +189,11 @@ export function usePetMotion(target: Ref<HTMLCanvasElement | undefined>, options
   const visibility = () => { if (document.hidden) stop(); };
   const reduce = () => { if (preference.matches) stop(); };
   document.addEventListener('visibilitychange', visibility); preference.addEventListener('change', reduce);
-  onMounted(() => { void present(false); });
-  onUnmounted(() => { disposed = true; stop(false); current = undefined; cache.clear(); document.removeEventListener('visibilitychange', visibility); preference.removeEventListener('change', reduce); });
+  onMounted(() => {
+    void present(false);
+    observer = new IntersectionObserver(entries => { if (entries.some(entry => entry.isIntersecting)) warmCurrent(); });
+    if (target.value) observer.observe(target.value);
+  });
+  onUnmounted(() => { disposed = true; stop(false); observer?.disconnect(); current = undefined; cache.clear(); document.removeEventListener('visibilitychange', visibility); preference.removeEventListener('change', reduce); });
   return { play, stop, refresh: present, playing: () => mode !== 'idle' };
 }

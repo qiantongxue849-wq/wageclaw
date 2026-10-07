@@ -9,7 +9,7 @@ module.exports = function registerIpc(ctx) {
   handle('pet:bootstrap', (event, payload) => {
     if (event.sender !== ctx.bootstrapWindow?.webContents || JSON.stringify(payload).length > 20 * 1024 * 1024) throw new Error('Invalid migration');
     ctx.store.bootstrap(payload); ctx.service.start();
-    if (!ctx.store.state.settings.configured || ctx.store.recovery) ctx.showMainWindow();
+    ctx.showMainWindow();
     const boot = ctx.bootstrapWindow; ctx.bootstrapWindow = null; setImmediate(() => boot?.destroy());
     return ctx.service.snapshot();
   });
@@ -20,7 +20,8 @@ module.exports = function registerIpc(ctx) {
   // 界面已经记过这一次互动，这里只负责气泡和动作，避免次数加两次。
   handle('pet:interact', (_, action) => { if (['pat', 'stretch'].includes(action)) ctx.service.interact(action, false); });
   handle('pet:bond', (_, payload) => ctx.service.setPetBond(payload?.bondDate, payload?.bondCount));
-  handle('pet:manual', (_, topic) => ctx.service.manual(['income', 'offwork', 'holiday', 'spring', 'bonus'].includes(topic) ? topic : undefined, false));
+  handle('pet:manual', (_, topic) => ctx.service.manual(['income', 'offwork', 'holiday', 'spring', 'bonus', 'news'].includes(topic) ? topic : undefined, false));
+  handle('pet:fit-popup', (event, size) => ctx.resizePopup(event.sender, size));
   handle('pet:dismiss', () => ctx.service.dismiss());
   handle('pet:hover', (_, hovered) => ctx.service.hoverBubble(hovered === true));
   handle('pet:hovercard', (event, payload) => {
@@ -33,6 +34,15 @@ module.exports = function registerIpc(ctx) {
   });
   handle('pet:busy', (event, busy) => { mainOnly(event); ctx.service.setPanelBusy(busy === true); });
   handle('lite:open-main', (_, screen) => ctx.showMainWindow(screen === 'settings' ? screen : 'home'));
+  handle('lite:window-state', event => { mainOnly(event); return { maximized: ctx.mainWindow.isMaximized() }; });
+  handle('lite:window-action', (event, action) => {
+    mainOnly(event);
+    if (action === 'minimize') ctx.mainWindow.minimize();
+    else if (action === 'toggle-maximize') {
+      if (ctx.mainWindow.isMaximized()) ctx.mainWindow.unmaximize(); else ctx.mainWindow.maximize();
+    } else if (action === 'close') ctx.mainWindow.close();
+    else throw new Error('Invalid window action');
+  });
   handle('pet:menu', () => ctx.showPetMenu());
   handle('pet:hit', (event, interactive) => {
     if (alive(ctx.petWindow) && event.sender === ctx.petWindow.webContents) ctx.petWindow.setIgnoreMouseEvents(interactive !== true, { forward: true });

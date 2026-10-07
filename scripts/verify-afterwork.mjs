@@ -34,12 +34,11 @@ try {
   await panel.getByRole('button', { name: '一起松口气', exact: true }).click();
   await page.waitForTimeout(2000);
   assert.equal(await panel.locator('canvas').evaluate(el => el.getAnimations().length), 0);
-  await page.getByRole('button', { name: '放空一下 ↗' }).click();
-  for (let n = 1; n <= 9; n++) await page.getByRole('button', { name: `泡泡 ${n}`, exact: true }).click();
-  await page.getByText('这一小片，已经放空了。').waitFor();
+  await page.getByRole('button', { name: '选一款 ↗' }).click();
+  await page.getByRole('dialog', { name: '小游戏' }).getByRole('button', { name: /^坦克大战/ }).click();
+  await page.frameLocator('iframe[title="坦克大战"]').locator('#ovBtn').waitFor();
   assert.equal(await page.getByTestId('today-income').textContent(), income);
-  await page.getByRole('button', { name: '再来一张' }).click();
-  assert.equal(await page.locator('.bubble-grid .popped').count(), 0);
+  await page.getByRole('button', { name: '先收起来' }).click();
   await panel.getByRole('button', { name: '今天想安静一点' }).click();
   await panel.getByRole('button', { name: '恢复偶尔播报' }).waitFor();
   await page.reload();
@@ -60,5 +59,5 @@ try {
   await panel.getByRole('button', { name: '选择懒猫', exact: true }).click();
   await preview.getByRole('button', { name: /懒猫 Lv\./ }).waitFor();
   assert.deepEqual(errors, []);
-  console.log('Afterwork: all five pets, fixed/auto forms, persistence, reactions, finite motion, bubbles without changing earnings, quiet mode, privacy, dark/mobile layout, cross-tab preview sync passed.');
+  console.log('Afterwork: all five pets, fixed/auto forms, persistence, reactions, finite motion, tank without changing earnings, quiet mode, privacy, dark/mobile layout, cross-tab preview sync passed.');
 } finally { await browser.close(); }

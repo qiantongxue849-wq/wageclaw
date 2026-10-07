@@ -2,6 +2,8 @@ const core = require('./generated/core.cjs');
 module.exports = function createDesktopService(ctx) {
   let timer, bubbleTimer, idleTimer, introTimer, closeTimer, bubble = null, lastManual = 0, lastManualTopic = '';
   let lastInteraction = 0, interactions = 0;
+  let manualSequence = 0, lastNewsSignature = '';
+  let manualRequest = 0;
   let locked = false, suspended = false, dragging = false, panelBusy = false;
   const store = ctx.store;
   const snapshot = () => ({ settings: store.state.settings, recovery: store.recovery, bubble });
@@ -13,10 +15,12 @@ module.exports = function createDesktopService(ctx) {
     clearTimeout(bubbleTimer); bubble = null;
     if (ctx.bubbleWindow && !ctx.bubbleWindow.isDestroyed()) ctx.bubbleWindow.destroy();
     publish();
+    ctx.resumeHover?.();
   }
   function showReport(report, automatic = false) {
     if (automatic && bubble && bubble.priority >= report.priority) return false;
     clearTimeout(bubbleTimer); bubble = report;
+    if (report.topic === 'news') lastNewsSignature = report.signature;
     ctx.showBubble(); publish();
     const action = core.reportAction(report);
     if (action && !locked && !suspended && !dragging) ctx.sendWhenReady(ctx.petWindow, 'pet:animate', action);
@@ -28,11 +32,23 @@ module.exports = function createDesktopService(ctx) {
     const next = core.recordPetInteraction(new Date(), store.state.settings);
     if (next !== store.state.settings) store.save({ settings: next });
   }
-  function manual(topic, countBond = true) {
+  function headlines() {
+    if (store.state.settings.broadcast.news === false) return [];
+    return ctx.newsFeed?.current?.() ?? [];
+  }
+  function refreshNews() {
+    if (store.state.settings.broadcast.news !== false) void ctx.newsFeed?.refresh?.();
+  }
+  async function manual(topic, countBond = true) {
     if (locked || suspended || dragging || Date.now() - lastManual < 2000) return;
     lastManual = Date.now();
+    const request = ++manualRequest;
     if (countBond) remember();
-    const report = core.REPORT_TOPICS.includes(topic) ? core.requestedReport(new Date(), store.state.settings, topic) : core.manualReport(new Date(), store.state.settings, lastManualTopic);
+    if (topic === 'news' && store.state.settings.broadcast.news !== false) {
+      try { await ctx.newsFeed?.refresh?.(); } catch { /* Report unavailable below. */ }
+      if (request !== manualRequest || locked || suspended || dragging) return;
+    } else refreshNews();
+    const report = core.REPORT_TOPICS.includes(topic) ? core.requestedReport(new Date(), store.state.settings, topic, headlines(), lastNewsSignature) : core.manualReport(new Date(), store.state.settings, lastManualTopic, headlines(), { sequence: manualSequence++, lastNewsSignature });
     lastManualTopic = report.topic;
     showReport({ ...report, priority: 4 });
   }
@@ -59,7 +75,8 @@ module.exports = function createDesktopService(ctx) {
     const now = new Date();
     let d = core.normalizeDelivery(store.state.delivery, now);
     if (!d.nextAt || resume || now.getTime() - d.nextAt > 120000) d = { ...d, nextAt: core.randomDue(now) };
-    const report = core.autoReport(now, store.state.settings, d, dragging || panelBusy);
+    refreshNews();
+    const report = core.autoReport(now, store.state.settings, d, dragging || panelBusy, Math.random, headlines());
     if (report) {
       // Persist the reservation before display to avoid duplicate events after a crash.
       const next = core.recordDelivery(now, d, report);
@@ -82,14 +99,24 @@ module.exports = function createDesktopService(ctx) {
     }, 45000 + Math.random() * 45000);
   }
   function apply(settings, { closeAfterOnboarding = false } = {}) {
+    manualRequest++;
     const wasConfigured = store.state.settings.configured;
     const valid = core.sanitizeSettings(settings);
     const received = valid.bonusReceivedAt && valid.bonusReceivedAt !== store.state.settings.bonusReceivedAt;
     store.save({ settings: valid });
-    if (ctx.app.isPackaged && process.platform !== 'linux') ctx.app.setLoginItemSettings({ openAtLogin: valid.autoStart });
+    // The archive is committed above. A failed native-window refresh must not
+    // reject pet:save and make the renderer roll back an already saved choice.
+    const refresh = (label, action) => {
+      try { action(); } catch (error) { console.error(`设置已保存，${label}失败:`, error.message); }
+    };
+    if (ctx.app.isPackaged && process.platform !== 'linux') refresh('开机自启同步', () => ctx.app.setLoginItemSettings({ openAtLogin: valid.autoStart }));
     clearTimeout(introTimer); clearTimeout(closeTimer);
-    dismiss(); ctx.syncPetWindow(); publish(); safeSchedule(true);
-    if (received && valid.pet.visible && !locked && !suspended) showReport({ id: 'bonus-received', topic: 'bonus', signature: `received:${valid.bonusReceivedAt}`, priority: 4, text: '这一份辛苦终于到账了，为你开心。' });
+    refresh('气泡关闭', dismiss);
+    refresh('桌宠同步', () => ctx.syncPetWindow());
+    refresh('标题栏同步', () => ctx.syncCaption?.());
+    refresh('界面同步', publish);
+    safeSchedule(true);
+    if (received && valid.pet.visible && !locked && !suspended) refresh('到账提醒', () => showReport({ id: 'bonus-received', topic: 'bonus', signature: `received:${valid.bonusReceivedAt}`, priority: 4, text: '这一份辛苦终于到账了，为你开心。' }));
     if (valid.pet.visible && !locked && !suspended) idle(); else clearTimeout(idleTimer);
     if (closeAfterOnboarding && !wasConfigured && valid.configured) {
       closeTimer = setTimeout(() => ctx.mainWindow?.close(), 100);
@@ -108,7 +135,7 @@ module.exports = function createDesktopService(ctx) {
   function start() {
     ctx.syncPetWindow();
     publish();
-    safeSchedule(true);
+    safeSchedule();
     idle();
     if (!store.recovery && !store.state.settings.configured && !store.state.welcomeShown) {
       const welcome = core.candidates(new Date(), store.state.settings).find(c => c.id === 'welcome');
@@ -119,6 +146,7 @@ module.exports = function createDesktopService(ctx) {
     }
   }
   function systemPause(kind, enabled) {
+    manualRequest++;
     if (kind === 'lock') locked = enabled; else suspended = enabled;
     dismiss();
     ctx.sendWhenReady(ctx.petWindow, 'pet:paused', locked || suspended);
@@ -126,10 +154,10 @@ module.exports = function createDesktopService(ctx) {
   }
   return {
     snapshot, publish, dismiss, manual, interact, setPetBond, apply, quiet, start, systemPause,
-    setDragging(value) { dragging = value; if (value) dismiss(); },
+    setDragging(value) { dragging = value; if (value) { manualRequest++; dismiss(); } },
     setPanelBusy(value) { panelBusy = value; if (value) dismiss(); },
     hoverBubble(hover) { clearTimeout(bubbleTimer); if (!hover && bubble) bubbleTimer = setTimeout(dismiss, 3000); },
-    stop() { clearTimeout(timer); clearTimeout(bubbleTimer); clearTimeout(idleTimer); clearTimeout(introTimer); clearTimeout(closeTimer); },
+    stop() { manualRequest++; clearTimeout(timer); clearTimeout(bubbleTimer); clearTimeout(idleTimer); clearTimeout(introTimer); clearTimeout(closeTimer); },
     reset() { store.reset(); dismiss(); ctx.syncPetWindow(); publish(); safeSchedule(true); return snapshot(); },
     imported() { dismiss(); ctx.syncPetWindow(); publish(); safeSchedule(true); return snapshot(); }
   };

@@ -12,7 +12,8 @@ describe('free companion forms', () => {
     expect(new Set(voices).size).toBe(5);
     for (const style of PET_STYLES) {
       const report = comfortReport(style, 'pat', 3);
-      expect(report.text).toBe(comfortReport(style, 'pat', 0).text);
+      expect(report.text).not.toBe(comfortReport(style, 'pat', 0).text);
+      expect(comfortReport(style, 'pat', 6).text).toBe(comfortReport(style, 'pat', 0).text);
       expect(report.text).not.toMatch(/¥|元|任务|打卡/);
     }
   });

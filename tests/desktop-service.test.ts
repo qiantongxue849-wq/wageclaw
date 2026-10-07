@@ -12,6 +12,53 @@ function setup(recovery = false) {
 }
 afterEach(() => { vi.useRealTimers(); });
 describe('desktop runtime independently of the panel', () => {
+  it('does not fetch news when the user turns hotspots off', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-15T13:00:00'));
+    const { ctx, service } = setup();
+    const refresh = vi.fn(), current = vi.fn(() => []);
+    Object.assign(ctx, { newsFeed: { refresh, current } });
+    ctx.store.state.settings.broadcast.news = false;
+    service.start(); service.manual();
+    expect(refresh).not.toHaveBeenCalled(); expect(current).not.toHaveBeenCalled();
+    service.stop();
+  });
+  it('cycles multiple headlines during repeated manual reports', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-15T13:00:00'));
+    const { ctx, service } = setup();
+    Object.assign(ctx, { newsFeed: { refresh: vi.fn(), current: () => [{ title: '热点一' }, { title: '热点二' }, { title: '热点三' }] } });
+    const heard: string[] = [];
+    for (let n = 0; n < 30; n++) {
+      service.manual(); const bubble = service.snapshot().bubble;
+      if (bubble?.topic === 'news') heard.push(bubble.signature);
+      vi.advanceTimersByTime(2100);
+    }
+    expect(heard.length).toBeGreaterThanOrEqual(3); expect(new Set(heard).size).toBe(3);
+    service.stop();
+  });
+  it('waits for a cold explicit news request and discards it after stop', async () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-15T13:00:00'));
+    const { ctx, service } = setup();
+    let items: { title: string }[] = [], finish!: () => void;
+    const refresh = vi.fn(() => new Promise<void>(resolve => { finish = () => { items = [{ title: '刚取到的热点' }]; resolve(); }; }));
+    Object.assign(ctx, { newsFeed: { refresh, current: () => items } });
+    const pending = service.manual('news');
+    expect(ctx.showBubble).not.toHaveBeenCalled();
+    finish(); await pending;
+    expect(service.snapshot().bubble.text).toContain('刚取到的热点');
+    vi.advanceTimersByTime(2100);
+    const cancelled = service.manual('news'); service.stop();
+    finish(); await cancelled;
+    expect(ctx.showBubble).toHaveBeenCalledOnce();
+  });
+  it('preserves a future ordinary deadline when restarting', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-15T13:00:00'));
+    const { ctx, service } = setup();
+    const due = Date.now() + 10 * 60000;
+    ctx.store.state.delivery.nextAt = due;
+    service.start();
+    expect(ctx.store.state.delivery.nextAt).toBe(due);
+    service.stop();
+  });
   it('reports without a panel, pauses on lock, discards overdue reminders and clears timers', () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-15T17:29:00'));
     const { ctx, service } = setup(); service.start();
@@ -35,6 +82,27 @@ describe('desktop runtime independently of the panel', () => {
     const { service } = setup(true);
     expect(() => service.start()).not.toThrow();
     expect(service.snapshot().recovery).toBe(true); service.stop();
+  });
+  it('keeps a committed privacy change when a native window refresh fails', () => {
+    vi.useFakeTimers();
+    const { ctx, service } = setup();
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    ctx.syncPetWindow.mockImplementation(() => { throw new Error('Object has been destroyed'); });
+    const result = service.apply({ ...ctx.store.state.settings, privacy: true });
+    expect(result.settings.privacy).toBe(true);
+    expect(ctx.store.state.settings.privacy).toBe(true);
+    expect(ctx.sendWhenReady).toHaveBeenCalled();
+    expect(log).toHaveBeenCalled();
+    service.stop(); log.mockRestore();
+  });
+  it('rejects a genuine archive write failure without changing settings', () => {
+    vi.useFakeTimers();
+    const { ctx, service } = setup();
+    vi.spyOn(ctx.store, 'save').mockImplementation(() => { throw new Error('ENOSPC'); });
+    expect(() => service.apply({ ...ctx.store.state.settings, privacy: true })).toThrow('ENOSPC');
+    expect(ctx.store.state.settings.privacy).toBe(false);
+    expect(ctx.syncPetWindow).not.toHaveBeenCalled();
+    service.stop();
   });
 });
 

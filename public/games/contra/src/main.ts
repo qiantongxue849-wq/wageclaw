@@ -1,0 +1,10 @@
+import {Game} from './engine/Game';
+const canvas=document.getElementById('game') as HTMLCanvasElement;
+canvas.height=420;canvas.width=Math.round(420*innerWidth/innerHeight);
+const game=new Game(canvas);game.start();
+const cover=document.getElementById('cover')!;
+const start=()=>{cover.hidden=true;dispatchEvent(new KeyboardEvent('keydown',{code:'Space'}));dispatchEvent(new KeyboardEvent('keyup',{code:'Space'}));};
+document.getElementById('start')!.addEventListener('click',start);
+window.addEventListener('keydown',e=>{if(e.code==='Space')cover.hidden=true});
+window.postMessage({type:'setAudioConfig',enabled:false,musicVolume:0,sfxVolume:.4},location.origin);
+let muted=true;document.getElementById('sound')!.addEventListener('click',e=>{muted=!muted;(e.currentTarget as HTMLElement).textContent=muted?'静音':'声音';window.postMessage({type:'setAudioConfig',enabled:!muted,musicVolume:0,sfxVolume:.4},location.origin)});

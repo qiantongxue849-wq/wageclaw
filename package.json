@@ -1,6 +1,6 @@
 {
   "name": "wageclaw-electron",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "忍了吧 WageClaw desktop app",
   "author": "OpenAI Codex",
@@ -13,7 +13,8 @@
     "preview": "vite preview --host 127.0.0.1",
     "dist:mac": "npm run build && electron-builder -- --mac",
     "dist:mac:dmg:localfix": "npm run build && electron-builder --mac dmg",
-    "dist:win": "npm run build && electron-builder --win",
+    "icons": "node scripts/build-icons.mjs",
+    "dist:win": "npm run build && node scripts/prepare-news-config.mjs && electron-builder --win --x64 --config.electronDist=node_modules/electron/dist",
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "lint": "eslint src tests electron scripts",
@@ -52,6 +53,8 @@
     "afterPack": "electron/after-pack.cjs",
     "files": [
       "electron/**/*",
+      "!electron/private/**",
+      "!electron/assets/*-source.*",
       "dist/**/*",
       "package.json"
     ],
@@ -59,12 +62,16 @@
       {
         "from": "electron/app-config.json",
         "to": "app-config.json"
+      },
+      {
+        "from": "electron/private/news.env",
+        "to": "news.env"
       }
     ],
     "publish": [
       {
         "provider": "generic",
-        "url": "https://downloads.your-domain.com/wageclaw"
+        "url": "https://github.com/qiantongxue849-wq/wageclaw/releases/latest/download"
       }
     ],
     "mac": {
@@ -82,6 +89,10 @@
       "signAndEditExecutable": false
     },
     "nsis": {
+      "artifactName": "WageClaw-Setup-${version}.${ext}",
+      "shortcutName": "忍了吧",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "electron/assets/app-icon.ico",

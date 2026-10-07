@@ -44,17 +44,17 @@ export interface LiteSettings {
     /** 今天已经记下的互动次数；日期不是今天时，形象计算会把它当作 0。 */
     bondDate: string; bondCount: number;
   };
-  broadcast: { enabled: boolean; pauseUntil: number; quietDate: string };
+  broadcast: { enabled: boolean; pauseUntil: number; quietDate: string; news: boolean };
   autoStart: boolean;
 }
 
 export function defaults(): LiteSettings {
-  return { version: 2, configured: false, salary: 0, startTime: '08:30', endTime: '17:30',
+  return { version: 2, configured: false, salary: 0, startTime: '08:30', endTime: '18:00',
     summerFrom: '05-01', summerTo: '10-01', summerStartTime: '08:30', summerEndTime: '18:00',
-    workweek: [1, 2, 3, 4, 5], overrides: {}, payday: null, springStart: '02-04', springEnd: '',
+    workweek: [1, 2, 3, 4, 5], overrides: {}, payday: 15, springStart: '02-04', springEnd: '',
     bonusDate: '02-03', bonusAmount: null, bonusReceivedAt: '', privacy: false,
     theme: 'light', pet: { visible: true, onTop: true, size: 128, style: 'capybaraZen', motion: 'authored', form: null, x: null, y: null, bondDate: '', bondCount: 0 },
-    broadcast: { enabled: true, pauseUntil: 0, quietDate: '' }, autoStart: false };
+    broadcast: { enabled: true, pauseUntil: 0, quietDate: '', news: true }, autoStart: false };
 }
 
 export function dateKey(date: Date): string {
@@ -149,7 +149,7 @@ export function sanitizeSettings(raw: unknown): LiteSettings {
   if (typeof r.salary === 'number' && Number.isFinite(r.salary) && r.salary >= 0 && r.salary <= 100000000) s.salary = r.salary;
   if (typeof r.startTime === 'string' && Number.isFinite(clockMinutes(r.startTime))) s.startTime = r.startTime;
   if (typeof r.endTime === 'string' && clockMinutes(r.endTime) > clockMinutes(s.startTime)) s.endTime = r.endTime;
-  if (!(clockMinutes(s.endTime) > clockMinutes(s.startTime))) { s.startTime = '08:30'; s.endTime = '17:30'; }
+  if (!(clockMinutes(s.endTime) > clockMinutes(s.startTime))) { s.startTime = '08:30'; s.endTime = '18:00'; }
   s.summerFrom = parseMonthDay(r.summerFrom);
   s.summerTo = parseMonthDay(r.summerTo);
   // 区间端点必须成对出现，缺一即视为未启用夏季作息。
@@ -165,6 +165,7 @@ export function sanitizeSettings(raw: unknown): LiteSettings {
     for (const [key, value] of Object.entries(r.overrides)) if (parseDate(key) && typeof value === 'boolean') s.overrides[key] = value;
   }
   if (typeof r.payday === 'number' && Number.isInteger(r.payday) && r.payday >= 1 && r.payday <= 31) s.payday = r.payday;
+  else if (r.payday === null) s.payday = null;
   // 春节与年终奖按「月-日」每年重复；旧档的完整日期在这里收敛成月-日。
   for (const key of ['springStart', 'springEnd', 'bonusDate'] as const) s[key] = migrateMonthDay(r[key]);
   if (!s.springStart || s.springEnd < s.springStart) s.springEnd = '';
@@ -189,6 +190,7 @@ export function sanitizeSettings(raw: unknown): LiteSettings {
   s.broadcast.enabled = broadcast.enabled !== false;
   if (typeof broadcast.pauseUntil === 'number' && Number.isFinite(broadcast.pauseUntil)) s.broadcast.pauseUntil = Math.max(0, broadcast.pauseUntil);
   if (parseDate(broadcast.quietDate)) s.broadcast.quietDate = broadcast.quietDate as string;
+  s.broadcast.news = broadcast.news !== false;
   s.theme = r.theme === 'dark' ? 'dark' : 'light';
   s.configured = r.configured === true && !validateSettings(s);
   return s;

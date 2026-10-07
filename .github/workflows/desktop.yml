@@ -1,0 +1,103 @@
+name: Desktop CI and Windows delivery
+
+on:
+  push:
+    branches: [lite]
+  pull_request:
+    branches: [lite]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Keep publishing serialized. A newer run must not interrupt a manifest upload.
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  package:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/lite' && vars.WAGECLAW_RELEASE_ENABLED == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      WAGECLAW_UPDATE_URL: ${{ vars.WAGECLAW_UPDATE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node scripts/prepare-release.mjs
+      - run: npm run dist:win -- --config release/ci-builder.json --publish always
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-update
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            release/WageClaw-Setup-*.exe
+            release/WageClaw-Setup-*.exe.blockmap
+            release/latest.yml
+
+  deploy-github:
+    needs: package
+    if: vars.WAGECLAW_RELEASE_PROVIDER != 'oss'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-update
+          path: release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r scripts/release-requirements.txt
+      - run: python -m unittest discover -s tests -p 'test_release_*.py'
+      - run: python scripts/publish-github.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  deploy-oss:
+    needs: package
+    if: vars.WAGECLAW_RELEASE_PROVIDER == 'oss'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: desktop-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-update
+          path: release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r scripts/release-requirements.txt
+      - run: python -m unittest discover -s tests -p 'test_release_oss.py'
+      - run: python scripts/publish-oss.py
+        env:
+          OSS_ENDPOINT: ${{ vars.OSS_ENDPOINT }}
+          OSS_BUCKET: ${{ vars.OSS_BUCKET }}
+          OSS_PREFIX: ${{ vars.OSS_PREFIX }}
+          WAGECLAW_UPDATE_URL: ${{ vars.WAGECLAW_UPDATE_URL }}
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}

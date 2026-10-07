@@ -45,8 +45,18 @@ export function useLite() {
     try {
       if (desktop) accept(await desktop.saveSettings(JSON.parse(JSON.stringify(valid))));
       else localStorage.setItem(loaded.key, JSON.stringify(valid));
+      notice.value = '';
       return true;
-    } catch { settings.value = previous; notice.value = '未能保存设置，请检查本机存储空间。'; return false; }
+    } catch (error) {
+      settings.value = previous;
+      console.error('保存设置失败:', error);
+      const reason = error instanceof Error ? error.message : String(error);
+      notice.value = /ENOSPC|QuotaExceeded/i.test(reason) ? '存储空间不足，设置未保存。'
+        : /EACCES|EPERM|SecurityError/i.test(reason) ? '无法写入本机存档，请检查文件权限。'
+        : /Panel only|Untrusted sender/i.test(reason) ? '窗口连接失效，请关闭详情窗口后重新打开。'
+        : '设置未保存，请重试；详细原因已记录。';
+      return false;
+    }
   }
   function patch(values: Partial<LiteSettings>) { return save({ ...settings.value, ...values }); }
   // 「已收到」只在本轮发放周期内有效，因此记录标记当天而不是布尔值。

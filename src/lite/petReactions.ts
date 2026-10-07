@@ -9,7 +9,8 @@ export function reportAction(report: Pick<Report, 'id' | 'topic'>): PetAction | 
   if (report.id === 'spring-rest') return 'sleep';
   if (report.topic === 'comfort') return report.id === 'stretch' ? 'stretch' : 'play';
   if (report.id === 'end' || report.topic === 'income' || report.id === 'bonus-received') return 'celebrate';
-  if (['offwork', 'holiday', 'spring', 'bonus'].includes(report.topic)) return 'notice';
+  if (['offwork', 'holiday', 'spring', 'bonus', 'payday', 'break', 'news'].includes(report.topic)) return 'notice';
+  if (report.topic === 'care') return 'stretch';
   if (report.topic === 'rest') return 'sleep';
   return 'play';
 }

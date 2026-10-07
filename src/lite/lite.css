@@ -109,7 +109,15 @@ a {
 .header-actions {
   display:flex;
   gap:12px;
-  align-items:center
+  align-items:center;
+  -webkit-app-region:no-drag
+}
+.lite-root.is-desktop .app-header,
+.lite-root.is-desktop .greeting {
+  -webkit-app-region:drag
+}
+.lite-root.is-desktop .app-header {
+  padding-right:138px
 }
 .icon-button,.settings-button {
   border:1px solid var(--line);
@@ -132,6 +140,30 @@ a {
 .header-actions svg {
   width:17px;
   height:17px
+}
+.day-basis {
+  display:flex;
+  align-items:center;
+  height:36px;
+  padding:3px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--surface);
+  flex-shrink:0
+}
+.day-basis button {
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  border-radius:7px;
+  height:100%;
+  padding:0 8px;
+  font-size:11px;
+  line-height:1
+}
+.day-basis button[aria-pressed=true] {
+  background:var(--ink);
+  color:var(--paper)
 }
 .greeting {
   display:flex;
@@ -203,6 +235,18 @@ h1 {
   font-size:13px;
   position:relative;
   z-index:1
+}
+.card-title {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-width:0
+}
+.card-glyph {
+  width:20px;
+  height:20px;
+  object-fit:contain;
+  flex-shrink:0
 }
 .subtle-label {
   font-size:10px;
@@ -318,8 +362,26 @@ h1 {
   background:var(--surface);
   padding:20px 23px 15px;
   position:relative;
+  overflow:hidden;
   min-width:0
 }
+.holiday-card { background:linear-gradient(165deg, color-mix(in srgb,#f3c98a 22%, var(--surface)), var(--surface) 46%); }
+.spring-card { background:linear-gradient(165deg, color-mix(in srgb,#e7a88a 18%, var(--surface)), var(--surface) 46%); }
+.bonus-card { background:linear-gradient(165deg, color-mix(in srgb,#e2c484 18%, var(--surface)), var(--surface) 46%); }
+.event-art {
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:44px;
+  height:44px;
+  padding:5px;
+  object-fit:contain;
+  pointer-events:none;
+  border-radius:14px;
+  background:color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow:0 4px 10px rgba(48,62,48,.08)
+}
+.event-kicker { padding-right:52px; }
 .event-icon {
   position:absolute;
   right:21px;
@@ -760,6 +822,9 @@ input[type=checkbox] {
   .app-header {
     height:72px
   }
+  .brand strong span { display:none; }
+  .day-basis { height:32px; }
+  .day-basis button { padding:0 6px; font-size:10px; }
   .greeting {
     padding:25px 0 22px
   }
@@ -875,6 +940,11 @@ input[type=checkbox] {
 .income-number,.clock-number { font-size:clamp(29px,3.3vw,47px);letter-spacing:-1.5px;margin-top:30px; }
 .clock-number { letter-spacing:-.5px; }
 .clock-words { font-size:clamp(26px,2.8vw,37px);min-height:54px; }
+.earnings-card {
+  background:
+    radial-gradient(160px 110px at 100% 0%, color-mix(in srgb, #e7c27a 34%, transparent), transparent 70%),
+    var(--hero);
+}
 .earnings-card:after { display:none; }
 .income-footer { flex-wrap:wrap;row-gap:10px; }
 .income-caption,.clock-caption { min-height:34px;margin:12px 0 18px;line-height:1.7; }
@@ -920,21 +990,24 @@ input[type=checkbox] {
 .companion-quiet { color:var(--muted);background:none;border:0;font-size:10px;text-decoration:underline;text-underline-offset:4px;padding:12px 0 0; }
 .break-corner { border:1px dashed #c7d1be;border-radius:18px;padding:17px 19px;margin-top:20px; }
 .break-corner header { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+.break-actions { display:flex;gap:8px;flex-shrink:0; }
+.game-overlay { position:fixed; inset:0; z-index:18; display:flex; flex-direction:column; background:#0b0d16; color:#e8ecff; }
+.game-overlay header { flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; height:44px; padding:0 16px; font-size:13px; }
+.game-overlay header div { display:flex; gap:8px; }
+.game-overlay header button { border:1px solid #3a3f5c; background:#191c2b; color:#e8ecff; border-radius:8px; padding:6px 12px; font-size:12px; }
+.game-overlay .game-pack { flex:1; min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; padding:8px 16px 16px; align-content:start; }
+.game-overlay .game-pack button { display:grid; gap:2px; text-align:left; border:1px solid #3a3f5c; background:#191c2b; color:#e8ecff; border-radius:10px; padding:10px 12px; }
+.game-overlay .game-pack strong { font-size:14px; font-weight:600; }
+.game-overlay .game-pack span { font-size:11px; color:#a8b0d4; }
+.game-frame { flex:1; width:100%; min-height:0; border:0; background:#0b0d16; }
 .break-corner h2 { font-size:12px;font-weight:500;margin:0; }
 .break-corner p { font-size:11px;color:var(--muted);line-height:1.8;margin:7px 0 0; }
 .break-corner button { border:1px solid var(--line);background:var(--wash);border-radius:10px;font-size:11px;padding:9px 12px;flex-shrink:0; }
-.bubble-game { display:flex;align-items:center;justify-content:center;gap:24px;padding-top:22px; }
-.bubble-grid { display:grid;grid-template-columns:repeat(3,44px);gap:9px; }
-.bubble-grid button { border-radius:50%;padding:0;width:44px;height:44px;background:radial-gradient(circle at 32% 24%,var(--surface),var(--hero));box-shadow:inset 0 -3px 5px #4a653716,0 3px 0 #50694017;transition:transform .16s,box-shadow .16s; }
-.bubble-grid .popped { background:var(--wash);box-shadow:inset 0 2px 3px #50694017;transform:scale(.88);color:var(--muted); }
-.bubble-note { max-width:230px; }
-.bubble-note button { margin:12px 0;background:var(--surface); }
-.bubble-note small { display:block;font-size:10px;color:var(--muted); }
+
 @media(min-width:1450px) { .page-shell { padding-top:20px; }.greeting { padding:36px 0; } }
 @media(max-width:1100px) and (min-width:741px) { .page-shell { padding:0 24px 24px; }.dashboard-layout { grid-template-columns:minmax(0,1fr) 258px;gap:16px; }.earnings-card,.offwork-card { padding:23px 17px; }.companion-panel { padding:21px 12px; }.income-number,.clock-number { font-size:31px; }.clock-words { font-size:27px; }.event-card { padding:17px 12px 12px; }.event-icon { display:none; }.event-card h3 { font-size:12px; }.event-number strong { font-size:30px; }.event-number span { font-size:10px; } }
 @media(max-width:900px) and (min-width:741px) { .hero-grid { grid-template-columns:1fr; }.income-number,.clock-number { margin-top:15px;font-size:38px; }.income-caption,.clock-caption { min-height:0; }.anticipation-grid { grid-template-columns:1fr; }.event-card { display:grid;grid-template-columns:1fr auto; }.event-card h3 { margin:10px 0; }.event-kicker,.event-card footer { grid-column:1/-1; }.event-number { grid-column:2;grid-row:2; }.event-card footer { min-height:0; }.break-corner header { flex-wrap:wrap; } }
-@media(max-width:740px) { .page-shell { padding:0 18px 22px; }.dashboard-layout { grid-template-columns:1fr; }.hero-grid { grid-template-columns:1fr; }.income-number,.clock-number { font-size:42px; }.clock-words { font-size:32px; }.earnings-card,.offwork-card { padding:25px; }.companion-panel { max-width:none; }.companion-pet { width:180px;height:180px; }.companion-speech { min-height:58px; }.pet-picker { gap:9px; }.pet-picker img { height:54px; }.pet-picker span { font-size:11px; }.form-gallery { gap:10px; }.bubble-game { gap:16px; }.page-footer { flex-direction:column;gap:6px; }.greeting { padding:24px 0; }.brand strong span { font-size:9px; }.companion-actions button { padding:10px 16px; } }
-@media(prefers-reduced-motion:reduce) { .bubble-grid button { transition:none; } }
+@media(max-width:740px) { .page-shell { padding:0 18px 22px; }.dashboard-layout { grid-template-columns:1fr; }.hero-grid { grid-template-columns:1fr; }.income-number,.clock-number { font-size:42px; }.clock-words { font-size:32px; }.earnings-card,.offwork-card { padding:25px; }.companion-panel { max-width:none; }.companion-pet { width:180px;height:180px; }.companion-speech { min-height:58px; }.pet-picker { gap:9px; }.pet-picker img { height:54px; }.pet-picker span { font-size:11px; }.form-gallery { gap:10px; }.page-footer { flex-direction:column;gap:6px; }.greeting { padding:24px 0; }.brand strong span { font-size:9px; }.companion-actions button { padding:10px 16px; } }
 @media(min-width:901px) and (max-height:850px) {
   .app-header { height:68px; }.greeting { padding:18px 0; }
   .earnings-card,.offwork-card { padding:20px; }.income-number,.clock-number { margin-top:20px; }
@@ -947,8 +1020,17 @@ input[type=checkbox] {
   .break-corner { padding:14px 16px;margin-top:16px; }.section-heading { margin:18px 0 12px; }.page-footer { margin-top:16px; }
 }
 @media(min-width:901px) and (max-height:850px) {
-  .page-shell { padding-bottom:12px; }.greeting { padding:14px 0; }
-  .companion-pet { width:126px;height:126px; }.income-caption,.clock-caption { margin-bottom:10px; }
+  .page-shell { padding-bottom:12px; }.greeting { padding:8px 0; }
+  .companion-pet { width:96px;height:96px; }.income-caption,.clock-caption { margin-bottom:10px; }
+  .companion-speech { min-height:40px;margin-top:8px; }
+  .companion-topics { margin:6px 0; }
+  .pet-picker { margin-top:8px;padding-top:6px; }
+  .pet-picker img { height:40px; }
+  .wardrobe-toggle { margin-top:8px;padding:7px; }
+  .companion-panel > .companion-caption ~ .companion-caption,
+  .companion-panel footer { display:none; }
+  .companion-quiet { padding-top:4px; }
+  .page-footer { margin-top:8px; }
   .break-corner { margin-top:12px; }.section-heading { margin-top:16px; }.event-card footer { padding-top:8px; }
 }
 
@@ -957,3 +1039,368 @@ input[type=checkbox] {
 .companion-topics button { border:1px solid var(--line,#d7dfcf);border-radius:20px;padding:7px 10px;background:var(--paper,#fffdf7);color:var(--muted,#6a7f63);font:inherit;font-size:11px;cursor:pointer; }
 .companion-topics button:hover { border-color:#91a77e;color:var(--ink,#34563f); }
 .companion-topics button:focus-visible { outline:2px solid #6f9056;outline-offset:3px; }
+
+/* 详情窗内容区 860×520：字号、卡片和间距都按小窗来，一屏放下。 */
+@media (min-width: 700px) and (max-width: 980px) and (max-height: 620px) {
+  .lite-root { font-size: 12px; }
+  .page-shell { max-width: none; padding: 0 16px 6px; }
+  .app-header { height: 40px; }
+  .brand { gap: 8px; }
+  .brand-mark { width: 26px; height: 26px; font-size: 14px; border-radius: 8px; }
+  .brand strong { font-size: 14px; letter-spacing: 0; }
+  .brand strong span { font-size: 9px; margin-top: 1px; letter-spacing: .4px; }
+  .header-actions { gap: 6px; }
+  .day-basis { height: 28px; border-radius: 8px; }
+  .day-basis button { padding: 0 6px; font-size: 10px; border-radius: 6px; }
+  .icon-button, .settings-button { height: 28px; min-width: 28px; border-radius: 8px; font-size: 11px; }
+  .settings-button { padding: 0 8px; }
+  .header-actions svg { width: 14px; height: 14px; }
+  .greeting { padding: 6px 0; }
+  .eyebrow { font-size: 10px; margin-bottom: 2px; }
+  h1 { font-size: 16px; letter-spacing: -.3px; }
+  .quiet-tag { font-size: 10px; }
+  .dashboard-layout { grid-template-columns: minmax(0, 1fr) 188px; gap: 8px; align-items: start; }
+  .hero-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .earnings-card, .offwork-card { padding: 10px 12px 8px; border-radius: 14px; }
+  .card-top { font-size: 11px; }
+  .card-top svg { width: 14px; height: 14px; }
+  .subtle-label { font-size: 9px; padding: 2px 6px; }
+  .income-number, .clock-number { margin-top: 4px; font-size: 22px; letter-spacing: -.6px; }
+  .clock-words { font-size: 16px; min-height: 0; letter-spacing: -.2px; }
+  .income-caption, .clock-caption { min-height: 0; margin: 4px 0 6px; font-size: 10px; line-height: 1.4; }
+  .income-footer, .shift-footer { padding-top: 6px; }
+  .income-footer div { gap: 2px; }
+  .income-footer strong { font-size: 13px; }
+  .shift-footer > div:first-child { margin-bottom: 6px; font-size: 10px; }
+  .section-heading { margin: 8px 0 6px; }
+  .section-heading h2 { font-size: 12px; }
+  .section-heading span { font-size: 9px; }
+  .anticipation-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .event-card { display: block; padding: 8px 8px 6px; border-radius: 12px; }
+  .event-icon { width: 18px; height: 18px; right: 6px; top: 6px; font-size: 11px; border-radius: 6px; }
+  .event-kicker { font-size: 9px; }
+  .event-card h3 { font-size: 11px; margin: 6px 0 4px; max-width: 100%; min-height: 0; }
+  .event-number { height: auto; gap: 4px; }
+  .event-number strong { font-size: 20px; }
+  .event-number span { font-size: 10px; }
+  .event-card footer { min-height: 0; margin-top: 4px; padding-top: 4px; font-size: 9px; line-height: 1.35; grid-column: auto; }
+  .break-corner { margin-top: 6px; padding: 7px 8px; border-radius: 12px; }
+  .break-corner h2 { font-size: 11px; }
+  .break-corner p { margin-top: 1px; font-size: 10px; line-height: 1.35; }
+  .break-corner button { padding: 5px 8px; font-size: 10px; }
+  .page-footer { margin-top: 6px; font-size: 9px; line-height: 1.4; }
+  .companion-panel { padding: 8px 8px 6px; border-radius: 14px; }
+  .companion-heading h2 { font-size: 11px; }
+  .companion-heading > span { font-size: 9px; }
+  .companion-speech { min-height: 0; margin: 6px 0 0; padding: 5px 6px; font-size: 10px; line-height: 1.35; border-radius: 10px; }
+  .companion-pet { width: 64px; height: 64px; margin-top: 2px; }
+  .companion-panel h3 { font-size: 13px; margin-top: 2px; }
+  .companion-caption { margin: 1px 0 4px; font-size: 9px; line-height: 1.35; }
+  .companion-actions { gap: 4px; }
+  .companion-actions button { padding: 4px 2px; font-size: 10px; border-radius: 8px; }
+  .companion-topics { margin: 4px 0 2px; gap: 3px; }
+  .companion-topics button { padding: 2px 5px; font-size: 9px; }
+  .pet-picker { margin-top: 6px; padding-top: 6px; gap: 2px; }
+  .pet-picker img { height: 22px; }
+  .pet-picker span { font-size: 8px; }
+  .wardrobe-toggle { margin-top: 6px; padding: 5px 6px; font-size: 10px; border-radius: 8px; }
+  .companion-panel footer { margin-top: 6px; font-size: 9px; line-height: 1.35; }
+  .companion-quiet { padding-top: 2px; font-size: 9px; }
+
+  .modal-backdrop { padding: 8px; }
+  .settings-panel { width: 100%; max-height: calc(100dvh - 16px); border-radius: 14px; }
+  .settings-head { padding: 8px 12px 6px; }
+  .settings-head h2 { font-size: 15px; }
+  .settings-head .eyebrow { margin-bottom: 0; font-size: 10px; }
+  .settings-footer { padding: 6px 12px; }
+  .settings-footer span { font-size: 10px; }
+  .primary-button, .secondary-button, .danger-button { padding: 6px 10px; font-size: 11px; border-radius: 8px; }
+  .settings-body { padding: 0 12px 4px; overflow: hidden; }
+  .settings-columns { display: grid; grid-template-columns: 1.05fr .95fr 1fr; column-gap: 12px; align-items: start; }
+  .settings-col { display: block; min-width: 0; }
+  .settings-body fieldset { padding: 4px 0 2px; border-bottom: 0; }
+  .settings-body legend { float: none; width: auto; margin-bottom: 0; font-size: 12px; }
+  .settings-body legend + * { clear: none; }
+  .settings-body label { gap: 1px; margin-top: 4px; font-size: 10px; }
+  .field-label { margin-top: 6px; font-size: 10px; }
+  .settings-body input:not([type=checkbox]),
+  .settings-body select { height: 26px; padding: 1px 6px; font-size: 11px; border-radius: 6px; }
+  .field-help { font-size: 9px; line-height: 1.3; margin: 1px 0; }
+  .form-grid { gap: 6px; }
+  .settings-col:nth-child(2) .form-grid { grid-template-columns: 1fr; }
+  .week-picker { gap: 4px; }
+  .week-picker span { height: 24px; border-radius: 6px; font-size: 11px; }
+  .settings-body .switch-row { min-height: 22px; margin-top: 2px; }
+  .data-settings h3, .update-settings h3 { font-size: 12px; }
+  .data-settings, .update-settings { margin-top: 2px; }
+  .data-actions { gap: 6px; margin-top: 2px; }
+  .settings-col:nth-child(3) > fieldset { display: grid; grid-template-columns: 1fr 1fr; column-gap: 6px; align-content: start; }
+  .settings-col:nth-child(3) > fieldset > legend,
+  .settings-col:nth-child(3) > fieldset > .field-help,
+  .settings-col:nth-child(3) > fieldset > .data-actions,
+  .settings-col:nth-child(3) > fieldset > a,
+  .settings-col:nth-child(3) > fieldset > label:not(.switch-row) { grid-column: 1 / -1; }
+}
+
+/* 小窗：数据、桌宠、游戏三屏切换。287×183 再在文件末尾把字号和卡片压到一半。 */
+.lite-root.is-pocket { height: 100vh; overflow: hidden; font-size: 12px; }
+.lite-root.is-pocket .page-shell { height: 100%; max-width: none; display: flex; flex-direction: column; padding: 0 12px 8px; }
+.lite-root.is-pocket main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.lite-root.is-pocket .app-header { height: 34px; flex: none; }
+.lite-root.is-pocket .brand { gap: 6px; }
+.lite-root.is-pocket .brand-mark { width: 22px; height: 22px; font-size: 12px; }
+.lite-root.is-pocket .brand strong { font-size: 13px; }
+.lite-root.is-pocket .brand strong span { display: none; }
+.lite-root.is-pocket .header-actions { gap: 6px; }
+.lite-root.is-pocket .day-basis { height: 26px; padding: 2px; border-radius: 8px; }
+.lite-root.is-pocket .day-basis button { padding: 0 6px; font-size: 10px; border-radius: 6px; }
+.lite-root.is-pocket .icon-button,
+.lite-root.is-pocket .settings-button { height: 26px; min-width: 26px; font-size: 11px; border-radius: 8px; }
+.lite-root.is-pocket .header-actions svg { width: 13px; height: 13px; }
+.lite-root.is-pocket .greeting { padding: 2px 0 6px; flex: none; }
+.lite-root.is-pocket .greeting h1 { font-size: 14px; }
+.lite-root.is-pocket .eyebrow { margin-bottom: 1px; font-size: 10px; }
+.lite-root.is-pocket .quiet-tag,
+.lite-root.is-pocket .section-heading,
+.lite-root.is-pocket .page-footer { display: none; }
+.lite-root.is-pocket .dashboard-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch; }
+.lite-root.is-pocket .dashboard-main { width: 100%; }
+.lite-root.is-pocket .dashboard-main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.lite-root.is-pocket .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex: 1.05; min-height: 0; }
+.lite-root.is-pocket .anticipation-section { flex: 1; min-height: 0; display: flex; margin: 0; }
+.lite-root.is-pocket .anticipation-grid { flex: 1; min-height: 0; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.lite-root.is-pocket .earnings-card,
+.lite-root.is-pocket .offwork-card,
+.lite-root.is-pocket .event-card {
+  height: 100%; min-height: 0; margin: 0; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.lite-root.is-pocket .offwork-card { order: -1; }
+.lite-root.is-pocket .earnings-card,
+.lite-root.is-pocket .offwork-card { padding: 8px 10px 6px; border-radius: 12px; }
+.lite-root.is-pocket .card-top { font-size: 11px; }
+.lite-root.is-pocket .card-top svg { width: 14px; height: 14px; }
+.lite-root.is-pocket .card-title { gap: 4px; }
+.lite-root.is-pocket .card-glyph { width: 16px; height: 16px; }
+.lite-root.is-pocket .event-art { top: 6px; right: 6px; width: 28px; height: 28px; padding: 3px; border-radius: 9px; box-shadow: none; }
+.lite-root.is-pocket .event-kicker { padding-right: 26px; }
+.lite-root.is-pocket .event-card h3 { padding-right: 18px; }
+.lite-root.is-pocket .income-number,
+.lite-root.is-pocket .clock-number { margin-top: 2px; font-size: 22px; }
+.lite-root.is-pocket .clock-words { font-size: 16px; min-height: 0; }
+.lite-root.is-pocket .income-caption,
+.lite-root.is-pocket .clock-caption {
+  margin: 2px 0 4px; font-size: 10px; line-height: 1.35; min-height: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.lite-root.is-pocket .income-footer,
+.lite-root.is-pocket .shift-footer { padding-top: 4px; flex-wrap: nowrap; }
+.lite-root.is-pocket .income-footer strong,
+.lite-root.is-pocket .shift-footer strong { font-size: 13px; }
+.lite-root.is-pocket .payday-note { font-size: 10px; white-space: nowrap; }
+.lite-root.is-pocket .event-icon { display: none; }
+.lite-root.is-pocket .event-card { padding: 7px 8px 6px; border-radius: 12px; }
+.lite-root.is-pocket .event-kicker { font-size: 10px; }
+.lite-root.is-pocket .event-card h3 { font-size: 12px; margin: 2px 0; min-height: 0; max-width: 100%; }
+.lite-root.is-pocket .event-number { height: auto; gap: 4px; }
+.lite-root.is-pocket .event-number strong { font-size: 22px; }
+.lite-root.is-pocket .event-number span { font-size: 10px; white-space: nowrap; }
+.lite-root.is-pocket .event-card footer { min-height: 0; margin-top: 4px; padding-top: 4px; font-size: 9px; line-height: 1.3; }
+.lite-root.is-pocket .companion-panel {
+  position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 68px minmax(0, 1fr);
+  align-content: center; justify-content: stretch; text-align: left;
+  padding: 8px 10px; border-radius: 14px; overflow: hidden;
+}
+.lite-root.is-pocket .companion-heading,
+.lite-root.is-pocket .companion-actions,
+.lite-root.is-pocket .companion-topics,
+.lite-root.is-pocket .pet-picker,
+.lite-root.is-pocket .wardrobe-toggle,
+.lite-root.is-pocket .companion-quiet { grid-column: 1 / -1; }
+.lite-root.is-pocket .companion-pet { grid-column: 1; grid-row: 2 / span 3; width: 60px; height: 60px; margin: 0 auto; align-self: center; }
+.lite-root.is-pocket .companion-speech { grid-column: 2; margin: 0; min-height: 0; padding: 4px 8px; font-size: 11px; line-height: 1.35; text-align: left; justify-content: flex-start; }
+.lite-root.is-pocket .companion-panel h3 { grid-column: 2; margin: 2px 0 0; font-size: 13px; text-align: left; }
+.lite-root.is-pocket .companion-caption { grid-column: 2; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lite-root.is-pocket .companion-panel > .companion-caption ~ .companion-caption { display: none; }
+.lite-root.is-pocket .companion-actions { justify-content: flex-start; margin-top: 4px; gap: 4px; }
+.lite-root.is-pocket .companion-actions button { padding: 4px 8px; font-size: 11px; }
+.lite-root.is-pocket .companion-topics { flex-wrap: nowrap; justify-content: flex-start; margin: 4px 0; gap: 4px; }
+.lite-root.is-pocket .companion-topics button { padding: 3px 6px; font-size: 10px; }
+.lite-root.is-pocket .pet-picker { margin-top: 4px; padding-top: 4px; gap: 2px; }
+.lite-root.is-pocket .pet-picker button { padding-bottom: 2px; }
+.lite-root.is-pocket .pet-picker img { height: 22px; }
+.lite-root.is-pocket .wardrobe-toggle { margin-top: 4px; padding: 4px 8px; }
+.lite-root.is-pocket .companion-panel footer { display: none; }
+.lite-root.is-pocket .companion-quiet { padding: 2px 0 0; font-size: 10px; text-align: left; }
+.lite-root.is-pocket .wardrobe {
+  position: absolute; inset: 6px; z-index: 2; margin: 0; padding: 8px;
+  background: var(--wash); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+}
+.lite-root.is-pocket .wardrobe p { display: none; }
+.lite-root.is-pocket .wardrobe label { gap: 2px; margin-top: 0; }
+.lite-root.is-pocket .wardrobe select { height: 26px; padding: 2px 6px; }
+.lite-root.is-pocket .wardrobe .switch-row { margin-top: 6px; padding: 4px 8px; }
+.lite-root.is-pocket .form-gallery { margin-top: 6px; gap: 3px; grid-template-columns: repeat(10, minmax(0, 1fr)); }
+.lite-root.is-pocket .form-gallery button { width: 100%; height: 46px; padding: 0; overflow: hidden; }
+.lite-root.is-pocket .form-gallery canvas { width: 100%; height: 30px; aspect-ratio: unset; }
+.lite-root.is-pocket .break-corner { flex: 1; min-height: 0; margin: 0; display: flex; flex-direction: column; justify-content: flex-start; padding: 8px; border-radius: 14px; overflow: hidden; }
+.lite-root.is-pocket .game-pack { flex: 1; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, minmax(0, 1fr)); gap: 4px; align-content: stretch; }
+.lite-root.is-pocket .game-pack button { min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 2px 8px; }
+.lite-root.is-pocket .game-pack strong { font-size: 12px; font-weight: 550; line-height: 1.2; }
+.lite-root.is-pocket .game-pack span { font-size: 9px; color: var(--muted); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lite-root.is-pocket .game-play { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 4px; }
+.lite-root.is-pocket .game-back { flex: none; align-self: flex-start; height: 22px; padding: 0 8px; font-size: 11px; }
+.lite-root.is-pocket .game-frame { flex: 1 1 0; min-height: 0; width: 100%; height: 0; margin: 0; border: 0; border-radius: 10px; background: #0b0d16; }
+.pocket-nav { flex: none; display: flex; align-items: center; justify-content: center; gap: 10px; height: 32px; }
+.pocket-nav > button { width: 28px; height: 28px; border: 1px solid var(--line); background: var(--surface); border-radius: 50%; font-size: 18px; line-height: 1; }
+.pocket-dots { display: flex; gap: 6px; }
+.pocket-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: var(--line); }
+.pocket-dots button[aria-current=true] { background: var(--ink); }
+.pocket-nav span { font-size: 10px; color: var(--muted); min-width: 28px; }
+
+.modal-backdrop.is-pocket { padding: 0; background: transparent; backdrop-filter: none; }
+.modal-backdrop.is-pocket .settings-panel { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; box-shadow: none; }
+.modal-backdrop.is-pocket .settings-head { padding: 8px 12px 4px; }
+.modal-backdrop.is-pocket .settings-head .eyebrow { display: none; }
+.modal-backdrop.is-pocket .settings-head h2 { font-size: 15px; }
+.modal-backdrop.is-pocket .settings-body { overflow: hidden; padding: 0 12px 4px; display: flex; flex-direction: column; justify-content: center; }
+.modal-backdrop.is-pocket .settings-columns { width: 100%; }
+.modal-backdrop.is-pocket .field-help { display: none; }
+.modal-backdrop.is-pocket .settings-body fieldset { padding: 4px 0; border-bottom: 0; min-width: 0; }
+.modal-backdrop.is-pocket .settings-body legend { float: none; width: auto; margin-bottom: 2px; }
+.modal-backdrop.is-pocket .settings-body legend + * { clear: none; }
+.modal-backdrop.is-pocket .settings-body label { margin-top: 2px; gap: 2px; font-size: 11px; }
+.modal-backdrop.is-pocket .field-label { margin-top: 6px; font-size: 11px; }
+.modal-backdrop.is-pocket .week-picker { margin-top: 4px; }
+.modal-backdrop.is-pocket .week-picker label { margin-top: 0; }
+.modal-backdrop.is-pocket .settings-body fieldset > label:not(.switch-row),
+.modal-backdrop.is-pocket .form-grid label { width: 100%; grid-template-columns: none; }
+.modal-backdrop.is-pocket .settings-panel form { flex: 1; min-height: 0; }
+.modal-backdrop.is-pocket .settings-body { flex: 1; min-height: 0; }
+.modal-backdrop.is-pocket .form-grid { grid-template-columns: 1fr 1fr; }
+.modal-backdrop.is-pocket .settings-body input:not([type=checkbox]),
+.modal-backdrop.is-pocket .settings-body select { height: 28px; }
+.modal-backdrop.is-pocket .week-picker span { height: 26px; }
+.modal-backdrop.is-pocket .settings-footer { padding: 4px 12px 6px; }
+.modal-backdrop.is-pocket .settings-footer > div:last-child span { display: none; }
+.modal-backdrop.is-pocket .settings-col:last-child > fieldset { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; align-content: start; }
+.modal-backdrop.is-pocket .settings-col:last-child > fieldset > legend,
+.modal-backdrop.is-pocket .settings-col:last-child > fieldset > .field-help,
+.modal-backdrop.is-pocket .settings-col:last-child > fieldset > .data-actions,
+.modal-backdrop.is-pocket .settings-col:last-child > fieldset > a { grid-column: 1 / -1; }
+.modal-backdrop.is-pocket .settings-body .switch-row { min-height: 22px; margin-top: 0; }
+.modal-backdrop.is-pocket .data-actions { gap: 6px; margin-top: 4px; }
+.modal-backdrop.is-pocket .update-settings,
+.modal-backdrop.is-pocket .data-settings { margin-top: 0; }
+.modal-backdrop.is-pocket .primary-button,
+.modal-backdrop.is-pocket .secondary-button,
+.modal-backdrop.is-pocket .danger-button { padding: 5px 10px; font-size: 11px; }
+.pocket-settings-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.pocket-settings-nav button { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 4px 8px; font-size: 11px; }
+.pocket-settings-nav span { font-size: 10px; color: var(--muted); }
+
+/* 内容区 287×183（上一版 573×365 的一半）。比旧最小尺寸更小时，字号、卡片和间距一起缩小。 */
+@media (max-width: 479px), (max-height: 319px) {
+  .lite-root.is-pocket { font-size: 10px; }
+  .lite-root.is-pocket .page-shell { padding: 0 6px 2px; }
+  .lite-root.is-pocket .app-header { height: 32px; }
+  .lite-root.is-pocket .brand { gap: 0; flex-shrink: 0; }
+  .lite-root.is-pocket .brand-mark { width: 16px; height: 16px; font-size: 10px; border-radius: 5px; flex: none; }
+  .lite-root.is-pocket .brand strong { display: none; }
+  .lite-root.is-pocket .header-actions { flex-shrink: 0; }
+  .lite-root.is-pocket .header-actions { gap: 3px; }
+  .lite-root.is-pocket .day-basis { height: 18px; padding: 1px; border-radius: 6px; }
+  .lite-root.is-pocket .day-basis button { padding: 0 2px; font-size: 8px; border-radius: 4px; }
+  .lite-root.is-pocket .icon-button,
+  .lite-root.is-pocket .settings-button { height: 16px; min-width: 16px; width: 16px; padding: 0; font-size: 0; border-radius: 5px; gap: 0; }
+  .lite-root.is-pocket .header-actions svg { width: 11px; height: 11px; }
+  .lite-root.is-pocket .greeting { padding: 0; }
+  .lite-root.is-pocket .eyebrow { margin: 0; font-size: 8px; letter-spacing: 0; line-height: 1.1; }
+  .lite-root.is-pocket .greeting h1 { font-size: 11px; line-height: 1.15; letter-spacing: 0; }
+  .lite-root.is-pocket .dashboard-main { gap: 3px; }
+  .lite-root.is-pocket .hero-grid,
+  .lite-root.is-pocket .anticipation-grid { gap: 4px; }
+  .lite-root.is-pocket .earnings-card,
+  .lite-root.is-pocket .offwork-card { padding: 3px 5px 2px; border-radius: 8px; }
+  .lite-root.is-pocket .offwork-card:after { display: none; }
+  .lite-root.is-pocket .card-top { font-size: 8px; line-height: 1.1; }
+  .lite-root.is-pocket .card-glyph { width: 11px; height: 11px; }
+  .lite-root.is-pocket .income-number,
+  .lite-root.is-pocket .clock-number { margin-top: 0; font-size: 13px; line-height: 1.05; letter-spacing: -.4px; white-space: nowrap; }
+  .lite-root.is-pocket .clock-words { font-size: 11px; }
+  .lite-root.is-pocket .card-top,
+  .lite-root.is-pocket .income-number,
+  .lite-root.is-pocket .clock-number,
+  .lite-root.is-pocket .income-caption,
+  .lite-root.is-pocket .clock-caption,
+  .lite-root.is-pocket .income-footer,
+  .lite-root.is-pocket .shift-footer,
+  .lite-root.is-pocket .event-kicker,
+  .lite-root.is-pocket .event-card h3,
+  .lite-root.is-pocket .event-number,
+  .lite-root.is-pocket .event-card footer { flex-shrink: 0; }
+  .lite-root.is-pocket .income-caption,
+  .lite-root.is-pocket .clock-caption { margin: 1px 0; font-size: 8px; line-height: 1.2; -webkit-line-clamp: 1; }
+  .lite-root.is-pocket .income-footer,
+  .lite-root.is-pocket .shift-footer { padding-top: 2px; }
+  .lite-root.is-pocket .income-footer { align-items: center; gap: 4px; }
+  .lite-root.is-pocket .income-footer div { display: flex; align-items: baseline; gap: 3px; }
+  .lite-root.is-pocket .income-footer span,
+  .lite-root.is-pocket .payday-note,
+  .lite-root.is-pocket .shift-footer > div:first-child { font-size: 8px; line-height: 1.1; }
+  .lite-root.is-pocket .income-footer strong,
+  .lite-root.is-pocket .shift-footer strong { font-size: 10px; }
+  .lite-root.is-pocket .payday-note { overflow: hidden; text-overflow: ellipsis; }
+  .lite-root.is-pocket .shift-footer > div:first-child { margin-bottom: 2px; }
+  .lite-root.is-pocket .progress-track { height: 3px; }
+  .lite-root.is-pocket .event-card { padding: 3px 4px 2px; border-radius: 8px; }
+  .lite-root.is-pocket .event-art { top: 3px; right: 3px; width: 14px; height: 14px; padding: 1px; border-radius: 5px; }
+  .lite-root.is-pocket .event-kicker { font-size: 8px; line-height: 1.1; padding-right: 14px; }
+  .lite-root.is-pocket .event-card h3 { margin: 1px 0; font-size: 9px; line-height: 1.15; padding-right: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .lite-root.is-pocket .event-number { gap: 2px; }
+  .lite-root.is-pocket .event-number strong { font-size: 14px; line-height: 1; }
+  .lite-root.is-pocket .event-number span { font-size: 8px; }
+  .lite-root.is-pocket .event-card footer { margin-top: 1px; padding-top: 2px; font-size: 7px; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .pocket-nav { height: 16px; gap: 6px; }
+  .pocket-nav > button { width: 14px; height: 14px; font-size: 11px; }
+  .pocket-dots { gap: 4px; }
+  .pocket-dots button { width: 4px; height: 4px; }
+  .pocket-nav span { font-size: 8px; min-width: 18px; }
+  .lite-root.is-pocket .companion-panel { grid-template-columns: 36px minmax(0, 1fr); padding: 3px 6px; border-radius: 10px; overflow-y: auto; align-content: start; }
+  .lite-root.is-pocket .companion-heading { display: none; }
+  .lite-root.is-pocket .companion-pet { width: 30px; height: 30px; }
+  .lite-root.is-pocket .companion-speech { padding: 2px 4px; font-size: 9px; }
+  .lite-root.is-pocket .companion-panel h3 { font-size: 11px; margin-top: 0; }
+  .lite-root.is-pocket .companion-caption { display: none; }
+  .lite-root.is-pocket .companion-actions,
+  .lite-root.is-pocket .companion-topics,
+  .lite-root.is-pocket .pet-picker,
+  .lite-root.is-pocket .wardrobe-toggle { margin-top: 2px; }
+  .lite-root.is-pocket .companion-actions button,
+  .lite-root.is-pocket .companion-topics button { font-size: 8px; padding: 1px 4px; }
+  .lite-root.is-pocket .pet-picker { padding-top: 2px; }
+  .lite-root.is-pocket .pet-picker img { height: 12px; }
+  .lite-root.is-pocket .pet-picker button { padding-bottom: 0; }
+  .lite-root.is-pocket .wardrobe-toggle { padding: 2px 6px; font-size: 9px; }
+  .lite-root.is-pocket .companion-quiet { padding-top: 2px; font-size: 8px; }
+  .lite-root.is-pocket .form-gallery button { height: 26px; }
+  .lite-root.is-pocket .wardrobe select { height: 20px; }
+  .lite-root.is-pocket .game-pack { gap: 2px; }
+  .lite-root.is-pocket .game-pack span { display: none; }
+  .lite-root.is-pocket .game-pack strong { font-size: 10px; }
+  .lite-root.is-pocket .game-back { height: 16px; font-size: 9px; }
+  .lite-root.is-pocket .break-corner { padding: 4px; }
+  .modal-backdrop.is-pocket { align-items: stretch; padding: 0; }
+  .modal-backdrop.is-pocket .settings-panel { flex: 1; width: 100%; height: auto; max-height: 100%; min-height: 0; }
+  .lite-root.is-desktop .modal-backdrop.is-pocket .settings-head { min-height: 32px; padding: 2px 138px 2px 8px; }
+  .modal-backdrop.is-pocket .settings-head h2 { font-size: 13px; }
+  .modal-backdrop.is-pocket .settings-body { overflow-y: auto; justify-content: flex-start; }
+  .modal-backdrop.is-pocket .settings-body input:not([type=checkbox]),
+  .modal-backdrop.is-pocket .settings-body select,
+  .modal-backdrop.is-pocket .week-picker span { height: 22px; }
+  .modal-backdrop.is-pocket .settings-footer { padding: 2px 8px 4px; }
+  .pocket-settings-nav { margin-bottom: 2px; }
+  .pocket-settings-nav button { padding: 2px 6px; font-size: 10px; }
+}
+
+

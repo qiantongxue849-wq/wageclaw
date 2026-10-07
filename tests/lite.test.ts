@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { INTERACTIONS_PER_STAGE, MAX_BOND_COUNT, PET_STAGE_COUNT, PET_STYLES, activeShift, dateKey, defaults, dayGap, parseDate, sanitizeSettings, validateSettings } from '../src/lite/model';
-import { bonusCountdown, earnings, isWorkday, mergePetBond, monthWorkdays, nextHoliday, paydayCountdown, petStage, recordPetInteraction, springCountdown } from '../src/lite/calendar';
+import { bonusCountdown, earnings, isWorkday, mergePetBond, monthWorkdays, nextHoliday, paydayCountdown, petStage, recordPetInteraction, springCountdown, workdayGap } from '../src/lite/calendar';
 import { autoReport, candidates, freshDelivery, manualReport, nextWake, normalizeDelivery, randomDue, recordDelivery } from '../src/lite/broadcast';
 import { backupContents, LITE_KEY, loadSettings, OLD_KEY, resetSettings } from '../src/lite/storage';
 // 固定为 09:00—18:00 且关闭夏季作息，与出厂默认解耦。
@@ -14,6 +14,14 @@ class MemoryStorage {
   key(index: number) { return [...this.data.keys()][index] ?? null; }
 }
 describe('lightweight income and work calendar', () => {
+  it('uses the chosen install defaults in winter and summer while preserving cleared or customized saved settings', () => {
+    const initial = defaults();
+    expect(initial).toMatchObject({ configured: false, salary: 0, payday: 15, springStart: '02-04', bonusDate: '02-03', startTime: '08:30', endTime: '18:00', summerFrom: '05-01', summerTo: '10-01', summerStartTime: '08:30', summerEndTime: '18:00' });
+    expect(activeShift(at('2027-01-15T12:00:00'), initial)).toEqual({ startTime: '08:30', endTime: '18:00', summer: false });
+    expect(activeShift(at('2027-06-15T12:00:00'), initial)).toEqual({ startTime: '08:30', endTime: '18:00', summer: true });
+    const custom = { ...initial, payday: null, startTime: '09:00', endTime: '17:30', springStart: '', bonusDate: '', summerFrom: '', summerTo: '' };
+    expect(sanitizeSettings(JSON.parse(JSON.stringify(custom)))).toMatchObject(custom);
+  });
   it('computes income directly across a whole shift without claiming or ticking', () => {
     const s = settings();
     const daily = s.salary / monthWorkdays(at('2026-09-15T12:00:00'), s).length;
@@ -81,6 +89,18 @@ describe('date boundaries and anticipated events', () => {
     expect(parseDate('2026-13-01')).toBeNull();
     expect(dayGap(new Date(2026, 2, 7, 23, 50), new Date(2026, 2, 9, 0, 5))).toBe(2);
     expect(dayGap(new Date(2026, 11, 31), new Date(2027, 0, 1))).toBe(1);
+  });
+  it('counts only workdays, skipping weekends, holidays, and personal leave', () => {
+    const s = settings();
+    expect(workdayGap(at('2026-09-18T23:00:00'), at('2026-09-18T08:00:00'), s)).toBe(0);
+    // 周五到下周一：周六休息，周日 9/20 是调休上班，周一上班。
+    expect(workdayGap(at('2026-09-18T12:00:00'), at('2026-09-21T12:00:00'), s)).toBe(2);
+    expect(workdayGap(at('2026-09-21T12:00:00'), at('2026-09-18T12:00:00'), s)).toBe(-2);
+    // 国庆前：9/30 上班，10/1 起放假。发薪日 10/15 中间还要去掉假期和周末，10/10 调休算上班。
+    expect(workdayGap(at('2026-09-29T12:00:00'), at('2026-10-01T12:00:00'), s)).toBe(1);
+    expect(workdayGap(at('2026-09-29T12:00:00'), at('2026-10-15T12:00:00'), s)).toBe(8);
+    const leave = { ...s, springStart: '09-21', springEnd: '' };
+    expect(workdayGap(at('2026-09-18T12:00:00'), at('2026-09-21T12:00:00'), leave)).toBe(1);
   });
   it('counts to official leave start, shows active holiday and never invents next year', () => {
     expect(nextHoliday(at('2026-02-14T12:00:00'))).toMatchObject({ name: '春节', days: 1, length: 9 });
@@ -170,13 +190,13 @@ describe('seasonal shift and shipped defaults', () => {
   it('ships the personal schedule, spring leave and bonus defaults', () => {
     expect(defaults()).toMatchObject({
       configured: false, salary: 0,
-      startTime: '08:30', endTime: '17:30',
+      startTime: '08:30', endTime: '18:00', payday: 15,
       summerFrom: '05-01', summerTo: '10-01', summerStartTime: '08:30', summerEndTime: '18:00',
       springStart: '02-04', springEnd: '', bonusDate: '02-03', bonusAmount: null, bonusReceivedAt: ''
     });
   });
   it('switches between regular and summer shifts by month-day, endpoints included', () => {
-    const s = { ...defaults(), configured: true, salary: 22000 };
+    const s = { ...defaults(), configured: true, salary: 22000, endTime: '17:30' };
     const shift = (day: string) => activeShift(new Date(`${day}T12:00:00`), s);
     expect(shift('2026-04-30')).toEqual({ startTime: '08:30', endTime: '17:30', summer: false });
     expect(shift('2026-05-01')).toEqual({ startTime: '08:30', endTime: '18:00', summer: true });
@@ -189,11 +209,11 @@ describe('seasonal shift and shipped defaults', () => {
   it('falls back to the regular shift when the range is incomplete or unset', () => {
     const half = { ...defaults(), configured: true, salary: 22000, summerTo: '' };
     expect(activeShift(new Date('2026-06-01T12:00:00'), half).summer).toBe(false);
-    const off = { ...defaults(), configured: true, salary: 22000, summerFrom: '', summerTo: '' };
+    const off = { ...defaults(), configured: true, salary: 22000, endTime: '17:30', summerFrom: '', summerTo: '' };
     expect(activeShift(new Date('2026-06-01T12:00:00'), off)).toEqual({ startTime: '08:30', endTime: '17:30', summer: false });
   });
   it('drives income and the off-work countdown from the active shift', () => {
-    const s = { ...defaults(), configured: true, salary: 22000 };
+    const s = { ...defaults(), configured: true, salary: 22000, endTime: '17:30' };
     const days = monthWorkdays(at('2026-06-15T12:00:00'), s);
     const summer = earnings(at('2026-06-15T13:00:00'), s);
     expect(summer.status).toBe('working');

@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { usePocket } from './usePocket';
 import { dateKey, parseDate, validateSettings, PET_STYLES, PET_STYLE_LABELS, type LiteSettings } from './model';
 import { HOLIDAY_SOURCE } from './calendar';
 import type { LiteDesktop } from './desktop';
 import type { UpdateState } from '../auth-types';
+import PocketSettings from './PocketSettings.vue';
 const props = defineProps<{ settings: LiteSettings; recovery: boolean; notice: string; desktop?: LiteDesktop }>();
-const emit = defineEmits<{ close: []; save: [settings: LiteSettings]; export: []; reset: []; import: [] }>();
+const emit = defineEmits<{ close: []; save: [settings: LiteSettings]; export: []; reset: []; import: []; dismissNotice: [] }>();
 const draft = ref<LiteSettings>(JSON.parse(JSON.stringify(props.settings)));
 const error = ref('');
 const overrideDate = ref('');
 const overrideWork = ref('rest');
 const confirmReset = ref(false);
+const pocket = usePocket();
 const dialog = ref<HTMLElement>();
 const update = ref<UpdateState>();
 const updateBusy = ref(false);
@@ -48,7 +51,7 @@ async function updateAction(install = false) {
 }
 onMounted(async () => {
   await nextTick(); dialog.value?.focus();
-  if (props.desktop) {
+    if (props.desktop && !pocket.value) {
     cleanUpdate = props.desktop.onUpdate(state => { update.value = state; });
     try { update.value = await props.desktop.getUpdateState(); } catch { /* Updates are optional. */ }
   }
@@ -56,12 +59,13 @@ onMounted(async () => {
 onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
 </script>
 <template>
-  <div class="modal-backdrop" @click.self="settings.configured && !recovery && emit('close')">
+  <PocketSettings v-if="pocket" :settings="settings" :recovery="recovery" :notice="notice" :desktop="desktop" @close="emit('close')" @save="emit('save', $event)" @export="emit('export')" @reset="emit('reset')" @import="emit('import')" @dismiss-notice="emit('dismissNotice')" />
+  <div v-else class="modal-backdrop" @click.self="settings.configured && !recovery && emit('close')">
     <section ref="dialog" class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" tabindex="-1" @keydown="keydown">
       <header class="settings-head">
         <div>
           <p class="eyebrow">{{ settings.configured ? '自己的节奏，自己设定' : '只需要一分钟' }}</p>
-          <h2 id="settings-title">{{ settings.configured ? '设置' : '从你的工资和作息开始' }}</h2>
+          <h2 id="settings-title">{{ settings.configured ? '设置' : pocket ? '开始我的小记' : '从你的工资和作息开始' }}</h2>
         </div>
         <button v-if="!recovery" class="icon-button" aria-label="关闭设置" @click="emit('close')">×</button>
       </header>
@@ -69,6 +73,8 @@ onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
         <div class="settings-body">
           <p v-if="notice" class="notice" role="status">{{ notice }}</p>
           <p v-if="recovery" class="form-error">存档无法读取。原始数据仍保留，请先导出备份，再恢复默认设置。</p>
+          <div class="settings-columns">
+          <div class="settings-col">
           <fieldset :disabled="recovery">
             <legend>工资与作息</legend>
             <p class="field-help">只在这台设备保存。修改后，会重新估算当月收入。</p>
@@ -87,7 +93,21 @@ onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
               </label>
             </div>
             <p class="field-help">午休照常计入工时（不扣除、不暂停）；暂不支持跨夜班次。下面两段留空，则全年都按这组时间。</p>
-            <span class="field-label">夏季作息（选填）</span>
+            <span class="field-label">每周工作日</span>
+            <div class="week-picker">
+              <label v-for="item in week" :key="item.day" :class="{ selected: draft.workweek.includes(item.day) }">
+                <input v-model="draft.workweek" type="checkbox" :value="item.day" />
+                <span>{{ item.name }}</span>
+              </label>
+            </div>
+            <label>
+              每月发薪日（选填）
+              <input v-model.number="draft.payday" type="number" min="1" max="31" step="1" placeholder="1～31；不足该日期时按月末" />
+            </label>
+          </fieldset>
+          <fieldset :disabled="recovery">
+            <legend>夏季作息（选填）</legend>
+            <p class="field-help">这两段日期之间改用夏季作息，含起止当天；每年自动重复。留空则全年使用上面的上下班时间。</p>
             <div class="form-grid">
               <label>
                 生效开始（月-日）
@@ -108,19 +128,9 @@ onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
                 <input v-model="draft.summerEndTime" type="time" />
               </label>
             </div>
-            <p class="field-help">这两段日期之间改用夏季作息，含起止当天；每年自动重复。</p>
-            <span class="field-label">每周工作日</span>
-            <div class="week-picker">
-              <label v-for="item in week" :key="item.day" :class="{ selected: draft.workweek.includes(item.day) }">
-                <input v-model="draft.workweek" type="checkbox" :value="item.day" />
-                <span>{{ item.name }}</span>
-              </label>
-            </div>
-            <label>
-              每月发薪日（选填）
-              <input v-model.number="draft.payday" type="number" min="1" max="31" step="1" placeholder="1～31；不足该日期时按月末" />
-            </label>
           </fieldset>
+          </div>
+          <div class="settings-col">
           <fieldset :disabled="recovery">
             <legend>给未来留一点盼头</legend>
             <div class="form-grid">
@@ -172,6 +182,14 @@ onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
               </li>
             </ul>
           </fieldset>
+          <section v-if="desktop" class="update-settings">
+            <h3>版本更新</h3>
+            <p class="field-help">{{ update?.message || '可手动检查更新，不影响离线使用。' }}</p>
+            <button v-if="update?.status === 'available'" type="button" class="secondary-button" :disabled="updateBusy" @click="updateAction(true)">下载并重启安装</button>
+            <button v-else type="button" class="secondary-button" :disabled="updateBusy || update?.status === 'downloading'" @click="updateAction()">检查更新</button>
+          </section>
+          </div>
+          <div class="settings-col">
           <fieldset :disabled="recovery">
             <legend>外观与桌面</legend>
             <label class="switch-row">
@@ -188,12 +206,13 @@ onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
             <label>桌宠形象<select v-model="draft.pet.style" aria-label="桌宠形象"><option v-for="item in PET_STYLES" :key="item" :value="item">{{ PET_STYLE_LABELS[item] }}</option></select></label>
             <p class="field-help">五组形象，每组十种模样。每天一上班从第一种开始。互动 20 次，或上班后每满一小时，都会换成下一种。也可以在详情页里固定一种。</p>
             <label class="switch-row"><span>自动气泡播报</span><input v-model="draft.broadcast.enabled" type="checkbox" /></label>
-            <p class="field-help">工作时约 25～45 分钟说一句，每天最多 12 条日常播报，另有临近下班和收工提醒。默认静音，休息日不打扰。</p>
+            <label class="switch-row"><span>偶尔说一条热点</span><input v-model="draft.broadcast.news" type="checkbox" /></label>
+            <label v-if="desktop" class="switch-row"><span>开机自启（安装版生效）</span><input v-model="draft.autoStart" type="checkbox" /></label>
+            <p class="field-help">轮换工资、发薪、休息倒数、放松提示和轻松短句，热点需配置 TianAPI 密钥。工作时约 25～45 分钟说一句，每天最多 12 条日常播报，另有临近下班和收工提醒。默认静音，休息日不打扰。</p>
             <div class="data-actions"><button class="secondary-button" type="button" @click="draft.broadcast.pauseUntil = Date.now() + 3600000">暂停一小时</button><button class="secondary-button" type="button" @click="draft.broadcast.quietDate = dateKey(new Date())">今天安静</button><button class="text-action" type="button" @click="draft.broadcast.pauseUntil = 0; draft.broadcast.quietDate = ''">恢复播报</button></div>
             <p class="field-help">{{ draft.broadcast.quietDate === dateKey(new Date()) ? '今天安静（保存后生效）' : draft.broadcast.pauseUntil > Date.now() ? '已选择暂停一小时（保存后生效）' : '按设置自动播报' }}</p>
-            <label v-if="desktop" class="switch-row"><span>开机自启（安装版生效）</span><input v-model="draft.autoStart" type="checkbox" /></label>
             <p class="field-help">卡皮巴拉 · 点一下看一句，双击看全部，拖动换位置。无需喂养。</p>
-            <a v-if="!desktop" href="?view=pet-preview" target="_blank" class="text-action">预览桌宠与气泡 ↗</a>
+            <a v-if="!desktop && !pocket" href="?view=pet-preview" target="_blank" class="text-action">预览桌宠与气泡 ↗</a>
           </fieldset>
           <section class="data-settings">
             <h3>本地数据</h3>
@@ -209,12 +228,8 @@ onUnmounted(() => { cleanUpdate?.(); previousFocus?.focus(); });
               <button type="button" class="danger-button" @click="emit('reset')">确认重置并保留备份</button>
             </div>
           </section>
-          <section v-if="desktop" class="update-settings">
-            <h3>版本更新</h3>
-            <p class="field-help">{{ update?.message || '可手动检查更新，不影响离线使用。' }}</p>
-            <button v-if="update?.status === 'available'" type="button" class="secondary-button" :disabled="updateBusy" @click="updateAction(true)">下载并重启安装</button>
-            <button v-else type="button" class="secondary-button" :disabled="updateBusy || update?.status === 'downloading'" @click="updateAction()">检查更新</button>
-          </section>
+          </div>
+          </div>
         </div>
         <footer class="settings-footer">
           <p v-if="error" class="form-error" role="alert">{{ error }}</p>
